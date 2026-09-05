@@ -1,4 +1,4 @@
-"""vec_baselines on synthetic stages: the three rows, row selection and the writer (including the n_cells gotcha)."""
+"""vec_baselines on synthetic stages: the three baselines, row selection and the writer (explicit, required n_cells)."""
 from __future__ import annotations
 
 import json
@@ -66,39 +66,75 @@ def test_looks_like_counts_and_log_normalize(heart_panel):
     assert sp.issparse(c.X) and np.allclose(np.expm1(dense(c)).sum(1), 1e4, rtol=1e-3)
 
 
+def test_parse_n_cells():
+    assert bio.parse_n_cells("all") == "all" and bio.parse_n_cells(" ALL ") == "all"
+    assert bio.parse_n_cells(5000) == 5000 and bio.parse_n_cells("5000") == 5000 and bio.parse_n_cells(np.int64(7)) == 7
+    for bad in (None, True, 2.5, "some", [5000]):
+        with pytest.raises(ValueError, match="n_cells is required"):
+            bio.parse_n_cells(bad)
+
+
 def test_select_rows_policies():
     spec = {"min_cells": 1000, "max_cells": 7449}
-    idx, notes = bio.select_rows(150, spec, relax_cells=True)
+    # n_cells is required: None raises and the message says what to pass
+    with pytest.raises(ValueError, match="n_cells is required.*'all'"):
+        bio.select_rows(20000, spec)
+    with pytest.raises(ValueError, match="n_cells is required"):
+        bio.select_rows(20000, spec, n_cells=None)
+    # explicit int inside the bounds: a seeded subset without replacement, sorted
+    idx, notes = bio.select_rows(20000, spec, n_cells=4000)
+    assert len(idx) == 4000 and len(set(idx)) == 4000 and np.all(np.diff(idx) > 0) and notes["n_cells_mode"] == "explicit"
+    assert notes["sampled_without_replacement"] and notes["target"] == 4000
+    # explicit int above max_cells is an error that states the bound (never a silent clamp)
+    with pytest.raises(ValueError, match=r"exceeds the board's max_cells=7449.*\[1000, 7449\]"):
+        bio.select_rows(20000, spec, n_cells=10000)
+    # explicit int below min_cells: error unless relaxed
+    with pytest.raises(ValueError, match="below the board's min_cells=1000"):
+        bio.select_rows(2500, spec, n_cells=500)
+    idx, notes = bio.select_rows(150, spec, n_cells="all", relax_cells=True)
     assert np.array_equal(idx, np.arange(150)) and notes["below_min_cells_relaxed"]
-    idx, notes = bio.select_rows(150, spec, relax_cells=False)
+    # fewer source rows than requested (but >= min_cells): every row, flagged
+    idx, notes = bio.select_rows(2500, spec, n_cells=5000)
+    assert np.array_equal(idx, np.arange(2500)) and notes["kept_all_rows"] and notes["n_written"] == 2500
+    # below min_cells without relax: duplicates fill up to min_cells
+    idx, notes = bio.select_rows(150, spec, n_cells=1000)
     assert len(idx) == 1000 and notes["duplicated_rows"] == 850 and set(idx) == set(range(150))
-    idx, notes = bio.select_rows(20000, spec)                       # the default-subsample gotcha
-    assert len(idx) == 4000 and len(set(idx)) == 4000 and np.all(np.diff(idx) > 0) and notes["n_cells_mode"] == "default"
-    idx, notes = bio.select_rows(20000, spec, n_cells=10000)
-    assert len(idx) == 7449 and notes["n_cells_clamped_to_max_cells"] == 7449
-    idx, notes = bio.select_rows(2500, spec)
-    assert np.array_equal(idx, np.arange(2500))
+    # "all": every row, or an error that states the bound
     idx, notes = bio.select_rows(6000, spec, n_cells="all")
     assert np.array_equal(idx, np.arange(6000)) and notes["n_cells_mode"] == "all"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"the source has 8000 cells and the board allows at most max_cells=7449.*\[1000, 7449\]"):
         bio.select_rows(8000, spec, n_cells="all")
     with pytest.raises(ValueError):
-        bio.select_rows(2500, spec, n_cells=500)
-    with pytest.raises(ValueError):
-        bio.select_rows(0, spec)
+        bio.select_rows(0, spec, n_cells="all")
+    with pytest.raises(ValueError, match="positive"):
+        bio.select_rows(2500, spec, n_cells=0)
 
 
-def test_write_submission_default_subsample_gotcha(tmp_path, heart_panel):
+def test_write_submission_requires_explicit_n_cells(tmp_path, heart_panel):
     a = make_adata(heart_panel, 4500, seed=4, density=0.1)
     X, C, _ = bm.copy_last(a)
-    rep = bio.write_submission(X, C, heart_panel, tmp_path / "default.h5ad", "T3:gata4")
-    assert rep["ok"] and rep["info"]["n_obs"] == 4000                 # 4500 in, 4000 out: read the module doc
-    assert rep["write_info"]["n_cells_mode"] == "default" and rep["write_info"]["sampled_without_replacement"]
+    with pytest.raises(ValueError, match="n_cells is required"):
+        bio.write_submission(X, C, heart_panel, tmp_path / "none.h5ad", "T3:gata4")
+    with pytest.raises(ValueError, match="n_cells is required"):
+        bio.write_submission(X, C, heart_panel, tmp_path / "none.h5ad", "T3:gata4", n_cells=None)
+    assert not (tmp_path / "none.h5ad").exists()
     rep = bio.write_submission(X, C, heart_panel, tmp_path / "all.h5ad", "T3:gata4", n_cells="all")
     assert rep["info"]["n_obs"] == 4500 and rep["write_info"]["n_cells_mode"] == "all"
     rep = bio.write_submission(X, C, heart_panel, tmp_path / "explicit.h5ad", "T3:gata4", n_cells=1500, seed=3)
     assert rep["info"]["n_obs"] == 1500 and rep["write_info"]["n_cells_mode"] == "explicit"
+    assert rep["write_info"]["sampled_without_replacement"]
     assert_contract(tmp_path / "explicit.h5ad", "T3:gata4")
+    # a count above the board maximum is refused with the bound, not clamped
+    with pytest.raises(ValueError, match="max_cells=7449"):
+        bio.write_submission(X, C, heart_panel, tmp_path / "big.h5ad", "T3:gata4", n_cells=8000)
+    # "all" on the embryo board (max 5000) with 4500 rows is fine; with 5100 rows it is refused with the bound
+    rep = bio.write_submission(X, C, heart_panel, tmp_path / "embryo_all.h5ad", "T2:embryo:val_interp", n_cells="all")
+    assert rep["ok"] and rep["info"]["n_obs"] == 4500
+    b = make_adata(heart_panel, 5100, seed=5, density=0.05)
+    Xb, Cb, _ = bm.copy_last(b)
+    with pytest.raises(ValueError, match=r"5100 cells and the board allows at most max_cells=5000.*\[583, 5000\]"):
+        bio.write_submission(Xb, Cb, heart_panel, tmp_path / "embryo_big.h5ad", "T2:embryo:val_interp", n_cells="all")
+    assert not (tmp_path / "embryo_big.h5ad").exists()
 
 
 def test_write_submission_clips_maps_columns_and_validates(tmp_path, heart_panel):
@@ -204,12 +240,33 @@ def test_cli_copy_last_and_flags(tmp_path, heart_panel, capsys):
     assert a.n_obs == 1300
     payload = json.loads((tmp_path / "rep.json").read_text(encoding="utf-8"))
     assert payload["check"]["ok"] and payload["info"]["method"] == "copy_last"
-    # default subsample NOTE on a stage larger than 4000 cells
+    # --n-cells is required: leaving it out is a usage error and nothing is written
+    with pytest.raises(SystemExit):
+        make_main(["--method", "copy_last", "--board", "T2:heart:val_interp", "--last", str(stage), "--out", str(tmp_path / "def.h5ad")])
+    assert not (tmp_path / "def.h5ad").exists()
+    capsys.readouterr()
+    # a count above what the source holds (but >= min_cells): every source cell is written, with a NOTE
+    rc = make_main(["--method", "copy_last", "--board", "T2:heart:val_interp", "--last", str(stage), "--out", str(tmp_path / "req.h5ad"),
+                    "--n-cells", "5000"])
+    out_text = capsys.readouterr().out
+    assert rc == 0 and "requested but the source has only 1300 cells" in out_text
+    assert ad.read_h5ad(tmp_path / "req.h5ad").n_obs == 1300
+    # "all" above the board maximum fails with the bound in the message (embryo board: max 5000)
     big = tmp_path / "big.h5ad"
-    make_adata(heart_panel, 4200, seed=13, density=0.1).write_h5ad(big)
-    rc = make_main(["--method", "copy_last", "--board", "T2:heart:val_interp", "--last", str(big), "--out", str(tmp_path / "def.h5ad")])
-    assert rc == 0 and "default subsample" in capsys.readouterr().out
-    assert ad.read_h5ad(tmp_path / "def.h5ad").n_obs == 4000
+    make_adata(heart_panel, 5100, seed=13, density=0.05).write_h5ad(big)
+    rc = make_main(["--method", "copy_last", "--board", "T2:embryo:val_interp", "--last", str(big), "--out", str(tmp_path / "all.h5ad"),
+                    "--n-cells", "all"])
+    err_text = capsys.readouterr().err
+    assert rc == 1 and "max_cells=5000" in err_text and not (tmp_path / "all.h5ad").exists()
+    # an explicit count above the maximum is refused the same way
+    rc = make_main(["--method", "copy_last", "--board", "T2:embryo:val_interp", "--last", str(big), "--out", str(tmp_path / "too.h5ad"),
+                    "--n-cells", "6000"])
+    assert rc == 1 and "max_cells=5000" in capsys.readouterr().err
+    # a count inside the bound works on the 498-gene embryo board from the 500-gene file
+    rc = make_main(["--method", "copy_last", "--board", "T2:embryo:val_interp", "--last", str(big), "--out", str(tmp_path / "emb.h5ad"),
+                    "--n-cells", "5000"])
+    assert rc == 0 and assert_contract(tmp_path / "emb.h5ad", "T2:embryo:val_interp").n_obs == 5000
+    capsys.readouterr()
     # count-scale input is refused without --log1p-counts
     counts = tmp_path / "counts.h5ad"
     c = make_adata(heart_panel, 1100, seed=14)
@@ -229,4 +286,7 @@ def test_cli_copy_last_and_flags(tmp_path, heart_panel, capsys):
     assert rc == 0 and "NOT uploadable" in capsys.readouterr().out
     # missing input flag is a usage error
     with pytest.raises(SystemExit):
-        make_main(["--method", "pseudobulk_shift", "--board", "T1:val", "--last", str(stage), "--out", str(out)])
+        make_main(["--method", "pseudobulk_shift", "--board", "T1:val", "--last", str(stage), "--out", str(out), "--n-cells", "all"])
+    # a non-integer --n-cells is a usage error
+    with pytest.raises(SystemExit):
+        make_main(["--method", "copy_last", "--board", "T2:heart:val_interp", "--last", str(stage), "--out", str(out), "--n-cells", "many"])

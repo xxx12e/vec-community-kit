@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", "runs", "third_party", ".venv", "data"}
+SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", "runs", "third_party", ".venv", "data", "out", "pseudo", "scratchpad"}
 SUFFIXES = {".py", ".json", ".txt", ".ini", ".cfg", ".toml", ".md"}
 ALLOWED_NON_ASCII = {ROOT / "README.md"}
 

@@ -1,21 +1,29 @@
 #!/usr/bin/env python
-"""Build a local pseudo-validation board that mimics the official scorer's handling of the target.
+"""Export a fixed pseudo-validation split as files - for inspection, or to call the veckit CLI directly.
 
-Official protocol: every stage is subsampled to 10 % before comparison; the target is split in half - one half
-is scored against (the "truth"), the other half is scored AS a prediction to give the attainable ceiling. veckit
-itself does none of this (it scores --input against the whole --target file you give it), so this script
-prepares the files; you then call veckit three times (ceiling, floor, your model) or use `vec_local_score`,
-which does the split in memory.
+`vec_local_score` does NOT need this: it takes the RAW released stage files and performs the 10 % subsample and the
+split-half itself, in memory. Use this script only when you want to look at one fixed split or feed it to the
+veckit command line, which scores whatever files you give it without subsampling. The exported files carry a marker
+(uns["vec_pseudo_split"]) and `vec_local_score` REFUSES them, because scoring them there would subsample twice.
+
+veckit protocol (as of veckit 0.1.1): every stage is subsampled to 10 % before comparison; the target is split in
+half - one half is scored against (the "truth"), the other half is scored AS a prediction to give the attainable
+ceiling; the floor is the reference stage resubmitted.
 
 Outputs into --out-dir:
     target_score.h5ad     the half of the 10 % target subsample to point veckit at as --target
     target_ceiling.h5ad   the other half, to be scored as --input for the ceiling row
-    reference.h5ad        10 % subsample of --reference (the DE reference AND the copy_last floor prediction)
+    reference.h5ad        10 % subsample of --reference (the DE reference AND the copy_last / wt_identity floor row)
     meta.json             cell counts and panel size
+
+veckit CLI, three calls per split (T2 heart shown; T1 drops --setting; T3 uses --wt instead of --reference):
+    veckit --task T2 --setting heart --input pseudo/heart/target_ceiling.h5ad --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad   # ceiling row
+    veckit --task T2 --setting heart --input pseudo/heart/reference.h5ad      --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad   # floor row
+    veckit --task T2 --setting heart --input pred.h5ad                        --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad   # your model
 
 Example (heart, hold out E8.75 and predict it from E8.25):
     python -m vec_local_score.make_pseudo_split --target E8.75.h5ad --reference E8.25_late.h5ad \
-        --out-dir pseudo/heart_E8.25_to_E8.75 --panel data/panels/T2__heart__val_interp.genes.txt
+        --out-dir pseudo/heart --panel data/panels/T2__heart__val_interp.genes.txt --require-coords
 Coordinates (obsm["spatial_3D"]) are kept when present and required with --require-coords (T2/T3).
 """
 from __future__ import annotations
@@ -28,6 +36,8 @@ from pathlib import Path
 import anndata as ad
 import numpy as np
 from scipy import sparse
+
+MARKER = "vec_pseudo_split"
 
 
 def slim(a: ad.AnnData, panel=None, require_coords: bool = False) -> ad.AnnData:
@@ -50,6 +60,13 @@ def slim(a: ad.AnnData, panel=None, require_coords: bool = False) -> ad.AnnData:
     return out
 
 
+def _mark(a: ad.AnnData, role: str, frac: float, seed: int, source: str) -> ad.AnnData:
+    """Stamp an exported file so vec_local_score refuses to subsample it a second time."""
+    a.uns[MARKER] = {"tool": "vec_local_score.make_pseudo_split", "role": role, "frac": float(frac), "seed": int(seed),
+                     "source": str(source)}
+    return a
+
+
 def make_split(target, reference, out_dir, frac: float = 0.10, seed: int = 0, panel=None,
                require_coords: bool = False, min_cells: int = 20) -> dict:
     out_dir = Path(out_dir)
@@ -69,14 +86,18 @@ def make_split(target, reference, out_dir, frac: float = 0.10, seed: int = 0, pa
     k_r = min(n_r, max(int(round(n_r * frac)), min_cells))
     idx_r = rng.choice(n_r, k_r, replace=False)
 
-    t_score, t_ceil, r_sub = tgt[np.sort(score_half)].copy(), tgt[np.sort(ceil_half)].copy(), ref[np.sort(idx_r)].copy()
+    t_score = _mark(tgt[np.sort(score_half)].copy(), "target_score", frac, seed, Path(target).name)
+    t_ceil = _mark(tgt[np.sort(ceil_half)].copy(), "target_ceiling", frac, seed, Path(target).name)
+    r_sub = _mark(ref[np.sort(idx_r)].copy(), "reference", frac, seed, Path(reference).name)
     t_score.write_h5ad(out_dir / "target_score.h5ad")
     t_ceil.write_h5ad(out_dir / "target_ceiling.h5ad")
     r_sub.write_h5ad(out_dir / "reference.h5ad")
     meta = {"target_file": str(target), "reference_file": str(reference), "frac": frac, "seed": seed,
             "target_full_cells": int(n_t), "target_score_cells": int(t_score.n_obs), "target_ceiling_cells": int(t_ceil.n_obs),
             "reference_full_cells": int(n_r), "reference_cells": int(r_sub.n_obs), "genes": int(tgt.n_vars),
-            "has_coords": bool("spatial_3D" in tgt.obsm)}
+            "has_coords": bool("spatial_3D" in tgt.obsm),
+            "note": "exported split for inspection / the veckit CLI; not an input to vec_local_score (which takes the "
+                    "raw stages and subsamples itself)"}
     (out_dir / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
     return meta
 
@@ -84,10 +105,10 @@ def make_split(target, reference, out_dir, frac: float = 0.10, seed: int = 0, pa
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m vec_local_score.make_pseudo_split", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--target", required=True, type=Path, help="stage to be predicted (held out)")
-    ap.add_argument("--reference", required=True, type=Path, help="preceding stage (DE reference / copy_last)")
+    ap.add_argument("--target", required=True, type=Path, help="RAW stage to be predicted (held out)")
+    ap.add_argument("--reference", required=True, type=Path, help="RAW preceding stage (DE reference / copy_last floor)")
     ap.add_argument("--out-dir", required=True, type=Path)
-    ap.add_argument("--frac", type=float, default=0.10, help="subsample fraction applied to every stage (official: 0.10)")
+    ap.add_argument("--frac", type=float, default=0.10, help="subsample fraction applied to every stage (veckit protocol: 0.10)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--panel", type=Path, help="genes.txt from data/panels to subset + order both files to")
     ap.add_argument("--require-coords", action="store_true", help="fail if obsm['spatial_3D'] is missing (T2/T3)")

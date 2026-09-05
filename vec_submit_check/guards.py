@@ -1,7 +1,8 @@
 """Generic numeric sanity guards for a prediction matrix. None of these is an official metric.
 
 They catch the classic failure modes before a file is validated or scored: NaN / negative / count-scale entries
-(the portal rejects the first two; a missing metric is scored 0, not floor), a normalisation convention that
+(the board contracts require finite, non-negative expression; a metric that comes back missing is scored 0, not
+floor), a normalisation convention that
 differs from the reference stage (library_size_ratio far from 1), mean collapse (variance_ratio near 0),
 duplicated cells (they bias the unbiased distribution estimators), and cell counts outside the board bounds.
 
@@ -87,7 +88,7 @@ def duplicate_rows(X, C=None) -> dict:
 
 
 def finite_nonneg(X, C=None, x_max_warn: float = 30.0) -> dict:
-    """Finite, non-negative, float32-castable expression (and finite coordinates): the portal's hard checks."""
+    """Finite, non-negative, float32-castable expression (and finite coordinates): the contract's hard requirements."""
     A = to_dense_f32(X)
     out = {"finite": bool(np.all(np.isfinite(A))), "n_nonfinite": int(np.count_nonzero(~np.isfinite(A))),
            "nonneg": bool(np.all(A >= 0)), "n_negative": int(np.count_nonzero(A < 0)),

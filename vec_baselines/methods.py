@@ -1,9 +1,10 @@
-"""Official-style reference baselines of the Virtual Embryo Challenge, re-implemented from their public
-one-line definitions (challenge task pages):
+"""Baseline generators for the Virtual Embryo Challenge, re-implemented from the organisers' public one-line
+definitions (challenge task pages):
 
     copy_last(last)              T1/T2 floor row: resubmit the last observed stage verbatim
     wt_identity(wt)              T3 floor row: resubmit the matched wild type verbatim
-    pseudobulk_shift(prev, last) T1/T2: move each cell of `last` by ITS OWN cell type's mean change prev -> last
+    pseudobulk_shift(prev, last) T1/T2 baseline (not a floor row): move each cell of `last` by ITS OWN cell type's
+                                 mean change prev -> last
 
 Every function returns (X, coords, info):
     X       np.ndarray float32 [n, G], non-negative
@@ -13,8 +14,10 @@ Every function returns (X, coords, info):
 Inputs are AnnData objects (see io.load_stage); all inputs of one call must share var_names in the same order
 (checked). `rows` restricts the OUTPUT cells while every statistic is computed on ALL cells of every input.
 
-The floor rows score exactly the floor (50 on the 0-100 skill scale) by construction; they are the right first
-file to upload because they exercise the whole pipeline with a known outcome.
+copy_last / wt_identity are the organisers' floor rows: the published floor (50 on the 0-100 skill scale) is the
+organisers' own copy_last / wt_identity row scored on the hidden target. A file generated here is a resample of the
+same stage, so it lands near that value, not exactly on it. It is still the right first upload: it exercises the
+whole pipeline with a known reference point.
 """
 from __future__ import annotations
 
@@ -78,7 +81,7 @@ def _base_info(method: str, X: np.ndarray, C, source) -> dict:
             "has_coords": C is not None, "n_source_cells": int(source.n_obs)}
 
 
-# ----------------------------------------------------------------------------- official rows
+# ----------------------------------------------------------------------------- the organisers' rows
 def copy_last(last, rows=None):
     """copy_last (T1/T2 floor row): resubmit the last observed stage verbatim (X and coords)."""
     X = _dense_rows(last, rows)

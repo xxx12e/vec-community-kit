@@ -15,11 +15,17 @@ prediction. The rules (challenge site, Agent Team section):
   scored. The evidence must come from the exact run that produced the file. Organisers may audit and ask you to
   re-run the harness. Limits: 200 MB per evidence file, 600 MB per team in total.
 
-This package makes producing that evidence mechanical. It targets the Claude Code CLI in headless mode
-(`claude -p --output-format stream-json`) because it exposes everything needed: a transcript per session id, hooks
-that can deny and log tool calls, a settings file for deny rules, and an init event that echoes the model and tool
-set actually used. The same layout works for any agent CLI that can be started from a command line and writes a
-machine-readable trajectory; replace `launch.build_command`.
+This package makes producing that evidence mechanical. The current implementation targets the Claude Code CLI
+in headless mode (`claude -p --output-format stream-json`) because it exposes everything needed: a transcript per
+session id, hooks that can deny and log tool calls, a settings file for deny rules, and an init event that echoes
+the model and tool set actually used. The same layout works for any agent CLI that can be started from a command
+line and writes a machine-readable trajectory, but you must adapt `launch.build_command` (and the stream-event
+parsing in `launch.launch` if the CLI's output differs).
+
+What the hooks are and are not: `hooks/guard.py` and `hooks/audit.py` are **regex hooks** over the tool input.
+They reject recognised network commands and restricted file operations, and they log every tool call; the audit
+log and the hashes in `config.lock.json` / `run_manifest.json` support post-run verification. They are not a
+network sandbox (see "The hooks" and "Limitations").
 
 ## What a run directory contains
 
@@ -79,7 +85,8 @@ unrendered placeholder fails the lock.
 
 ## The hooks
 
-`hooks/guard.py` (PreToolUse; exit 2 + JSON reason denies the call) refuses: network-shaped commands (curl, wget,
+`hooks/guard.py` (PreToolUse; exit 2 + JSON reason denies the call) rejects recognised network commands and
+restricted file operations: network-shaped commands (curl, wget,
 pip/uv/conda install, git clone/fetch/pull/push, ssh/scp, requests/httpx/urllib/socket, huggingface_hub, any URL),
 any reference to `~/.claude`, any reference to another run directory, writes into `submission/` other than through
 `tools/finalize_submission.py`, writes outside the workspace or into `tools/`, `data/`, `DEADLINE.txt`,
@@ -88,9 +95,10 @@ kill, Stop-Process), and recursive `claude -p`. It is fail-closed: an internal e
 `hooks/audit.py` appends one JSON line per event to `hooks/tool_audit.jsonl` and never blocks.
 
 Both are stdlib-only and copied into the run directory, so editing the kit while a run is in progress cannot change
-that run. Note that a regex guard over the command text is not a sandbox: a determined agent could obfuscate a
-command, and Python code that opens files itself bypasses Read/Edit deny rules. Enforcement is layered (tool set,
-deny rules, guard, offline environment, audit log) and the trajectory shows what happened.
+that run. A regex guard over the command text is not a sandbox: a determined agent could obfuscate a command, and
+Python code that opens files itself bypasses Read/Edit deny rules. Enforcement is layered (tool set, deny rules,
+guard, offline environment, audit log); the audit log, the trajectory and the recorded hashes are what supports
+post-run verification of what actually happened.
 
 ## Secret scan
 
@@ -115,6 +123,9 @@ feed one run's artefacts into another's workspace, never edit a submission.
 ## Limitations
 
 * Windows and POSIX are both supported for the launcher (CTRL_BREAK / SIGINT, then a process-tree kill). Network is
-  not sandboxed by this kit; a firewall rule for the agent's Python interpreter is the hard block.
+  not sandboxed by this kit: the guard is a regex hook that rejects recognised network commands; a firewall rule for
+  the agent's Python interpreter is the hard block.
+* Only the Claude Code CLI is implemented (`claude -p --output-format stream-json`, headless, hooks via a settings
+  file). Another agent CLI needs `launch.build_command` adapted and its trajectory located by `evidence.collect_transcript`.
 * Thinking blocks may be stored without their text by the CLI; the trajectory proves the tool calls and messages.
 * `total_cost_usd` in the manifest is the CLI's own estimate.

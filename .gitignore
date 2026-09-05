@@ -12,3 +12,6 @@ pseudo/
 third_party/
 *.log
 .ipynb_checkpoints/
+
+# scratch scripts (never committed)
+scratchpad/

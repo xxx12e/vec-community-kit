@@ -1,12 +1,14 @@
 """Validate a prediction .h5ad against a Virtual Embryo Challenge board contract.
 
-Contract source: data/panels/index.json + data/panels/<board>.genes.txt, copies of the public files published
-at https://virtualembryo.ai/challenge/panels/ . The checks mirror what the official portal rejects on:
+A set of local pre-upload checks against the published board contracts: data/panels/index.json plus one
+data/panels/<board>.genes.txt per board, copies of the public files at https://virtualembryo.ai/challenge/panels/ .
+It is not a reproduction of every portal rule - the portal's own validator has the final say - but a file that
+fails here would have failed there, so running it first reduces avoidable upload-and-debug cycles. Checks:
 
   * var_names == board panel, element by element, same order (the portal does not reorder genes)
   * n_obs within [min_cells, max_cells]
-  * file size <= MAX_FILE_MB (portal cap: a single .h5ad of at most 1200 MB)
-  * .X finite; for T2/T3 also non-negative (log-normalised expression); dtype castable to float32
+  * file size <= MAX_FILE_MB (a single .h5ad of at most 1200 MB)
+  * .X finite and non-negative on every board (log-normalised expression); dtype castable to float32
   * obsm["spatial_3D"] present with shape (n, >=3) and finite when the board needs coordinates
   * warns if cell-type labels are present (the scorer ignores them; harmless)
 The panel file itself is verified against index.json's genes_sha256 before it is trusted.
@@ -33,7 +35,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PANELS = ROOT / "data" / "panels"
-# Portal cap on one prediction file ("single .h5ad, max 1200 MB"), measured in MB = 1e6 bytes (the stricter reading).
+# Cap on one prediction file ("single .h5ad, max 1200 MB"), measured in MB = 1e6 bytes (the stricter reading).
 MAX_FILE_MB = 1200.0
 # .X max above this looks like raw counts rather than log-normalised expression (warning only).
 COUNTS_MAX_WARN = 30.0
@@ -121,7 +123,7 @@ def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB) -> di
     info.update(n_obs=int(n), n_vars=int(g), sha256=sha256_file(path), size_mb=round(path.stat().st_size / 1e6, 1),
                 max_file_mb=max_file_mb)
     if info["size_mb"] > max_file_mb:
-        err(f"file size {info['size_mb']} MB > portal cap {max_file_mb:g} MB (store .X as CSR when it is sparse, dense "
+        err(f"file size {info['size_mb']} MB > the {max_file_mb:g} MB cap on a single prediction file (store .X as CSR when it is sparse, dense "
             "float32 when it is not; write fewer cells; or use compression='gzip')")
 
     # --- genes ---
@@ -130,7 +132,7 @@ def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB) -> di
     names = list(map(str, a.var_names))
     if names != panel:
         if sorted(names) == sorted(panel):
-            err("gene set matches the panel but ORDER differs; the portal rejects this (reorder with the panel file)")
+            err("gene set matches the panel but ORDER differs; reorder with the panel file (the portal does not reorder)")
         else:
             missing = sorted(set(panel) - set(names))[:10]
             extra = sorted(set(names) - set(panel))[:10]
@@ -166,10 +168,8 @@ def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB) -> di
             xmin, xmax = min(xmin, 0.0), max(xmax, 0.0)
         info.update(X_min=round(xmin, 4), X_max=round(xmax, 4),
                     X_nonzero_frac=round(float(np.count_nonzero(data)) / max(1, n * g), 4))
-        if spec["task"] in ("T2", "T3") and xmin < 0:
-            err(f".X has negative entries (min={xmin:.4f}); T2/T3 expression must be non-negative")
-        if spec["task"] == "T1" and xmin < 0:
-            warn(f".X has negative entries (min={xmin:.4f}); log1p data should be >= 0")
+        if xmin < 0:
+            err(f".X has negative entries (min={xmin:.4f}); expression must be non-negative on every board")
         if xmax > COUNTS_MAX_WARN:
             warn(f".X max={xmax:.2f} looks like raw counts, not log-normalised expression")
         if not np.issubdtype(data.dtype, np.floating):

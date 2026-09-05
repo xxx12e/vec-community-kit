@@ -1,19 +1,20 @@
 #!/usr/bin/env python
-"""Build one official-style reference baseline and write a board-valid submission .h5ad.
+"""Build one baseline (the organisers' published definitions) and write a board-valid submission .h5ad.
 
 Inputs per method (all .h5ad, loaded and reordered to the board panel):
   copy_last         --last
   wt_identity       --wt
   pseudobulk_shift  --prev --last   [--celltype-key celltype]
 
-Examples (paths are illustrative):
-  python -m vec_baselines.make_baseline --method copy_last   --board T1:val  --last E9.5_RNA.h5ad --out pred.h5ad --n-cells all
+Examples (paths are illustrative; the released stages hold more cells than most boards allow, so pass a count):
+  python -m vec_baselines.make_baseline --method copy_last   --board T1:val  --last E9.5_RNA.h5ad --out pred.h5ad --n-cells 5000
   python -m vec_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap --last E9.5.h5ad --out pred.h5ad --n-cells 5000
-  python -m vec_baselines.make_baseline --method wt_identity --board T3:gata4 --wt WT_E8.75.h5ad --out pred.h5ad --n-cells all
-  python -m vec_baselines.make_baseline --method pseudobulk_shift --board T2:heart:val_extrap --prev E8.75.h5ad --last E9.5.h5ad --out pred.h5ad
+  python -m vec_baselines.make_baseline --method wt_identity --board T3:gata4 --wt WT_E8.75.h5ad --out pred.h5ad --n-cells 5000
+  python -m vec_baselines.make_baseline --method pseudobulk_shift --board T2:heart:val_extrap --prev E8.75.h5ad --last E9.5.h5ad --out pred.h5ad --n-cells 5000
 
-Cell count: without --n-cells the writer subsamples to min(max_cells, 4000) cells (see vec_baselines/io.py, THE
-CELL-COUNT GOTCHA). Pass --n-cells all or an explicit number when you mean something else.
+Cell count: --n-cells is REQUIRED - an integer inside the board's [min_cells, max_cells], or 'all' for every cell
+of the source stage ('all' errors, stating the bound, when the stage exceeds max_cells). A source with fewer cells
+than requested (but at least min_cells) is written whole, with a NOTE.
 Smoke tests on tiny files: --relax-cells skips only the min_cells check (the file is then NOT uploadable);
 --log1p-counts normalises count-scale inputs (normalize_total 1e4 + log1p).
 Exit code 0 = file written and passes vec_submit_check; 1 = failed; 2 = usage error.
@@ -49,14 +50,6 @@ def _jsonable(o):
     return str(o)
 
 
-def parse_n_cells(s):
-    if s is None:
-        return None
-    if str(s).lower() == "all":
-        return "all"
-    return int(s)
-
-
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="python -m vec_baselines.make_baseline", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -66,8 +59,9 @@ def main(argv=None) -> int:
     p.add_argument("--prev", type=Path, help="stage before --last (pseudobulk_shift)")
     p.add_argument("--wt", type=Path, help="matched wild type at the target stage (wt_identity)")
     p.add_argument("--out", required=True, type=Path)
-    p.add_argument("--n-cells", default=None,
-                   help="cells to write: an integer, or 'all' (default: min(max_cells, 4000) - the subsample gotcha)")
+    p.add_argument("--n-cells", required=True,
+                   help="REQUIRED: cells to write - an integer inside the board's [min_cells, max_cells], or 'all' for "
+                        "every cell of the source stage ('all' errors when the stage exceeds max_cells)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--relax-cells", action="store_true", help="ignore the min_cells check (tiny sample data; not uploadable)")
     p.add_argument("--celltype-key", default="celltype", help="obs column with cell-type labels (pseudobulk_shift)")
@@ -88,7 +82,7 @@ def main(argv=None) -> int:
     if missing:
         p.error(f"--method {args.method} needs --" + " --".join(m.replace("_", "-") for m in missing))
     try:
-        n_cells = parse_n_cells(args.n_cells)
+        n_cells = bio.parse_n_cells(args.n_cells)
     except ValueError:
         p.error("--n-cells must be an integer or 'all'")
 
@@ -121,9 +115,9 @@ def main(argv=None) -> int:
     except ValueError as e:
         print(f"FAIL: {e}", file=sys.stderr)
         return 1
-    if notes.get("n_cells_mode") == "default" and notes.get("sampled_without_replacement"):
-        print(f"[make_baseline] NOTE: --n-cells not given -> writing {notes['n_written']} of {notes['n_available']} cells "
-              "(default subsample). Pass --n-cells all or a number to control this.")
+    if notes.get("kept_all_rows") and notes["n_written"] != notes["target"]:
+        print(f"[make_baseline] NOTE: --n-cells {args.n_cells} requested but the source has only {notes['n_available']} "
+              f"cells; writing all {notes['n_written']} of them.")
 
     try:
         if args.method == "copy_last":
@@ -145,9 +139,8 @@ def main(argv=None) -> int:
     print(json.dumps(info, indent=2, default=_jsonable))
 
     try:
-        # rows were already selected above, so the writer receives exactly the cells to write
-        rep = bio.write_submission(X, C, panel, args.out, args.board, relax_cells=args.relax_cells,
-                                   n_cells="all" if X.shape[0] <= spec["max_cells"] else int(spec["max_cells"]),
+        # rows were already selected above (inside the bounds), so the writer receives exactly the cells to write
+        rep = bio.write_submission(X, C, panel, args.out, args.board, relax_cells=args.relax_cells, n_cells="all",
                                    seed=args.seed, panels=args.panels)
         ok = True
     except (bio.SubmissionError, ValueError, KeyError) as e:

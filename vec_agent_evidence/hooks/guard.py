@@ -22,6 +22,11 @@ Denies
   * recursive `claude -p` invocations.
 Fail-closed: an internal error denies with the error text as the reason (the run is never silently exposed).
 Every denial is appended to $VEC_RUN_DIR/hooks/guard_denials.jsonl.
+
+This is a regex guard over the tool input, not a network sandbox: it rejects RECOGNISED network commands and
+restricted file operations. An obfuscated command or Python code that opens files itself is not caught here; the
+audit log and the hashes recorded by the harness support post-run verification, and a firewall rule for the
+agent's interpreter is the hard network block.
 """
 from __future__ import annotations
 

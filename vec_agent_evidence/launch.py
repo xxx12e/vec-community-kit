@@ -4,6 +4,11 @@ The agent process gets the initial prompt as stdin bytes and nothing else, ever.
 byte-for-byte into stream.jsonl; the init event is asserted against the lock (model, permission mode, tool
 set); the wall clock is enforced (interrupt, grace period, then kill of the whole process tree); a long silence
 is treated as a stall (rate limit / hang) and killed. The harness never writes to the agent after launch.
+
+The current implementation targets the Claude Code CLI in headless mode: `build_command` emits the exact
+`claude -p --output-format stream-json ...` argv and `launch` parses that CLI's stream-json events (system/init,
+assistant, result). Another agent CLI needs `build_command` adapted (and the event parsing in `launch` if its
+stream differs).
 """
 from __future__ import annotations
 

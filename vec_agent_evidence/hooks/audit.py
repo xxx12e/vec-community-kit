@@ -4,7 +4,8 @@
 Appends one JSON line per event to $VEC_RUN_DIR/hooks/tool_audit.jsonl (fallback: <cwd>/../hooks/ if that
 directory exists, else <cwd>/hooks_audit_fallback.jsonl). A SessionStart event additionally writes
 hooks/session_start.json (it carries transcript_path, the authoritative location of the trajectory).
-Never blocks and never fails the tool call: no stdout, exit 0 always.
+Never blocks and never fails the tool call: no stdout, exit 0 always. Together with the hashes in
+config.lock.json / run_manifest.json this log supports post-run verification; it enforces nothing.
 
 Hook input contract (https://code.claude.com/docs/en/hooks): session_id, transcript_path, cwd,
 permission_mode, hook_event_name, tool_name, tool_input, tool_use_id, tool_response (PostToolUse),

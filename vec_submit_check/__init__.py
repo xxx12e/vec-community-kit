@@ -1,4 +1,6 @@
-"""vec_submit_check - board-contract validator for Virtual Embryo Challenge prediction files.
+"""vec_submit_check - local pre-upload checks of a Virtual Embryo Challenge prediction file against the published
+board contracts (gene panel and order, cell bounds, finite non-negative float32 expression, coordinates, size cap).
+Not a reproduction of every portal rule; it reduces avoidable upload-and-debug cycles.
 
     python -m vec_submit_check --board T2:heart:val_interp pred.h5ad
 

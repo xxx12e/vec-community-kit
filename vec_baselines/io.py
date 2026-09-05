@@ -1,4 +1,4 @@
-"""I/O for the reference baselines: stage loading, row selection, and the safe submission writer.
+"""I/O for the baseline generators: stage loading, row selection, and the submission writer.
 
 Everything that touches the board contract goes through vec_submit_check (index.json + the board's genes file),
 and every file written by `write_submission` is validated with vec_submit_check.check before this module returns.
@@ -7,16 +7,19 @@ Public API
     panel_for_board(board)                    -> (spec dict from index.json, ordered gene list)
     load_stage(path, panel_genes=None)        -> AnnData subset/reordered to the panel (raises if genes missing)
     looks_like_counts(X) / log_normalize(a)   -> detect and fix un-logged inputs (convention log1p(1e4*c/sum c))
-    select_rows(n, spec, n_cells=...)         -> row indices that land inside [min_cells, max_cells]
+    select_rows(n, spec, n_cells)             -> row indices that land inside [min_cells, max_cells]
     write_submission(X, coords, genes, out_path, board, n_cells=...) -> vec_submit_check report
 
-THE CELL-COUNT GOTCHA (read this once)
-    write_submission(..., n_cells=None) does NOT write every row you pass. With n_cells=None it subsamples to
-    min(max_cells, DEFAULT_N_CELLS) = at most 4000 cells (without replacement, seeded). This keeps T1 files
-    (32,285 genes) small, and 4000 cells is more than the scorer's own draws use, but it silently changes the
-    number of cells in the file. Always pass the count you mean:
-        n_cells=<int>   exactly that many rows (clamped to max_cells; below min_cells raises unless relax_cells)
-        n_cells="all"   every row you passed (raises if that exceeds max_cells)
+THE CELL COUNT IS EXPLICIT AND REQUIRED
+    `n_cells` must be an int or the literal "all"; passing None (or leaving it out) raises a ValueError that says
+    what to pass. An earlier version of this writer defaulted to a 4000-cell subsample and silently changed the
+    number of cells in the file - a pitfall the authors hit themselves, hence the rule.
+        n_cells=<int>   exactly that many rows, drawn without replacement (seeded); the int must lie inside the
+                        board's [min_cells, max_cells] (above max_cells raises; below min_cells raises unless
+                        relax_cells). A source with fewer rows than requested (but at least min_cells) is written
+                        whole and notes["kept_all_rows"] is set.
+        n_cells="all"   every source row, in order; raises when that exceeds the board's max_cells, telling you
+                        the bound (pass an explicit int in that case).
     The report's write_info block records what happened (n_available, target, n_written, sampling notes).
 """
 from __future__ import annotations
@@ -31,9 +34,9 @@ import scipy.sparse as sp
 
 from vec_submit_check import checker as vcheck
 
-# Cell count written when n_cells is not given (see THE CELL-COUNT GOTCHA above).
-DEFAULT_N_CELLS = 4000
-PREFERRED_CELLS = DEFAULT_N_CELLS   # backwards-compatible alias
+# The message raised whenever a caller does not say how many cells to write.
+N_CELLS_REQUIRED = ("n_cells is required: pass an int inside the board's [min_cells, max_cells] (the number of cells to "
+                    "write, e.g. n_cells=5000) or the literal 'all' to write every source cell")
 # .X max above this is treated as raw / un-logged counts (same bound the checker warns on).
 COUNTS_MAX_THRESHOLD = vcheck.COUNTS_MAX_WARN
 
@@ -108,41 +111,61 @@ def log_normalize(a: ad.AnnData, target_sum: float = 1e4) -> ad.AnnData:
 
 
 # ----------------------------------------------------------------------------- rows
-def select_rows(n_available: int, spec: dict, n_cells=None, seed: int = 0, relax_cells: bool = False):
-    """Row indices for a submission that land inside [min_cells, max_cells].
+def parse_n_cells(n_cells):
+    """Normalise the n_cells argument: "all" -> "all"; an int (or an int-like string) -> int; anything else,
+    including None, raises ValueError with N_CELLS_REQUIRED."""
+    if n_cells is None or isinstance(n_cells, bool):
+        raise ValueError(N_CELLS_REQUIRED + f" (got {n_cells!r})")
+    if isinstance(n_cells, str):
+        text = n_cells.strip()
+        if text.lower() == "all":
+            return "all"
+        try:
+            return int(text)
+        except ValueError:
+            raise ValueError(N_CELLS_REQUIRED + f" (got {n_cells!r})") from None
+    if isinstance(n_cells, (int, np.integer)):
+        return int(n_cells)
+    raise ValueError(N_CELLS_REQUIRED + f" (got {type(n_cells).__name__} {n_cells!r})")
 
-    n_cells: None  -> target = min(max_cells, DEFAULT_N_CELLS)  (the default-subsample gotcha, see module doc)
-             "all" -> target = n_available (raises ValueError if that exceeds max_cells)
-             int   -> target = n_cells (clamped to max_cells; below min_cells raises unless relax_cells)
+
+def select_rows(n_available: int, spec: dict, n_cells=None, seed: int = 0, relax_cells: bool = False):
+    """Row indices for a submission that land inside [min_cells, max_cells]. `n_cells` is REQUIRED.
+
+    n_cells: "all" -> target = n_available; raises ValueError (stating the bound) if that exceeds max_cells
+             int   -> target = n_cells; must lie inside [min_cells, max_cells] (above max_cells raises; below
+                      min_cells raises unless relax_cells)
+             None  -> raises ValueError telling the caller what to pass
       n >= target             -> random subset of `target` rows, WITHOUT replacement, sorted
-      min_cells <= n < target -> every row, original order (duplicating would add nothing)
+      min_cells <= n < target -> every row, original order (duplicating would add nothing); notes["kept_all_rows"]
       n < min_cells           -> every row + (min_cells - n) rows drawn with replacement (duplicates),
-                                 unless relax_cells, in which case every row as-is
+                                 unless relax_cells, in which case every row as-is (smoke tests; not uploadable)
     Returns (indices, notes dict).
     """
     n_available = int(n_available)
     if n_available <= 0:
         raise ValueError("no cells to write")
+    n_cells = parse_n_cells(n_cells)
     rng = np.random.default_rng(seed)
     lo, hi = int(spec["min_cells"]), int(spec["max_cells"])
-    if n_cells is None:
-        target = min(hi, DEFAULT_N_CELLS)
-        mode = "default"
-    elif isinstance(n_cells, str) and n_cells.lower() == "all":
+    if n_cells == "all":
         if n_available > hi:
-            raise ValueError(f"n_cells='all' but {n_available} rows exceed max_cells={hi}; pass an explicit n_cells")
+            raise ValueError(f"n_cells='all' but the source has {n_available} cells and the board allows at most "
+                             f"max_cells={hi}; pass an explicit n_cells inside [{lo}, {hi}] (e.g. n_cells={min(hi, 5000)})")
         target = n_available
         mode = "all"
     else:
-        target = int(n_cells)
+        target = n_cells
         mode = "explicit"
+        if target > hi:
+            raise ValueError(f"n_cells={target} exceeds the board's max_cells={hi}; pass a value inside [{lo}, {hi}]")
+        if target <= 0:
+            raise ValueError(f"n_cells={target} must be positive")
     notes: dict = {"n_available": n_available, "target": target, "n_cells_mode": mode}
-    if target > hi:
-        notes["n_cells_clamped_to_max_cells"] = hi
-        target = hi
     if target < lo:
         if not relax_cells:
-            raise ValueError(f"n_cells={target} is below min_cells={lo} for this board (relax_cells=True to allow)")
+            raise ValueError(f"n_cells={target} is below the board's min_cells={lo}; pass a value inside [{lo}, {hi}] "
+                             "(relax_cells=True allows it for smoke tests on tiny files; such a file is not uploadable)")
         notes["target_below_min_cells_relaxed"] = True
     if n_available >= target:
         idx = np.sort(rng.choice(n_available, size=target, replace=False))
@@ -150,12 +173,12 @@ def select_rows(n_available: int, spec: dict, n_cells=None, seed: int = 0, relax
     elif n_available >= lo or relax_cells:
         idx = np.arange(n_available)
         notes["kept_all_rows"] = True
-        if n_available < lo:
-            notes["below_min_cells_relaxed"] = True
     else:
         extra = rng.choice(n_available, size=lo - n_available, replace=True)
         idx = np.concatenate([np.arange(n_available), extra])
         notes["duplicated_rows"] = int(lo - n_available)
+    if n_available < lo and relax_cells:
+        notes["below_min_cells_relaxed"] = True
     notes["n_written"] = int(len(idx))
     return idx, notes
 
@@ -170,8 +193,8 @@ def write_submission(X, coords, genes, out_path, board: str, relax_cells: bool =
     * .X float32, negatives clipped to 0 (count reported), finiteness asserted; T1 stored as CSR when sparse
       enough, T2/T3 dense.
     * obsm["spatial_3D"] float32 (n, 3) written when the board needs coordinates (required then; dropped otherwise).
-    * rows selected with `select_rows` so n_obs lands inside [min_cells, max_cells] - READ the n_cells note in
-      the module docstring: n_cells=None subsamples to at most 4000 cells.
+    * rows selected with `select_rows` so n_obs lands inside [min_cells, max_cells]; `n_cells` is REQUIRED (an
+      int inside the bounds, or "all" for every row - see the module docstring); None raises ValueError.
     * vec_submit_check.check() runs on the written file; any error raises SubmissionError, except the
       "< min_cells" error when relax_cells=True (tiny sample data / smoke tests; such a file is NOT uploadable).
     `obs` (optional, indexed like the rows of X) is carried along for local diagnostics only: the scorer ignores

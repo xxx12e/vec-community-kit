@@ -36,7 +36,7 @@ organisers' scorer) is at `{{VECKIT_DIR_POSIX}}`. Package installation is imposs
 {{BOARD_CONTRACT_TABLE}}
 
 Submission contract: a single .h5ad per board; `var_names` exactly the board panel in order; `n_obs` inside the
-cell bounds; `.X` finite, non-negative for T2/T3, float32-castable, log-normalised like the released data;
+cell bounds; `.X` finite, non-negative, float32-castable, log-normalised like the released data;
 `obsm["spatial_3D"]` float32 (n, 3) when the board needs coordinates; no cell-type labels.
 
 ## Data you may read (sha256 recorded in the configuration lock)
@@ -51,12 +51,12 @@ not available in this run.
 | command | use |
 |---|---|
 | `python -m vec_submit_check --board <board> <file.h5ad>` | board-contract check; run before every finalize |
-| `python -m vec_baselines.make_baseline --method copy_last|wt_identity|pseudobulk_shift --board <board> ... --out <file> --n-cells all` | a valid reference-row file (floor rows = known outcome) |
-| `python -m vec_local_score --task <T> [--setting heart|embryo] --pred <file> --target <held-out stage> --reference <earlier stage> | --wt <matched WT>` | official skill scale on a pseudo split of released data (not a preview of the real score) |
+| `python -m vec_baselines.make_baseline --method copy_last|wt_identity|pseudobulk_shift --board <board> ... --out <file> --n-cells <count>` | a valid baseline file (`--n-cells` is required: an integer inside the board's cell bounds, or `all` when the source fits) |
+| `python -m vec_local_score --task <T> [--setting heart|embryo] --pred <file> --target <held-out RAW stage> --reference <earlier RAW stage> | --wt <matched WT>` | the veckit scorer's protocol (10 % subsample, split-half ceiling, floor row, skill scale) on a pseudo split of released data (not a preview of the real score) |
 | `python -m vec_local_score.seed_summary ... --seeds 0 1 2` | mean +- sd over seeds |
 | `python tools/finalize_submission.py --board <board> --candidate <file> --candidate-id <k>` | THE ONLY way to write the submission; validates, hashes, atomic-replaces, appends MANIFEST.json |
 
-## Rules (denied by hooks and logged)
+## Rules (a guard hook rejects the violations it recognises and logs them; every tool call is audited)
 
 1. No network access of any kind (curl, wget, pip/uv/conda install, git clone/fetch/pull/push, ssh/scp,
    requests/httpx/urllib/socket, huggingface_hub, torch.hub, any URL).

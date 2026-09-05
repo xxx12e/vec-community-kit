@@ -102,7 +102,8 @@ def test_values_and_coords(tmp_path, heart_adata):
     neg.X[0, 0] = -0.5
     f = tmp_path / "neg.h5ad"
     neg.write_h5ad(f)
-    assert "negative" in errors(check(f, "T3:gata4"))
+    for board in ("T3:gata4", "T2:heart:val_interp", "T2:heart:val_extrap"):
+        assert "negative" in errors(check(f, board)), board
     nan = a.copy()
     nan.X[1, 1] = np.nan
     g = tmp_path / "nan.h5ad"
@@ -140,7 +141,7 @@ def test_file_size_cap(tmp_path, heart_adata):
     f = tmp_path / "ok.h5ad"
     strip(heart_adata).write_h5ad(f)
     rep = check(f, "T3:gata4", max_file_mb=0.001)
-    assert any("portal cap" in e for e in rep["errors"])
+    assert any("MB cap on a single prediction file" in e for e in rep["errors"])
     assert check(f, "T3:gata4")["ok"]
 
 
@@ -162,14 +163,14 @@ def test_t1_sparse_file(tmp_path):
     a.write_h5ad(g)
     rep = check(g, "T1:val")
     assert rep["ok"] and any("does not need coordinates" in w for w in rep["warnings"])
-    # negative values are only a warning on T1 (log1p data should still be >= 0)
+    # negative values are rejected on T1 as well (non-negative expression is required on every board)
     X2 = X.copy()
     X2.data[0] = -1.0
     b = ad.AnnData(X=X2, obs=a.obs.copy(), var=a.var.copy())
     h = tmp_path / "t1neg.h5ad"
     b.write_h5ad(h)
     rep = check(h, "T1:val")
-    assert rep["ok"] and any("negative" in w for w in rep["warnings"])
+    assert not rep["ok"] and "negative" in errors(rep) and "every board" in errors(rep)
 
 
 def test_cli_exit_codes(tmp_path, heart_adata, capsys):

@@ -3,7 +3,7 @@
 
 The 10 % subsample and the half split make a single local score noisy. Two predictions can only be compared on
 the same target/reference pair, the same seeds, and with the spread in view: a difference inside one standard
-deviation is not a result.
+deviation is not a result. Inputs are the RAW released stage files (see local_score.py).
 
     python -m vec_local_score.seed_summary --task T2 --setting heart --pred pred.h5ad \
         --target E8.75.h5ad --reference E8.25_late.h5ad --seeds 0 1 2 3 4 [--json out.json]
@@ -54,7 +54,7 @@ def summarise(task: str, pred, target, reference, seeds=(0, 1, 2), setting: str 
             "reference": str(reference), "seeds": [int(s) for s in seeds], "frac": frac,
             "task_score_mean": float(scores.mean()),
             "task_score_sd": float(scores.std(ddof=1)) if len(scores) > 1 else 0.0,
-            "task_scores": scores.tolist(), "metrics": metrics, "per_seed": per}
+            "task_scores": scores.tolist(), "metrics": metrics, "veckit": per[0].get("veckit"), "per_seed": per}
 
 
 def summary_line(res: dict) -> str:
@@ -99,6 +99,9 @@ def main(argv=None) -> int:
     except ImportError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 1
     if args.verbose:
         for r in res["per_seed"]:
             print(format_table(r))

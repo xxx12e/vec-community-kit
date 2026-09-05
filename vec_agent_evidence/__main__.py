@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """vec_agent_evidence - configuration lock, launch, evidence collection and upload packaging for an Agent-track run.
 
+Targets the Claude Code CLI (`claude -p --output-format stream-json`); adapt launch.build_command for another CLI.
+The hooks are regex hooks (reject recognised network commands and restricted file operations; audit log), not a sandbox.
+
 Sub-commands
   lock      freeze a run directory (config.lock.json, prompt, settings, hooks, snapshot, workspace) and stop
   run       lock -> launch the agent CLI -> postrun   (the lock is the start of the run: no human afterwards)
