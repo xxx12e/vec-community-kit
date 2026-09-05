@@ -1,0 +1,97 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "deny": [
+      "WebFetch",
+      "WebSearch",
+      "PowerShell",
+      "Task",
+      "Agent",
+      "Skill",
+      "NotebookEdit",
+      "Workflow",
+      "Read(~/.claude/**)",
+      "Edit(~/.claude/**)",
+      "Read(//{{HOME_CLAUDE_POSIX}}/**)",
+      "Edit(//{{HOME_CLAUDE_POSIX}}/**)",
+      "Read(//{{RUNS_ROOT_POSIX}}/**/submission/**)",
+      "Edit(//{{RUNS_ROOT_POSIX}}/**/submission/**)",
+      "Edit(//{{RUN_DIR_POSIX}}/workspace/tools/**)",
+      "Edit(//{{RUN_DIR_POSIX}}/workspace/data/**)",
+      "Edit(//{{RUN_DIR_POSIX}}/workspace/DEADLINE.txt)",
+      "Edit(//{{RUN_DIR_POSIX}}/workspace/README_WORKSPACE.md)",
+      "Edit(//{{DATA_DIR_POSIX}}/**)",
+      "Edit(//{{KIT_ROOT_POSIX}}/vec_agent_evidence/**)",
+      "Edit(//{{KIT_ROOT_POSIX}}/vec_submit_check/**)",
+      "Edit(//{{KIT_ROOT_POSIX}}/vec_baselines/**)",
+      "Edit(//{{KIT_ROOT_POSIX}}/vec_local_score/**)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(uv *)",
+      "Bash(git clone *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git push *)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(claude *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|Read|Glob|Grep",
+        "hooks": [
+          {"type": "command", "command": "\"{{PYTHON_POSIX}}\" \"{{GUARD_POSIX}}\"", "timeout": 30}
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {"type": "command", "command": "\"{{PYTHON_POSIX}}\" \"{{AUDIT_POSIX}}\"", "timeout": 30}
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {"type": "command", "command": "\"{{PYTHON_POSIX}}\" \"{{AUDIT_POSIX}}\"", "timeout": 30}
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {"type": "command", "command": "\"{{PYTHON_POSIX}}\" \"{{AUDIT_POSIX}}\" --session-start", "timeout": 30}
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {"type": "command", "command": "\"{{PYTHON_POSIX}}\" \"{{AUDIT_POSIX}}\"", "timeout": 30}
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {"type": "command", "command": "\"{{PYTHON_POSIX}}\" \"{{AUDIT_POSIX}}\"", "timeout": 30}
+        ]
+      }
+    ]
+  },
+  "autoMemoryEnabled": false,
+  "env": {
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+    "DISABLE_AUTOUPDATER": "1",
+    "DISABLE_TELEMETRY": "1"
+  }
+}

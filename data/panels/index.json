@@ -1,0 +1,110 @@
+{
+  "T1:val": {
+    "key": "T1:val",
+    "label": "T1 \u00b7 validation (E10.5)",
+    "task": "T1",
+    "setting": null,
+    "split": "val",
+    "target_ko": null,
+    "public": true,
+    "n_genes": 32285,
+    "genes_file": "T1__val.genes.txt",
+    "genes_sha256": "807549e15be01989",
+    "needs_coords": false,
+    "obs_required": [],
+    "obsm_required": [],
+    "min_cells": 1000,
+    "max_cells": 5118,
+    "truth_cells": 1249,
+    "ref_cells": 1706,
+    "floor_model": "copy_last"
+  },
+  "T2:embryo:val_interp": {
+    "key": "T2:embryo:val_interp",
+    "label": "T2 embryo \u00b7 interpolation, validation (E7.5)",
+    "task": "T2",
+    "setting": "embryo",
+    "split": "val_interp",
+    "target_ko": null,
+    "public": true,
+    "n_genes": 498,
+    "genes_file": "T2__embryo__val_interp.genes.txt",
+    "genes_sha256": "f8a2aaa79bf32cfb",
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "min_cells": 583,
+    "max_cells": 5000,
+    "truth_cells": 583,
+    "ref_cells": 1330,
+    "floor_model": "copy_last"
+  },
+  "T2:heart:val_extrap": {
+    "key": "T2:heart:val_extrap",
+    "label": "T2 heart \u00b7 extrapolation, validation (E10.5)",
+    "task": "T2",
+    "setting": "heart",
+    "split": "val_extrap",
+    "target_ko": null,
+    "public": true,
+    "n_genes": 500,
+    "genes_file": "T2__heart__val_extrap.genes.txt",
+    "genes_sha256": "a9a553108e19acb6",
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "min_cells": 1000,
+    "max_cells": 25179,
+    "truth_cells": 8393,
+    "ref_cells": 5374,
+    "floor_model": "copy_last"
+  },
+  "T2:heart:val_interp": {
+    "key": "T2:heart:val_interp",
+    "label": "T2 heart \u00b7 interpolation, validation (E8.5)",
+    "task": "T2",
+    "setting": "heart",
+    "split": "val_interp",
+    "target_ko": null,
+    "public": true,
+    "n_genes": 500,
+    "genes_file": "T2__heart__val_interp.genes.txt",
+    "genes_sha256": "a9a553108e19acb6",
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "min_cells": 1000,
+    "max_cells": 17616,
+    "truth_cells": 1185,
+    "ref_cells": 5872,
+    "floor_model": "copy_last"
+  },
+  "T3:gata4": {
+    "key": "T3:gata4",
+    "label": "T3 \u00b7 validation (Gata4 KO)",
+    "task": "T3",
+    "setting": null,
+    "split": "val",
+    "target_ko": "gata4",
+    "public": true,
+    "n_genes": 500,
+    "genes_file": "T3__gata4.genes.txt",
+    "genes_sha256": "a9a553108e19acb6",
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "min_cells": 1000,
+    "max_cells": 7449,
+    "truth_cells": 2320,
+    "ref_cells": 2483,
+    "floor_model": "wt_identity"
+  }
+}

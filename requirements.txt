@@ -1,0 +1,11 @@
+# Core (validator, baselines, evidence skeleton)
+anndata>=0.10
+numpy>=1.24
+scipy>=1.10
+pandas>=2.0
+h5py>=3.8
+# Tests
+pytest>=7.0
+# Local scoring: the organisers' scorer is NOT vendored. Install it separately, e.g.
+#   pip install git+https://github.com/aristoteleo/veckit.git
+# (it needs scikit-learn) or set VECKIT_PATH to a clone directory.

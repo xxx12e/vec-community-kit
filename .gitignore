@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+# run directories (evidence) and data are never committed
+runs/
+data/raw/
+*.h5ad
+out/
+pseudo/
+third_party/
+*.log
+.ipynb_checkpoints/
