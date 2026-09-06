@@ -1,0 +1,367 @@
+# Tutorial dry run, 2026-09-06T01:04:47Z (UTC), Windows 11, Python 3.12.10
+anndata 0.13.3.post0 numpy 2.4.4 scipy 1.18.0 pandas 3.0.1 h5py 3.16.0 scikit-learn 1.9.0
+# kit commit: 4b58fb9 + the round-2 review edits (committed as the next commit); VECKIT_PATH=D:\量化竞赛\virtual-embryo\third_party\veckit
+
+planted synthetic stages under D:\量化竞赛\vec-community-kit\data\raw
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m pytest -q
+  .........................................                                [100%]
+  41 passed in 33.71s
+  -> rc=0 (35.8s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_baselines.make_baseline --method copy_last   --board T1:val               --last data/raw/T1/E9.5_RNA.h5ad          --out out/t1_copy_last.h5ad --n-cells 5000
+  [make_baseline] loaded last  E9.5_RNA.h5ad: 1100 cells x 32285 genes
+  [make_baseline] NOTE: --n-cells 5000 requested but the source has only 1100 cells; writing all 1100 of them.
+  [make_baseline] method info:
+  {
+    "method": "copy_last",
+    "n_cells": 1100,
+    "n_genes": 32285,
+    "has_coords": false,
+    "n_source_cells": 1100,
+    "row_selection": {
+      "n_available": 1100,
+      "target": 5000,
+      "n_cells_mode": "explicit",
+      "kept_all_rows": true,
+      "n_written": 1100
+    }
+  }
+  
+  [PASS] out\t1_copy_last.h5ad @ T1:val  n_obs=1100 n_vars=32285 X=csr_matrix min=0.0 max=5.3982 size=3.0MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+    done in 0.3s
+  -> rc=0 (1.5s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad       --out out/embryo_copy_last.h5ad --n-cells 5000
+  [make_baseline] loaded last  E8.0.h5ad: 1500 cells x 498 genes (+coords)
+  [make_baseline] NOTE: --n-cells 5000 requested but the source has only 1500 cells; writing all 1500 of them.
+  [make_baseline] method info:
+  {
+    "method": "copy_last",
+    "n_cells": 1500,
+    "n_genes": 498,
+    "has_coords": true,
+    "n_source_cells": 1500,
+    "row_selection": {
+      "n_available": 1500,
+      "target": 5000,
+      "n_cells_mode": "explicit",
+      "kept_all_rows": true,
+      "n_written": 1500
+    }
+  }
+  
+  [PASS] out\embryo_copy_last.h5ad @ T2:embryo:val_interp  n_obs=1500 n_vars=498 X=dense[float32] min=0.0 max=11.8469 size=3.1MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+    done in 0.0s
+  -> rc=0 (1.3s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_baselines.make_baseline --method copy_last   --board T2:heart:val_interp  --last data/raw/T2_heart/E8.25_late.h5ad  --out out/heart_interp_copy_last.h5ad --n-cells 5000
+  [make_baseline] loaded last  E8.25_late.h5ad: 2400 cells x 500 genes (+coords)
+  [make_baseline] NOTE: --n-cells 5000 requested but the source has only 2400 cells; writing all 2400 of them.
+  [make_baseline] method info:
+  {
+    "method": "copy_last",
+    "n_cells": 2400,
+    "n_genes": 500,
+    "has_coords": true,
+    "n_source_cells": 2400,
+    "row_selection": {
+      "n_available": 2400,
+      "target": 5000,
+      "n_cells_mode": "explicit",
+      "kept_all_rows": true,
+      "n_written": 2400
+    }
+  }
+  
+  [PASS] out\heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=2400 n_vars=500 X=dense[float32] min=0.0 max=12.1656 size=5.0MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+    done in 0.1s
+  -> rc=0 (1.4s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last data/raw/T2_heart/E9.5.h5ad        --out out/heart_extrap_copy_last.h5ad --n-cells 5000
+  [make_baseline] loaded last  E9.5.h5ad: 2400 cells x 500 genes (+coords)
+  [make_baseline] NOTE: --n-cells 5000 requested but the source has only 2400 cells; writing all 2400 of them.
+  [make_baseline] method info:
+  {
+    "method": "copy_last",
+    "n_cells": 2400,
+    "n_genes": 500,
+    "has_coords": true,
+    "n_source_cells": 2400,
+    "row_selection": {
+      "n_available": 2400,
+      "target": 5000,
+      "n_cells_mode": "explicit",
+      "kept_all_rows": true,
+      "n_written": 2400
+    }
+  }
+  
+  [PASS] out\heart_extrap_copy_last.h5ad @ T2:heart:val_extrap  n_obs=2400 n_vars=500 X=dense[float32] min=0.0 max=11.3546 size=5.0MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+    done in 0.1s
+  -> rc=0 (1.5s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_baselines.make_baseline --method wt_identity --board T3:gata4             --wt   data/raw/T2_heart/E8.75.h5ad       --out out/t3_wt_identity.h5ad --n-cells 5000
+  [make_baseline] loaded wt    E8.75.h5ad: 2400 cells x 500 genes (+coords)
+  [make_baseline] NOTE: --n-cells 5000 requested but the source has only 2400 cells; writing all 2400 of them.
+  [make_baseline] method info:
+  {
+    "method": "wt_identity",
+    "n_cells": 2400,
+    "n_genes": 500,
+    "has_coords": true,
+    "n_source_cells": 2400,
+    "row_selection": {
+      "n_available": 2400,
+      "target": 5000,
+      "n_cells_mode": "explicit",
+      "kept_all_rows": true,
+      "n_written": 2400
+    }
+  }
+  
+  [PASS] out\t3_wt_identity.h5ad @ T3:gata4  n_obs=2400 n_vars=500 X=dense[float32] min=0.0 max=10.2432 size=5.0MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+    done in 0.1s
+  -> rc=0 (1.4s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -c "from vec_baselines import io as bio, methods as bm; spec, panel = bio.panel_for_board('T3:gata4'); wt = bio.load_stage('data/raw/T2_heart/E8.75.h5ad', panel); X, C, info = bm.wt_identity(wt); report = bio.write_submission(X, C, panel, 'out/t3_wt_identity_api.h5ad', 'T3:gata4', n_cells=2000); print(report['ok'], report['info']['n_obs'])"
+  True 2000
+  -> rc=0 (1.4s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_submit_check --board T2:heart:val_interp out/heart_interp_copy_last.h5ad
+  [PASS] out\heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=2400 n_vars=500
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+    n_obs: 2400
+    n_vars: 500
+    sha256: e6109b90e14f2a4d6146a98bc3c9d6614355c6426f61c61dc4857c2ab07e3261
+    size_mb: 5.0
+    max_file_mb: 1200.0
+    X_format: dense[float32]
+    X_min: 0.0
+    X_max: 12.1656
+    X_nonzero_frac: 0.4303
+    spatial_3D_rms_radius: 84.589
+  -> rc=0 (1.3s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --json out/t1_check.json
+  [PASS] out\t1_copy_last.h5ad @ T1:val  n_obs=1100 n_vars=32285
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+    n_obs: 1100
+    n_vars: 32285
+    sha256: df22d7a922f152aea1771ca0a1ba34d553162ae9a770b15c514d0ad68e1ab071
+    size_mb: 3.0
+    max_file_mb: 1200.0
+    X_format: csr_matrix
+    X_min: 0.0
+    X_max: 5.3982
+    X_nonzero_frac: 0.0055
+  -> rc=0 (1.3s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"
+  True {'module': 'D:\\量化竞赛\\virtual-embryo\\third_party\\veckit\\score_h5ad.py', 'root': 'D:\\量化竞赛\\virtual-embryo\\third_party\\veckit', 'version': '0.1.1', 'sha256': {'score_h5ad.py': '9460f191d49cdcab2100ceb068759f4d6ea49570174c23846193c59f175f404d', 'common/core_metrics.py': 'e06dc84ecd8723ecacb1f31a0f4deb9a8722d37ff90193a7af05e2405fefb5e9'}, 'matches_tested': True}
+  -> rc=0 (1.3s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000
+  [make_baseline] loaded last  E8.25_late.h5ad: 2400 cells x 500 genes (+coords)
+  [make_baseline] NOTE: --n-cells 5000 requested but the source has only 2400 cells; writing all 2400 of them.
+  [make_baseline] method info:
+  {
+    "method": "copy_last",
+    "n_cells": 2400,
+    "n_genes": 500,
+    "has_coords": true,
+    "n_source_cells": 2400,
+    "row_selection": {
+      "n_available": 2400,
+      "target": 5000,
+      "n_cells_mode": "explicit",
+      "kept_all_rows": true,
+      "n_written": 2400
+    }
+  }
+  
+  [PASS] out\pseudo_pred.h5ad @ T2:heart:val_interp  n_obs=2400 n_vars=500 X=dense[float32] min=0.0 max=12.1656 size=5.0MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+    done in 0.1s
+  -> rc=0 (1.3s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --frac 0.1 --seed 0
+  T2 heart  pred=pseudo_pred.h5ad  target=E8.75.h5ad  ref=E8.25_late.h5ad  cells pred/A/B/ref = 2400/120/120/240  frac=0.1 seed=0
+  group                        metric                    raw      floor    ceiling   skill    pts
+  Expression change            de_score              -1.0000     0.0000     1.0000   0.333   4.17
+  Expression change            de_direction          -0.0600     0.0000     0.3042   0.455   5.69
+  Cell-state distribution      mmd_u                  0.1333     0.1325     0.1174   0.486   7.29
+  Cell-state distribution      variogram              0.0881     0.0879     0.0028   0.499   4.99
+  Tissue shape and growth      d2_shape               0.0066     0.0127     0.0101   1.000   8.33
+  Tissue shape and growth      occupancy_dice         0.3886     0.4457     0.4916   0.308   2.57
+  Tissue shape and growth      scale_log_ratio*      -0.2558    -0.3007    -0.0407   0.547   4.56
+  Local spatial organisation   neighborhood_mmd       0.4259     0.4232     0.2165   0.497  12.42
+                                      TASK SCORE (0-100; floor=50, ceiling=100)  50.02   [0.7s]
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  
+  [stderr]
+  C:\Users\kw020\AppData\Local\Programs\Python\Python312\Lib\site-packages\sklearn\linear_model\_logistic.py:1457: FutureWarning: 'n_jobs' has no effect since 1.8 and will be removed in 1.10. You provided 'n_jobs=-1', please leave it unspecified.
+    warnings.warn(msg, category=FutureWarning)
+  -> rc=0 (2.9s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_local_score.seed_summary --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --seeds 0 1 2 3 4
+  pseudo_pred.h5ad on E8.75.h5ad: 53.11 +- 3.54 (seeds [0, 1, 2, 3, 4])  de_score=-0.9569/0.338  de_direction=-0.0238/0.479  mmd_u=0.1461/0.500  variogram=0.0870/0.500  d2_shape=0.0145/1.000  occupancy_dice=0.4018/0.623  scale_log_ratio=-0.2424/0.504  neighborhood_mmd=0.4421/0.507
+  metric               raw_mean    raw_sd      floor    ceiling   skill    pts
+  de_score              -0.9569    0.0875     0.0000     1.0000   0.338   4.23
+  de_direction          -0.0238    0.0482     0.0000     0.2655   0.479   5.98
+  mmd_u                  0.1461    0.0128     0.1469     0.1127   0.500   7.50
+  variogram              0.0870    0.0011     0.0869     0.0030   0.500   5.00
+  d2_shape               0.0145    0.0072     0.0225     0.0221   1.000   8.33
+  occupancy_dice         0.4018    0.0181     0.4193     0.4201   0.623   5.19
+  scale_log_ratio       -0.2424    0.0190    -0.2473     0.0021   0.504   4.20
+  neighborhood_mmd       0.4421    0.0457     0.4500     0.2188   0.507  12.67
+  -> rc=0 (5.9s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_local_score --task T1 --pred out/t1_copy_last.h5ad --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad
+  T1  pred=t1_copy_last.h5ad  target=E9.5_RNA.h5ad  ref=E8.5_RNA.h5ad  cells pred/A/B/ref = 1100/55/55/110  frac=0.1 seed=0
+  group                        metric                    raw      floor    ceiling   skill    pts
+  DE recovery                  de_score               1.0000     0.0000     1.0000   1.000  25.00
+  Change direction             de_direction           0.1553     0.0000     0.0161   1.000  25.00
+  Cell-state distribution      mmd_u                  0.1766     0.1968     0.1967   1.000  30.00
+  Gene-gene co-variation       variogram              0.0002     0.0027     0.0005   1.000  20.00
+                                      TASK SCORE (0-100; floor=50, ceiling=100) 100.00   [1.4s]
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  
+  [stderr]
+  C:\Users\kw020\AppData\Local\Programs\Python\Python312\Lib\site-packages\sklearn\linear_model\_logistic.py:1457: FutureWarning: 'n_jobs' has no effect since 1.8 and will be removed in 1.10. You provided 'n_jobs=-1', please leave it unspecified.
+    warnings.warn(msg, category=FutureWarning)
+  -> rc=0 (3.4s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_local_score --task T3 --pred out/t3_wt_identity.h5ad --target data/raw/T2_heart/E8.75.h5ad --wt data/raw/T2_heart/E8.25_late.h5ad
+  T3  pred=t3_wt_identity.h5ad  target=E8.75.h5ad  ref=E8.25_late.h5ad  cells pred/A/B/ref = 2400/120/120/240  frac=0.1 seed=0
+  group                        metric                    raw      floor    ceiling   skill    pts
+  Response gene recovery       de_score               1.0000     0.0000     1.0000   1.000  30.00
+  Response direction           de_direction           0.4366     0.0000     0.3042   1.000  25.00
+  Response magnitude           severity_slope*       -0.0002    -6.9078     0.0004   1.000  25.00
+  Cell-state distribution      mmd_u                  0.1033     0.1325     0.1174   1.000  12.00
+  Cell-state distribution      variogram              0.0014     0.0879     0.0028   1.000   8.00
+                                      TASK SCORE (0-100; floor=50, ceiling=100) 100.00   [0.7s]
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  
+  [stderr]
+  C:\Users\kw020\AppData\Local\Programs\Python\Python312\Lib\site-packages\sklearn\linear_model\_logistic.py:1457: FutureWarning: 'n_jobs' has no effect since 1.8 and will be removed in 1.10. You provided 'n_jobs=-1', please leave it unspecified.
+    warnings.warn(msg, category=FutureWarning)
+  -> rc=0 (2.7s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_local_score.make_pseudo_split --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --out-dir pseudo/heart --panel data/panels/T2__heart__val_interp.genes.txt --require-coords
+  {
+    "target_file": "data\\raw\\T2_heart\\E8.75.h5ad",
+    "reference_file": "data\\raw\\T2_heart\\E8.25_late.h5ad",
+    "frac": 0.1,
+    "seed": 0,
+    "target_full_cells": 2400,
+    "target_score_cells": 120,
+    "target_ceiling_cells": 120,
+    "reference_full_cells": 2400,
+    "reference_cells": 240,
+    "genes": 500,
+    "has_coords": true,
+    "note": "exported split for inspection / the veckit CLI; not an input to vec_local_score (which takes the raw stages and subsamples itself)"
+  }
+  -> rc=0 (1.3s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad
+  [stderr]
+  ERROR: reference.h5ad was exported by vec_local_score.make_pseudo_split (uns['vec_pseudo_split']). The wrapper takes the RAW released stage files and subsamples / splits them itself; the exported files are for inspection and for the veckit CLI only
+  -> rc=1 (2.1s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m pytest tests/test_evidence.py -q
+  ........                                                                 [100%]
+  8 passed in 11.20s
+  -> rc=0 (13.2s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_agent_evidence lock --task T3 --prompt vec_agent_evidence/example_prompt.md --model claude-opus-5 --data-root ./data --hours 8 --runs-root scratchpad/runs_dryrun
+  [01:06:14Z evidence] locked 20260906-0106_T3_d3e5c292: model=claude-opus-5 boards=['T3:gata4'] deadline=2026-09-06T09:06:13Z data_files=6 dirty=True dry_run=False
+  {
+    "run_id": "20260906-0106_T3_d3e5c292",
+    "run_dir": "D:\\\u91cf\u5316\u7ade\u8d5b\\vec-community-kit\\scratchpad\\runs_dryrun\\20260906-0106_T3_d3e5c292",
+    "config_lock_sha256": "dcd74820b4d0399801faa5c1bd47837d8fe1fd1975938d1f112edb436779e9d2",
+    "launch_command": [
+      "C:\\Users\\kw020\\.local\\bin\\claude.exe",
+      "-p",
+      "--output-format",
+      "stream-json",
+      "--verbose",
+      "--model",
+      "claude-opus-5",
+      "--max-turns",
+      "400",
+      "--permission-mode",
+      "bypassPermissions",
+      "--tools",
+      "Bash,Read,Edit,Write,Glob,Grep",
+      "--disallowedTools",
+      "WebFetch,WebSearch,PowerShell,Task,Agent,Skill,NotebookEdit,Workflow",
+      "--settings",
+      "D:\\\u91cf\u5316\u7ade\u8d5b\\vec-community-kit\\scratchpad\\runs_dryrun\\20260906-0106_T3_d3e5c292\\claude_settings.json",
+      "--setting-sources",
+      "project",
+      "--strict-mcp-config",
+      "--add-dir",
+      "D:\\\u91cf\u5316\u7ade\u8d5b\\vec-community-kit\\data",
+      "--session-id",
+      "318e53d1-b428-44d6-b757-ebe926c32b49"
+    ]
+  }
+  -> rc=0 (1.6s)
+
+SUMMARY {
+ "pytest": 0,
+ "t1": 0,
+ "embryo": 0,
+ "hi": 0,
+ "he": 0,
+ "t3": 0,
+ "py_api": 0,
+ "check1": 0,
+ "check2": 0,
+ "avail": 0,
+ "pseudo_pred": 0,
+ "ls_t2": 0,
+ "ss_t2": 0,
+ "ls_t1": 0,
+ "ls_t3": 0,
+ "split": 0,
+ "split_refused": 1,
+ "evidence_tests": 0,
+ "lock": 0
+}
+
+# appended 2026-09-06T01:08:31Z: pseudobulk_shift coverage on the same planted synthetic stages
+
+$ python -m vec_baselines.make_baseline --method pseudobulk_shift --board T1:val --prev data/raw/T1/E8.5_RNA.h5ad --last data/raw/T1/E9.5_RNA.h5ad --out out/t1_pbshift.h5ad --n-cells 5000
+  [make_baseline] loaded prev  E8.5_RNA.h5ad: 1100 cells x 32285 genes
+  [make_baseline] loaded last  E9.5_RNA.h5ad: 1100 cells x 32285 genes
+  [make_baseline] NOTE: --n-cells 5000 requested but the source has only 1100 cells; writing all 1100 of them.
+  [make_baseline] method info:
+  [PASS] out\t1_pbshift.h5ad @ T1:val  n_obs=1100 n_vars=32285 X=csr_matrix min=0.0 max=7.8887 size=136.4MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  -> rc=0
+
+$ python -m vec_baselines.make_baseline --method pseudobulk_shift --board T2:heart:val_extrap --prev data/raw/T2_heart/E8.75.h5ad --last data/raw/T2_heart/E9.5.h5ad --out out/heart_extrap_pbshift.h5ad --n-cells 5000
+  [make_baseline] loaded prev  E8.75.h5ad: 2400 cells x 500 genes (+coords)
+  [make_baseline] loaded last  E9.5.h5ad: 2400 cells x 500 genes (+coords)
+  [make_baseline] NOTE: --n-cells 5000 requested but the source has only 2400 cells; writing all 2400 of them.
+  [make_baseline] method info:
+  [PASS] out\heart_extrap_pbshift.h5ad @ T2:heart:val_extrap  n_obs=2400 n_vars=500 X=dense[float32] min=0.0 max=11.3635 size=5.0MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  -> rc=0
+
+$ python -m vec_baselines.make_baseline --method copy_last --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad --out out/embryo_all.h5ad --n-cells all
+  [make_baseline] loaded last  E8.0.h5ad: 1500 cells x 498 genes (+coords)
+  [make_baseline] method info:
+  [PASS] out\embryo_all.h5ad @ T2:embryo:val_interp  n_obs=1500 n_vars=498 X=dense[float32] min=0.0 max=11.8469 size=3.1MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  -> rc=0
