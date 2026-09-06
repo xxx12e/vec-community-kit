@@ -104,6 +104,11 @@ def test_select_rows_policies():
     assert np.array_equal(idx, np.arange(6000)) and notes["n_cells_mode"] == "all"
     with pytest.raises(ValueError, match=r"the source has 8000 cells and the board allows at most max_cells=7449.*\[1000, 7449\]"):
         bio.select_rows(8000, spec, n_cells="all")
+    # opt-out: above index.json's max_cells with a note (the evaluation pages state no cap; untested on the portal)
+    idx, notes = bio.select_rows(8000, spec, n_cells="all", allow_over_max=True)
+    assert len(idx) == 8000 and notes["over_max_cells_allowed"] is True and notes["n_cells_mode"] == "all"
+    idx, notes = bio.select_rows(9000, spec, n_cells=8000, allow_over_max=True)
+    assert len(idx) == 8000 and notes["over_max_cells_allowed"] is True
     with pytest.raises(ValueError):
         bio.select_rows(0, spec, n_cells="all")
     with pytest.raises(ValueError, match="positive"):

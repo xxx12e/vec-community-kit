@@ -3,7 +3,7 @@
 veckit is NOT vendored in this kit. Obtain it from the organisers and provide it in one of these ways (checked
 in this order):
 
-  1. `pip install git+https://github.com/aristoteleo/veckit.git` (or `pip install -e <clone>`): the module
+  1. `pip install git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17` (or `pip install -e <clone>`): the module
      `score_h5ad` is then importable directly;
   2. set the environment variable VECKIT_PATH to the directory of a clone (the one containing score_h5ad.py);
   3. clone it into <kit>/third_party/veckit.
@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 KIT_ROOT = Path(__file__).resolve().parents[1]
-INSTALL_HINT = ("veckit not found. Install it with `pip install git+https://github.com/aristoteleo/veckit.git`, or set "
+INSTALL_HINT = ("veckit not found. Install it with `pip install git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17`, or set "
                 "VECKIT_PATH to a clone directory containing score_h5ad.py, or clone it into third_party/veckit.")
 
 # The veckit the kit was developed and tested against (pyproject.toml version; git commit of the clone).

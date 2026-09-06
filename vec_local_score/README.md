@@ -5,9 +5,10 @@ split built from RAW released stages and turns the raw metrics into the 0-100 sk
 scorer's protocol as of veckit 0.1.1: 10 % subsample, split-half ceiling, floor row, skill scale, plus the task
 weights published on the evaluation pages (floor = 50, ceiling = 100).
 
-**It is not a preview of your real score.** The real target is a stage you do not have; a pseudo board ranks
-your own methods against each other under the same metric definitions, nothing more. **The organisers' scorer is
-the source of truth and this wrapper may lag it.**
+**It is not a preview of your real score.** The real target is a stage you do not have; a pseudo board compares
+your own methods against each other under the same metric definitions on the split you chose, nothing more: it
+does not predict the order on the hidden target, and no local number is a competition score. **The organisers'
+scorer is the source of truth and this wrapper may lag it.**
 
 Tested against **veckit 0.1.1** (`pyproject.toml` version; clone at git commit
 `46d41e63f42a9aab815db20b742feeccd249cb17` of https://github.com/aristoteleo/veckit, 2026-08-10; sha256 of
@@ -21,7 +22,8 @@ so when they differ from the tested ones.
 veckit is the organisers' code (MIT, https://github.com/aristoteleo/veckit); it needs numpy, scipy, anndata and
 scikit-learn. Provide it in one of three ways; the wrapper checks them in this order:
 
-1. `pip install git+https://github.com/aristoteleo/veckit.git` (or `pip install -e path/to/clone`);
+1. `pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"` (the
+   tested commit; the default branch moves) or `pip install -e path/to/clone`;
 2. `set VECKIT_PATH=path\to\veckit` (Windows) / `export VECKIT_PATH=path/to/veckit` - the directory that
    contains `score_h5ad.py`;
 3. `git clone https://github.com/aristoteleo/veckit third_party/veckit` inside this kit.
@@ -34,16 +36,20 @@ tells you whether it is found and which one. The wrapper uses veckit's `score_h5
 
 The wrapper takes the **raw released stage files** and performs the 10 % subsample and the split-half itself, in
 memory, seeded. Hold out a released stage as `--target`, pass the stage the change is measured against as
-`--reference` (T1/T2) or `--wt` (T3), and pass your prediction for the held-out stage as `--pred`:
+`--reference` (T1/T2) or `--wt` (T3), and pass your prediction for the held-out stage as `--pred`. That prediction
+(`pseudo_pred.h5ad` below) must be built **without** the held-out stage - the `copy_last` file from the earlier
+stage, or your model run on the earlier stages only; a prediction that used the pseudo target makes the comparison
+meaningless. Do not reuse a file built for another board (an extrapolation prediction of a later stage, say) to
+score an earlier held-out stage:
 
 ```
 # one seed, full table
-python -m vec_local_score --task T1 --pred pred.h5ad --target E9.5_RNA.h5ad --reference E8.5_RNA.h5ad
-python -m vec_local_score --task T2 --setting heart --pred pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad
-python -m vec_local_score --task T3 --pred pred.h5ad --target Mab21l2_KO_E9.5.h5ad --wt WT_E9.5.h5ad
+python -m vec_local_score --task T1 --pred pseudo_pred.h5ad --target E9.5_RNA.h5ad --reference E8.5_RNA.h5ad
+python -m vec_local_score --task T2 --setting heart --pred pseudo_pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad
+python -m vec_local_score --task T3 --pred pseudo_pred.h5ad --target Mab21l2_KO_E9.5.h5ad --wt WT_E9.5.h5ad
 
 # several seeds, mean +- sd per metric and for the task score
-python -m vec_local_score.seed_summary --task T2 --setting heart --pred pred.h5ad --target E8.75.h5ad \
+python -m vec_local_score.seed_summary --task T2 --setting heart --pred pseudo_pred.h5ad --target E8.75.h5ad \
     --reference E8.25_late.h5ad --seeds 0 1 2 3 4 --json summary.json
 ```
 
@@ -61,7 +67,7 @@ python -m vec_local_score.make_pseudo_split --target E8.75.h5ad --reference E8.2
     --out-dir pseudo/heart --panel data/panels/T2__heart__val_interp.genes.txt --require-coords
 veckit --task T2 --setting heart --input pseudo/heart/target_ceiling.h5ad --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad   # ceiling row
 veckit --task T2 --setting heart --input pseudo/heart/reference.h5ad      --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad   # floor row
-veckit --task T2 --setting heart --input pred.h5ad                        --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad   # your model
+veckit --task T2 --setting heart --input pseudo_pred.h5ad                        --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad   # your model
 ```
 
 ## What the wrapper computes, exactly

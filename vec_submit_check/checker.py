@@ -1,21 +1,35 @@
 """Validate a prediction .h5ad against a Virtual Embryo Challenge board contract.
 
-A set of local pre-upload checks against the published board contracts: data/panels/index.json plus one
-data/panels/<board>.genes.txt per board, copies of the public files at https://virtualembryo.ai/challenge/panels/ .
-It is not a reproduction of every portal rule - the portal's own validator has the final say - but a file that
-fails here would have failed there, so running it first reduces avoidable upload-and-debug cycles. Checks:
+Local pre-upload checks against the published board contracts: data/panels/index.json plus one
+data/panels/<board>.genes.txt per board, copies of the public files at https://virtualembryo.ai/challenge/panels/
+(index.json re-fetched 2026-09-05), read together with the "Requirements for a valid file" section of
+https://virtualembryo.ai/challenge/evaluation?section=submissions&task=N (read 2026-09-05). The portal's own
+validator has the final say, and the organisers' starter kit (score_h5ad.py) validates locally too. "A file that
+fails here would have failed there" holds for the rules marked [portal]; the others are stricter or advisory:
 
-  * var_names == board panel, element by element, same order (the portal does not reorder genes)
-  * n_obs within [min_cells, max_cells]
-  * file size <= MAX_FILE_MB (a single .h5ad of at most 1200 MB)
-  * .X finite and non-negative on every board (log-normalised expression); dtype castable to float32
-  * obsm["spatial_3D"] present with shape (n, >=3) and finite when the board needs coordinates
-  * warns if cell-type labels are present (the scorer ignores them; harmless)
-The panel file itself is verified against index.json's genes_sha256 before it is trusted.
+  * [portal]   var_names == board panel, element by element, same order (the portal does not reorder genes)
+  * [portal]   .X a 2D cells x genes matrix, finite, non-negative; sparse or dense (the scorer densifies and casts
+               to float32 itself, so a non-float dtype is only a warning here)
+  * [portal]   obsm["spatial_3D"] present, shape (n, >=3), finite, when the board needs coordinates (the scorer
+               reads the first three columns)
+  * [portal]   a single .h5ad of at most 1200 MB (MAX_FILE_MB)
+  * [portal]   n_obs >= min_cells of index.json; the evaluation pages state a 1,000-cell minimum for every board,
+               so a count between index.json's min_cells and 1,000 is additionally warned about (PAGE_MIN_CELLS)
+  * [stricter] n_obs <= max_cells of index.json. The evaluation pages say "no cap" above the minimum while the
+               organisers' machine-readable index.json carries max_cells per board; an upload above it is
+               untested, so this is an error unless --ignore-max-cells (then a warning)
+  * [stricter] a constant .X is an error (it cannot be a prediction)
+  * [advisory] warnings for what the portal's validation does not catch: a .X max above COUNTS_MAX_WARN looks like
+               raw counts (a raw-count file passes validation and is then scored wrongly), cell-type labels
+               present (ignored by the scorer), coordinates on a board that has none
+PASS means these local format checks passed. It says nothing about the normalisation being right, about where
+the cells came from, or about eligibility under the rules. The panel file itself is verified against index.json's
+genes_sha256 before it is trusted.
 
 Usage:
   python -m vec_submit_check --board T1:val pred.h5ad
   python -m vec_submit_check --board T2:heart:val_interp pred.h5ad --json report.json
+  python -m vec_submit_check --board T2:heart:val_interp big.h5ad --ignore-max-cells
 
 Exit code 0 = passes, 1 = fails, 2 = usage error.
 
@@ -39,6 +53,9 @@ DEFAULT_PANELS = ROOT / "data" / "panels"
 MAX_FILE_MB = 1200.0
 # .X max above this looks like raw counts rather than log-normalised expression (warning only).
 COUNTS_MAX_WARN = 30.0
+# The evaluation pages state "at least 1,000 cells" for every board (read 2026-09-05); index.json's min_cells is
+# lower on one board. A count between the two is a warning.
+PAGE_MIN_CELLS = 1000
 
 
 def panels_dir(panels=None) -> Path:
@@ -108,8 +125,12 @@ def sha256_file(path, chunk: int = 1 << 20) -> str:
     return h.hexdigest()
 
 
-def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB) -> dict:
-    """Validate one file against one board. Returns a report dict with ok / errors / warnings / info."""
+def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB, ignore_max_cells: bool = False) -> dict:
+    """Validate one file against one board. Returns a report dict with ok / errors / warnings / info.
+
+    ignore_max_cells=True reports n_obs > max_cells (index.json) as a warning instead of an error: the evaluation
+    pages state no cap above the 1,000-cell minimum, while index.json carries max_cells; above it is untested.
+    """
     import anndata as ad
     import scipy.sparse as sp
 
@@ -141,10 +162,19 @@ def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB) -> di
         err("duplicate var_names")
 
     # --- cells ---
-    if n < spec["min_cells"]:
-        err(f"n_obs={n} < min_cells={spec['min_cells']}")
-    if n > spec["max_cells"]:
-        err(f"n_obs={n} > max_cells={spec['max_cells']}")
+    lo, hi = int(spec["min_cells"]), int(spec["max_cells"])
+    if n < lo:
+        err(f"n_obs={n} < min_cells={lo} (panels/index.json)")
+    elif n < PAGE_MIN_CELLS:
+        warn(f"n_obs={n} is below the 1,000-cell minimum stated on the evaluation pages although index.json allows "
+             f"min_cells={lo} for this board; an upload this small is untested")
+    if n > hi:
+        over = (f"n_obs={n} > max_cells={hi} in the organisers' panels/index.json (the evaluation pages state no cap "
+                "above the minimum; an upload above max_cells is untested)")
+        if ignore_max_cells:
+            warn(over + "; reported as a warning because ignore_max_cells was given")
+        else:
+            err(over + "; pass --ignore-max-cells to make this a warning")
 
     # --- X ---
     X = a.X
@@ -209,6 +239,8 @@ def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB) -> di
 def format_report(rep: dict) -> str:
     status = "PASS" if rep["ok"] else "FAIL"
     lines = [f"[{status}] {rep['file']} @ {rep['board']}  n_obs={rep['info'].get('n_obs')} n_vars={rep['info'].get('n_vars')}"]
+    if rep["ok"]:
+        lines.append("  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility")
     lines += [f"  ERROR: {e}" for e in rep["errors"]]
     lines += [f"  warn : {w}" for w in rep["warnings"]]
     lines += [f"  {k}: {v}" for k, v in rep["info"].items()]
@@ -234,12 +266,15 @@ def main(argv=None) -> int:
                    help="T1:val | T2:embryo:val_interp | T2:heart:val_interp | T2:heart:val_extrap | T3:gata4")
     p.add_argument("--panels", type=Path, default=None, help="directory with index.json + *.genes.txt (default: see module doc)")
     p.add_argument("--json", type=Path, help="write the report as JSON here")
+    p.add_argument("--ignore-max-cells", action="store_true",
+                   help="report n_obs > max_cells (panels/index.json) as a warning, not an error: the evaluation pages "
+                        "state no cap above the 1,000-cell minimum; an upload above max_cells is untested")
     args = p.parse_args(argv)
     if not args.h5ad.exists():
         print(f"no such file: {args.h5ad}", file=sys.stderr)
         return 2
     try:
-        rep = check(args.h5ad, args.board, args.panels)
+        rep = check(args.h5ad, args.board, args.panels, ignore_max_cells=args.ignore_max_cells)
     except (KeyError, FileNotFoundError) as e:
         print(f"usage error: {e}", file=sys.stderr)
         return 2

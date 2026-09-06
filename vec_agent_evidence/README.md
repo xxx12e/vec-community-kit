@@ -15,7 +15,10 @@ prediction. The rules (challenge site, Agent Team section):
   scored. The evidence must come from the exact run that produced the file. Organisers may audit and ask you to
   re-run the harness. Limits: 200 MB per evidence file, 600 MB per team in total.
 
-This package makes producing that evidence mechanical. The current implementation targets the Claude Code CLI
+This package makes producing that evidence mechanical. What it produces is an auditable evidence bundle -
+configuration snapshots, integrity checks (hashes re-verified after the run), best-effort guard hooks and an audit
+log. It does not independently attest that a run complied with the rules; the organisers' audit decides that, and
+this bundle is what you hand them. The current implementation targets the Claude Code CLI
 in headless mode (`claude -p --output-format stream-json`) because it exposes everything needed: a transcript per
 session id, hooks that can deny and log tool calls, a settings file for deny rules, and an init event that echoes
 the model and tool set actually used. The same layout works for any agent CLI that can be started from a command
@@ -56,6 +59,13 @@ and deadline, tool policy (allowed + disallowed tools, permission mode), seed, c
 sha256 of every data file under the data root, sha256 of the prompt / appendix / settings bytes, hook hashes, the
 snapshot hash, the kit's git commit and dirty state, and the CLI binary path / version / sha256.
 
+Transcript coverage: `postrun` copies the CLI transcript located by the run's session UUID
+(`transcript/<id>.jsonl`) plus the CLI's `tool-results/` and `subagents/` side directories when they exist. The
+kit's default tool policy disallows the `Task` / `Agent` tools, so a default run is one session with one
+transcript; if you enable subagents, check that their transcripts landed under `transcript/subagents/` before you
+rely on them. A resumed or continued session is outside what the lock covers: never resume a run (see below), and
+do not package a resumed run as Agent-track evidence.
+
 ## Commands
 
 ```
@@ -74,7 +84,7 @@ python -m vec_agent_evidence run --task T2 --boards T2:heart:val_extrap --prompt
 python -m vec_agent_evidence postrun --run-dir runs/<run_id>
 
 # 5. upload package: predictions/ + trajectory.zip + prompts.zip + harness.zip + evidence_bundle.zip + README.md
-python -m vec_agent_evidence package --run-dir runs/<run_id>
+python -m vec_agent_evidence package --run-dir runs/<run_id> --team-uploaded-mb 120   # 120 = what your team already uploaded
 ```
 
 `--data-root` is a directory holding the released .h5ad files (any layout; every `*.h5ad` under it is hashed into
@@ -110,7 +120,10 @@ to scan for its value as well. The patterns are assembled from fragments so the 
 ## Sizes
 
 `run_manifest.json.sizes` lists files over the 200 MB per-file cap and the upload-set total; `package` refuses to
-build a zip over the cap. A typical multi-hour run produces tens of MB of evidence uncompressed.
+build a zip over the cap. The 600 MB cap is per team across every upload, which no local tool can know: pass
+`package --team-uploaded-mb <MB your team has already uploaded>` (your own bookkeeping from the portal's evidence
+list) and the package README states the running total and warns when this upload would exceed 600 MB. A typical
+multi-hour run produces tens of MB of evidence uncompressed.
 
 ## What the human may and may not do
 
@@ -128,4 +141,8 @@ feed one run's artefacts into another's workspace, never edit a submission.
 * Only the Claude Code CLI is implemented (`claude -p --output-format stream-json`, headless, hooks via a settings
   file). Another agent CLI needs `launch.build_command` adapted and its trajectory located by `evidence.collect_transcript`.
 * Thinking blocks may be stored without their text by the CLI; the trajectory proves the tool calls and messages.
+* The bundle documents; it does not attest. Regex hooks, hashes and a read-only directory record and detect some
+  changes; by themselves they cannot prove that nobody intervened, that no restriction was bypassed, or that the
+  records were not regenerated. Keep the run directory and the CLI's own project directory as they are, and expect
+  the organisers to ask for a re-run.
 * `total_cost_usd` in the manifest is the CLI's own estimate.

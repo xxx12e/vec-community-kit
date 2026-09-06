@@ -4,7 +4,8 @@
 事实都来自官方站点（https://virtualembryo.ai/challenge）；如有出入，以官方为准。工具包本身只是通用工具：格式校验器、
 基线生成器与提交文件写入器、主办方打分器的本地封装、Agent 赛道的证据骨架。它不包含任何建模建议。
 
-下面每一条命令都在一组按第 2 节目录布局摆放的小型合成数据上原样执行过；你唯一要换的是把真实文件放到同样的位置。
+下面的命令都在一组按第 2 节目录布局摆放的小型合成数据上执行过（2026-09-05；含 Python 与依赖版本的日志见
+`scratchpad/dryrun_log.txt`），没有在本仓库里对真实发布数据跑过；你唯一要换的是把真实文件放到同样的位置。
 
 ## 0. 一页看懂比赛
 
@@ -77,7 +78,7 @@ python -m pytest -q                                    # 合成数据测试，�
 | 你想做 | 章节 | 需要 |
 |---|---|---|
 | 读懂契约、生成基线文件、校验、上传 | 4、5、6、8 | `pip install -r requirements.txt`（anndata、numpy、scipy、pandas、h5py；测试用 pytest）。不需要别的。 |
-| 在伪切分上本地打分 | 7 | 另需主办方的打分器 **veckit** 及其依赖（numpy、scipy、anndata、scikit-learn）。从主办方处获取：`pip install git+https://github.com/aristoteleo/veckit.git`，或把 https://github.com/aristoteleo/veckit 克隆到任意目录并用 `VECKIT_PATH` 指向它（Windows：`set VECKIT_PATH=C:\path\to\veckit`；其他系统：`export VECKIT_PATH=/path/to/veckit`）。检查：`python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"`。本工具包在 veckit 0.1.1 上测试过。 |
+| 在伪切分上本地打分 | 7 | 另需主办方的打分器 **veckit** 及其依赖（numpy、scipy、anndata、scikit-learn）。从主办方处获取：`pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"`，或把 https://github.com/aristoteleo/veckit 克隆到任意目录并用 `VECKIT_PATH` 指向它（Windows：`set VECKIT_PATH=C:\path\to\veckit`；其他系统：`export VECKIT_PATH=/path/to/veckit`）。检查：`python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"`。本工具包在 veckit 0.1.1 上测试过。 |
 | 真正运行 Agent 赛道骨架 | 9 | 另需安装并登录 Claude Code CLI（`claude --version` 能打印版本；无头命令 `claude -p "say ok" --max-turns 1` 能返回结果）。干跑 `python -m pytest tests/test_evidence.py -q` 既不需要 CLI 也不需要 API key。 |
 
 没有 veckit 时，打分器相关测试会被跳过，其余一切照常工作。
@@ -94,13 +95,16 @@ python -m pytest -q                                    # 合成数据测试，�
 | `T2:heart:val_interp`（E8.5） | 500 | 1000-17616 | 是 | copy_last |
 | `T3:gata4`（E8.75） | 500 | 1000-7449 | 是 | wt_identity |
 
-合格文件的规则（`vec_submit_check` 在本地检查这些；门户自己的校验器说了算）：
+合格文件的规则（`vec_submit_check` 在本地检查这些，每条规则在 `vec_submit_check/README.md` 里标明是门户规则、更严格还是仅提示；
+门户自己的校验器说了算）：
 
 1. 单个 `.h5ad`，不超过 1200 MB。
 2. `var_names` 与该榜的基因列表逐元素相等，**顺序也必须一致**。门户不会替你重排。
-3. `n_obs` 在该榜的细胞数范围内。细胞数只是样本量，不参与打分；几千个细胞足够（打分器自己的抽样在某些指标上最多用
-   2000 个细胞，另一些用 1500 个）。
-4. `.X` 有限、可转 float32、**每个榜都必须非负**、与发布数据一样是对数归一化。
+3. `n_obs` 不少于该榜的下限。评测页（2026-09-05 读取）写的是"至少 1,000 个细胞……无上限"，而主办方的 `panels/index.json`
+   给每个榜写了 `max_cells`（上表）；校验器默认把超过 `max_cells` 当错误（`--ignore-max-cells` 降为警告），因为超过它的上传
+   没人试过。细胞数只是样本量，不参与打分；几千个细胞足够（打分器自己的抽样在某些指标上最多用 2000 个细胞，另一些用 1500 个）。
+4. `.X` 有限、**每个榜都必须非负**、与发布数据一样是对数归一化；稀疏或稠密都行（打分器自己会稠密化并转成 float32）。
+   校验看不出尺度错误：原始计数文件能通过全部检查，然后被打错分（评测页明说了这一点）。
 5. T2/T3：`obsm["spatial_3D"]` 形状 (n, 3) 或更宽（取前三列），有限。坐标系任意：空间指标对平移和真旋转不变。
 6. 不需要细胞类型标签（打分器忽略它们，用自己的冻结分类器给细胞定型）。
 
@@ -133,13 +137,14 @@ python -m vec_baselines.make_baseline --method wt_identity --board T3:gata4     
 说明：
 
 * `--n-cells N` 恰好写 N 个细胞，不放回抽取（固定种子，`--seed`）；N 必须在该榜范围内（超过 `max_cells` 直接拒绝，绝不
-  悄悄截断）。`--n-cells all` 写入输入的全部细胞，超过 `max_cells` 时报错并给出范围。若输入的细胞数少于 N（但不少于
+  悄悄截断）。`--n-cells all` 写入输入的全部细胞，超过 `max_cells` 时报错并给出范围（`--allow-over-max` 可放行，见第 4 节第 3 条）。若输入的细胞数少于 N（但不少于
   `min_cells`），则全部写入并打印一条 NOTE。上面的阶段规模：E9.5_RNA 的 17,057 来自数据页；心脏各阶段取 `index.json` 中
   `ref_cells` 的十倍（打分器的 10% 参考抽样），所以是"约"。
 * 全胚胎榜可以直接喂 500 基因的心脏同构文件，写入器按基因名映射成 498 基因面板。
 * 哪个阶段算 "last" 由你决定；插值榜通常取目标之前紧邻的阶段，外推榜取最晚发布的阶段。
-* CLI 会打印写出文件的契约校验结论，只有通过时退出码才是 0，例如
-  `[PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 X=dense[float32] min=0.0 max=10.2 size=10.1MB`。
+* CLI 会打印写出文件的本地契约校验结论，只有通过时退出码才是 0，例如
+  `[PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 X=dense[float32] min=0.0 max=10.2 size=10.1MB`，
+  随后一行 `PASS = local format checks passed; ...`（只是格式检查通过，不代表归一化正确、数据来源合规或参赛资格）。
 
 在 Python 里：
 
@@ -166,6 +171,7 @@ python -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --json out/t1_ch
 
 ```
 [PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
   sha256: <64 hex characters: keep it with the file you upload>
   X_format: dense[float32]  X_min: 0.0  X_max: 12.1656  spatial_3D_rms_radius: 84.589  ...
 ```
@@ -230,10 +236,12 @@ T1：留出 E9.5_RNA、用 E8.5_RNA 预测它 —— 预测用 `--last data/raw/
 * 每份提交在被打分或上榜之前，必须附上 {trajectory（轨迹）、prompts（所有提示词，含初始提示词）、harness（编排代码、工具、
   评估循环）} 中至少**两种**不同类型的证据。证据必须来自产生该文件的那一次运行。主办方可能审计并要求重跑 harness。
   拿奖必须有证据。
-* 限制：每个证据文件 200 MB，每队合计 600 MB。
+* 限制：每个证据文件 200 MB，每队合计 600 MB（跨所有上传累计；`package --team-uploaded-mb` 会把累计值写进打包 README，
+  但账要你自己记）。
 * FAQ 原话：框架不是重点，重点是回路中没有人。
 
-`vec_agent_evidence` 把这一切变成机械步骤。当前实现面向无头模式的 Claude Code CLI（`claude -p --output-format stream-json`），
+`vec_agent_evidence` 把这一切变成机械步骤：产出的是交给主办方的可审计证据包（配置快照、完整性校验、尽力而为的守卫 hook、
+审计日志），它本身不能证明运行合规。当前实现面向无头模式的 Claude Code CLI（`claude -p --output-format stream-json`），
 需要先安装并登录（第 3 节）；换别的 agent CLI 需要改 `launch.build_command`。
 
 ```
@@ -275,9 +283,9 @@ requests/urllib 一行程序、任何 URL……）、读取 CLI 配置目录、�
 
 ## 10. 每次上传前的清单
 
-- [ ] `python -m vec_submit_check --board <榜> <文件>` 打印 `[PASS]`。
+- [ ] `python -m vec_submit_check --board <榜> <文件>` 打印 `[PASS]`（只是格式；下面三条要你自己确认）。
 - [ ] 基因顺序与面板文件一致（校验器会说；门户不会重排）。
-- [ ] 细胞数在榜的范围内（你是显式传入的）；没有重复细胞；不需要标签。
+- [ ] 细胞数至少 1,000，且除非你另有选择，不超过 `index.json` 的 `max_cells`（你是显式传入的）；没有重复细胞；不需要标签。
 - [ ] `.X` 与发布数据一样对数归一化（没有 `raw counts` 警告）、有限、非负（每个榜）。
 - [ ] T2/T3：`obsm["spatial_3D"]` 存在、(n, 3)、有限。
 - [ ] 文件小于 1200 MB。

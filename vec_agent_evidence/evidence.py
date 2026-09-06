@@ -3,7 +3,7 @@
 Copies the CLI transcript (located by session UUID, byte copy), copies the agent's small artefacts, validates
 every submission file with vec_submit_check, re-verifies every hash of the configuration lock, scans every text
 file for credential-shaped patterns, writes run_manifest.json (result, usage, every evidence file's bytes +
-sha256, size warnings against the portal limits) and seals the run directory read-only.
+sha256, size warnings against the portal limits) and marks the run directory read-only.
 
     python -m vec_agent_evidence postrun --run-dir runs/<run_id> [--projects-dir ~/.claude/projects]
 """
@@ -236,7 +236,7 @@ def build_manifest(run: Path, cfg: dict, state: dict, transcript: dict, artifact
         "transcript": transcript, "artifacts": artifacts, "submission": submission,
         "evidence": ev, "evidence_total_bytes": sum(v["bytes"] for v in ev.values()),
         "upload_set_bytes": sizes["upload_set_bytes"], "sizes": sizes,
-        "human_touch": "none - run directory sealed read-only by the harness; any later modification changes "
+        "human_touch": "none - run directory marked read-only by the harness; any later modification changes "
                        "the hashes recorded here",
     }
 
@@ -271,11 +271,11 @@ def state_from_stream(run: Path) -> dict:
 
 
 def postrun(run: Path, projects_dir=None, state=None) -> dict:
-    """Collect the evidence of a finished run and write run_manifest.json. Not repeatable (sealed evidence)."""
+    """Collect the evidence of a finished run and write run_manifest.json. Not repeatable (the evidence is hashed once)."""
     run = Path(run).resolve()
     cfg = C.read_json(run / "config.lock.json")
     if (run / "run_manifest.json").exists():
-        raise SystemExit(f"{run} already has run_manifest.json; postrun is not repeatable (sealed evidence)")
+        raise SystemExit(f"{run} already has run_manifest.json; postrun is not repeatable (the evidence was already hashed)")
     if (run / "RUNNING").exists():
         raise SystemExit(f"{run} has a RUNNING sentinel; postrun only after the agent process has exited")
     C.set_writable(run)
@@ -292,5 +292,5 @@ def postrun(run: Path, projects_dir=None, state=None) -> dict:
     manifest = build_manifest(run, cfg, state, transcript, artifacts, submission, integrity)
     C.write_json(run / "run_manifest.json", manifest)
     n = seal(run)
-    C.log(f"sealed {n} files read-only; run_manifest.json written; submission status = {submission['status']}")
+    C.log(f"marked {n} files read-only; run_manifest.json written; submission status = {submission['status']}")
     return manifest

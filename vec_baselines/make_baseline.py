@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Build one baseline (the organisers' published definitions) and write a board-valid submission .h5ad.
+"""Build one baseline (the published definitions, reconstructed) and write a contract-checked submission .h5ad.
 
 Inputs per method (all .h5ad, loaded and reordered to the board panel):
   copy_last         --last
@@ -13,8 +13,10 @@ Examples (paths are illustrative; the released stages hold more cells than most 
   python -m vec_baselines.make_baseline --method pseudobulk_shift --board T2:heart:val_extrap --prev E8.75.h5ad --last E9.5.h5ad --out pred.h5ad --n-cells 5000
 
 Cell count: --n-cells is REQUIRED - an integer inside the board's [min_cells, max_cells], or 'all' for every cell
-of the source stage ('all' errors, stating the bound, when the stage exceeds max_cells). A source with fewer cells
-than requested (but at least min_cells) is written whole, with a NOTE.
+of the source stage ('all' errors, stating the bound, when the stage exceeds index.json's max_cells, unless
+--allow-over-max: the evaluation pages state no cap above the 1,000-cell minimum while index.json carries max_cells,
+and an upload above it is untested). A source with fewer cells than requested (but at least min_cells) is written
+whole, with a NOTE.
 Smoke tests on tiny files: --relax-cells skips only the min_cells check (the file is then NOT uploadable);
 --log1p-counts normalises count-scale inputs (normalize_total 1e4 + log1p).
 Exit code 0 = file written and passes vec_submit_check; 1 = failed; 2 = usage error.
@@ -64,6 +66,9 @@ def main(argv=None) -> int:
                         "every cell of the source stage ('all' errors when the stage exceeds max_cells)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--relax-cells", action="store_true", help="ignore the min_cells check (tiny sample data; not uploadable)")
+    p.add_argument("--allow-over-max", action="store_true",
+                   help="let --n-cells exceed max_cells of panels/index.json (the evaluation pages state no cap; an upload "
+                        "above max_cells is untested); the checker then warns instead of failing")
     p.add_argument("--celltype-key", default="celltype", help="obs column with cell-type labels (pseudobulk_shift)")
     p.add_argument("--log1p-counts", action="store_true",
                    help="normalize_total(1e4)+log1p any input whose .X max > 30 (count-scale)")
@@ -111,7 +116,8 @@ def main(argv=None) -> int:
     # choose output rows up front so the method never densifies more cells than will be written
     src = inputs[OUTPUT_STAGE[args.method]]
     try:
-        rows, notes = bio.select_rows(src.n_obs, spec, n_cells=n_cells, seed=args.seed, relax_cells=args.relax_cells)
+        rows, notes = bio.select_rows(src.n_obs, spec, n_cells=n_cells, seed=args.seed, relax_cells=args.relax_cells,
+                                      allow_over_max=args.allow_over_max)
     except ValueError as e:
         print(f"FAIL: {e}", file=sys.stderr)
         return 1
@@ -141,7 +147,7 @@ def main(argv=None) -> int:
     try:
         # rows were already selected above (inside the bounds), so the writer receives exactly the cells to write
         rep = bio.write_submission(X, C, panel, args.out, args.board, relax_cells=args.relax_cells, n_cells="all",
-                                   seed=args.seed, panels=args.panels)
+                                   seed=args.seed, panels=args.panels, allow_over_max=args.allow_over_max)
         ok = True
     except (bio.SubmissionError, ValueError, KeyError) as e:
         print(f"FAIL: {e}", file=sys.stderr)
@@ -153,6 +159,8 @@ def main(argv=None) -> int:
     inf = rep.get("info", {})
     print(f"\n[{status}]{note} {args.out} @ {args.board}  n_obs={inf.get('n_obs')} n_vars={inf.get('n_vars')} "
           f"X={inf.get('X_format')} min={inf.get('X_min')} max={inf.get('X_max')} size={inf.get('size_mb')}MB")
+    if ok:
+        print("  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility")
     for e in rep.get("errors", []):
         print(f"  ERROR: {e}")
     for e in rep.get("ignored_errors", []):

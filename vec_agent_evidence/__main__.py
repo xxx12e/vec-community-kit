@@ -8,7 +8,7 @@ Sub-commands
   lock      freeze a run directory (config.lock.json, prompt, settings, hooks, snapshot, workspace) and stop
   run       lock -> launch the agent CLI -> postrun   (the lock is the start of the run: no human afterwards)
   postrun   collect evidence for an already-finished run directory (recovery after a harness crash)
-  package   build the upload package (predictions + trajectory.zip / prompts.zip / harness.zip) for a sealed run
+  package   build the upload package (predictions + trajectory.zip / prompts.zip / harness.zip) for a run after postrun
 
 Examples
   python -m vec_agent_evidence lock --task T3 --prompt my_prompt.md --model <model-id> --data-root ./data --hours 8
@@ -67,7 +67,7 @@ def parse_args(argv=None):
     sp = sub.add_parser("postrun", help="collect evidence for a finished run directory")
     sp.add_argument("--run-dir", required=True)
     sp.add_argument("--projects-dir", default=os.environ.get("VEC_CLAUDE_PROJECTS_DIR"))
-    sp = sub.add_parser("package", help="build the upload package for a sealed run")
+    sp = sub.add_parser("package", help="build the upload package for a run after postrun")
     sp.add_argument("--run-dir", required=True)
     sp.add_argument("--out-root", default=None)
     sp.add_argument("--allow-abort-unknown", action="store_true")

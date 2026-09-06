@@ -1,4 +1,4 @@
-"""Build the portal upload package for a completed, sealed run: byte-identical prediction copies (sha256 verified
+"""Build the portal upload package for a completed run (postrun done): byte-identical prediction copies (sha256 verified
 against run_manifest.json) plus the three evidence kinds (trajectory, prompts, harness) as a folder and as zips.
 
     python -m vec_agent_evidence package --run-dir runs/<run_id> [--out-root runs/_upload]
@@ -65,8 +65,12 @@ def kind_of(rel_top: str) -> str:
     return "harness"
 
 
-def package(run_dir, out_root=None, allow_abort_unknown: bool = False) -> Path:
-    """Build the package; raises SystemExit with the reason when the run must not be uploaded."""
+def package(run_dir, out_root=None, allow_abort_unknown: bool = False, team_uploaded_mb: float = 0.0) -> Path:
+    """Build the package; raises SystemExit with the reason when the run must not be uploaded.
+
+    team_uploaded_mb: evidence MB your team has already uploaded (your own bookkeeping from the portal); the README
+    states the running total against the per-team cap and warns when this package's three kind zips would exceed it.
+    """
     run = Path(run_dir).resolve()
     manifest_path = run / "run_manifest.json"
     if not manifest_path.exists():
@@ -171,6 +175,17 @@ def package(run_dir, out_root=None, allow_abort_unknown: bool = False) -> Path:
         zp = zips[kind]
         n = len(copied) if kind == "evidence_bundle" else len(kinds[kind])
         lines.append(f"| {kind} | {zp.name} | {zp.stat().st_size / 1e6:.1f} | {C.sha256_file(zp)} | {n} |")
+    upload_mb = sum(zips[k].stat().st_size for k in ("trajectory", "prompts", "harness")) / 1e6
+    team_cap = float(C.UPLOAD_LIMITS.get("team_total_mb", 600))
+    team_total = float(team_uploaded_mb) + upload_mb
+    team_line = (f"Team evidence total: {float(team_uploaded_mb):.1f} MB reported as already uploaded + {upload_mb:.1f} MB "
+                 f"for this package's three kind zips = {team_total:.1f} MB of the {team_cap:g} MB per-team cap "
+                 "(the cap is per team across every upload; only you know the running total - pass --team-uploaded-mb).")
+    if team_total > team_cap:
+        team_line += (" EXCEEDS THE CAP: upload two kinds instead of three, or file a summarised trace; "
+                      "the portal enforces the total.")
+        print(f"WARNING: {team_line}")
+    lines += ["", team_line]
     if abort_note:
         lines += ["", "NOTE: " + abort_note]
     lines += ["",
@@ -195,9 +210,12 @@ def main(argv=None) -> int:
     ap.add_argument("--allow-abort-unknown", action="store_true",
                     help="accept a manifest whose abort field is 'unknown (...)' because the harness died and postrun "
                          "reconstructed the state; recorded in README.md")
+    ap.add_argument("--team-uploaded-mb", type=float, default=0.0,
+                    help="evidence MB your team has already uploaded (from the portal's evidence list); the README then "
+                         "states the running total against the 600 MB per-team cap and warns when it would be exceeded")
     args = ap.parse_args(argv)
     try:
-        package(args.run_dir, args.out_root, args.allow_abort_unknown)
+        package(args.run_dir, args.out_root, args.allow_abort_unknown, team_uploaded_mb=args.team_uploaded_mb)
     except SystemExit as e:
         if str(e).startswith("REFUSED"):
             print(str(e))

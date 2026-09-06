@@ -1,12 +1,14 @@
 # vec_baselines - baseline generators and submission writer
 
-Re-implementations of three baselines the Virtual Embryo Challenge publishes as one-line definitions, plus the
-I/O needed to turn them into board-valid submission files with an explicit cell count.
+Re-implementations of three baselines the Virtual Embryo Challenge publishes as one-line definitions (the
+reference-rows page, read 2026-09-05), plus the I/O needed to turn them into contract-checked submission files
+with an explicit cell count. They are reconstructions of the published text, not numerically aligned with the
+organisers' reference rows.
 
 | baseline | boards | definition | role |
 |---|---|---|---|
-| `copy_last(last)` | T1, T2 | resubmit the last observed stage verbatim (expression and coordinates) | the organisers' floor row |
-| `wt_identity(wt)` | T3 | resubmit the matched wild type verbatim | the organisers' floor row |
+| `copy_last(last)` | T1, T2 | resubmit the last observed stage verbatim (expression and coordinates) | implements the published floor definition |
+| `wt_identity(wt)` | T3 | resubmit the matched wild type verbatim | implements the published floor definition |
 | `pseudobulk_shift(prev, last)` | T1, T2 | move each cell of `last` by its own cell type's mean change between `prev` and `last`, clip at 0 | a baseline, not a floor row |
 
 What "floor row" means here: the published floor value of a board (50 on the 0-100 skill scale) is the organisers'
@@ -18,6 +20,30 @@ reference point.
 The organisers' own baseline code was not public when this kit was written; these are reconstructions of the
 published text. Where the text leaves room (cells of `last` whose type has no cells in `prev`), the neutral
 reading is used: they are copied unchanged and reported in `info["unmatched_types_in_last"]`.
+
+## Coverage
+
+What has actually been run, and where the record is. "PASS" = the written file passes `vec_submit_check` for that
+board (format only). Synthetic stages are laid out like the release (`scratchpad/tutorial_dryrun.py` plants them;
+the dated log with package versions is `scratchpad/dryrun_log.txt`, 2026-09-05); `tests/test_baselines.py` covers
+the writer, the row selection and the method arithmetic on synthetic data.
+
+| board | method | input stage(s) | record | result |
+|---|---|---|---|---|
+| `T1:val` | `copy_last` | `E9.5_RNA` | dry-run log | PASS (CSR, 32,285 genes) |
+| `T1:val` | `pseudobulk_shift` | `E8.5_RNA` -> `E9.5_RNA` | dry-run log (appended section) | PASS |
+| `T2:embryo:val_interp` | `copy_last` | `E8.0` (500-gene heart schema mapped onto the 498-gene panel; also `--n-cells all`) | dry-run log | PASS |
+| `T2:heart:val_interp` | `copy_last` | `E8.25_late` | dry-run log | PASS |
+| `T2:heart:val_extrap` | `copy_last` | `E9.5` | dry-run log | PASS |
+| `T2:heart:val_extrap` | `pseudobulk_shift` | `E8.75` -> `E9.5` | dry-run log (appended section) | PASS |
+| `T3:gata4` | `wt_identity` | WT `E8.75` | dry-run log; `tests/test_baselines.py` (CLI, relaxed tiny file) | PASS |
+| any | `write_submission` | your own arrays | `tests/test_baselines.py` | column remap, clipping, bounds, `"all"` |
+
+Real-release inputs: the authors' own first uploads on all five public boards were built with these recipes (an
+earlier private version of the same code) and were accepted by the portal's validator. That is a format statement;
+the scores of those files are a resample's, not a reproduction of the organisers' reference rows. Not covered:
+`pseudobulk_shift` on the embryo board (its released stages carry a different label vocabulary; the method warns
+when fewer than 80 % of cells are shifted), and any board of the test phase (contracts not yet published).
 
 ## Files
 
@@ -40,13 +66,15 @@ bio.write_submission(X, C, panel, "pred.h5ad", board)                 # ValueErr
 ```
 
 * `n_cells=<int>` must lie inside the board's `[min_cells, max_cells]` (`data/panels/index.json`). Above
-  `max_cells` raises; below `min_cells` raises unless `relax_cells=True` (smoke tests on tiny files; such a file is
-  not uploadable). A source with fewer rows than requested, but at least `min_cells`, is written whole and the
+  `max_cells` raises unless `allow_over_max=True`; below `min_cells` raises unless `relax_cells=True` (smoke tests
+  on tiny files; such a file is not uploadable). A source with fewer rows than requested, but at least `min_cells`, is written whole and the
   report notes `kept_all_rows`.
 * `n_cells="all"` writes every source cell. It raises when that exceeds the board's `max_cells`, and the message
   states the bound (e.g. `the source has 17057 cells and the board allows at most max_cells=5118; pass an explicit
   n_cells inside [1000, 5118]`). The released stages hold more cells than most boards allow, so in practice you
-  pass a number.
+  pass a number - or `allow_over_max=True` (`--allow-over-max`): the evaluation pages state no cap above the
+  1,000-cell minimum while the organisers' `panels/index.json` carries `max_cells`, and an upload above it is
+  untested, so the default is the stricter reading and the checker reports the excess as a warning.
 
 `report["write_info"]` records `n_available`, `target`, `n_written` and `n_cells_mode` (`all` / `explicit`).
 
@@ -71,11 +99,13 @@ python -m vec_baselines.make_baseline --method pseudobulk_shift --board T1:val -
 ```
 
 Options: `--n-cells N|all` (required), `--seed`, `--relax-cells` (tiny sample data; the file is then not
-uploadable), `--log1p-counts` (count-scale inputs), `--celltype-key`, `--json report.json`, `--panels DIR`. Exit
-code 0 only when the written file passes the board contract. Example verdict line:
+uploadable), `--allow-over-max` (count above index.json's `max_cells`; untested on the portal), `--log1p-counts`
+(count-scale inputs), `--celltype-key`, `--json report.json`, `--panels DIR`. Exit code 0 only when the written
+file passes the local contract checks (format only). Example verdict lines:
 
 ```
 [PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 X=dense[float32] min=0.0 max=7.6104 size=10.1MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
 ```
 
 ## Caveats
@@ -88,3 +118,6 @@ code 0 only when the written file passes the board contract. Example verdict lin
 4. No labels in submissions: the writer produces an empty `obs`; the scorer types cells itself.
 5. Coordinates are copied in the input's own local frame; all spatial metrics are translation and rotation
    invariant.
+6. `PASS` is a format statement. A count-scale or normalised-but-not-log file that is non-negative and finite
+   passes validation, here and on the portal, and is then scored wrongly; `--log1p-counts` handles obvious count
+   inputs (`.X` max > 30), but the writer cannot recognise every wrong scale.

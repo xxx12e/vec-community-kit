@@ -184,6 +184,9 @@ def test_dry_run_end_to_end_and_package(tiny_data_root, runs_root, tmp_path):
     assert not any(n.startswith("workspace/") or n.endswith(".h5ad") for n in zipfile.ZipFile(out / "evidence_bundle.zip").namelist())
     readme = (out / "README.md").read_text(encoding="utf-8")
     assert "pred_T3_gata4.h5ad" in readme and b["sha256"] in readme and "trajectory.zip" in readme
+    assert "per-team cap" in readme and "EXCEEDS THE CAP" not in readme
+    out_over = package_mod.package(run, tmp_path / "upload_over", team_uploaded_mb=599.99)
+    assert "EXCEEDS THE CAP" in (out_over / "README.md").read_text(encoding="utf-8")
     # a tampered prediction is refused
     (out.parent / "tamper").mkdir()
     C.set_writable(run)

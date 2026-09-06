@@ -94,6 +94,10 @@ def test_cell_bounds(tmp_path, heart_panel):
     big.write_h5ad(g)
     rep = check(g, "T3:gata4")
     assert "> max_cells=7449" in errors(rep)
+    # index.json's max_cells is the stricter reading (the evaluation pages state no cap): opt-out makes it a warning
+    rep = check(g, "T3:gata4", ignore_max_cells=True)
+    assert rep["ok"] and any("> max_cells=7449" in w for w in rep["warnings"])
+    assert checker.PAGE_MIN_CELLS == 1000 and load_index()["T2:embryo:val_interp"]["min_cells"] == 583
 
 
 def test_values_and_coords(tmp_path, heart_adata):
