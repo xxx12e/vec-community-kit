@@ -202,6 +202,61 @@ def test_package_refusals(codex_run, tmp_path, heart_panel):
         codex.parse_prediction_args(["pred.h5ad"])
 
 
+def _secret_hits(data: bytes) -> list:
+    return [label for label, rx in C.SECRET_PATTERNS if rx.search(data)]
+
+
+def test_secret_scan_ignores_key_shapes_inside_a_long_base64_blob(codex_run, tmp_path):
+    """Random base64url data holds "-sk-" + 20 key characters about once per 14 MB. Such a substring in the middle
+    of a blob (an image, a pickled array printed by a command) is data, not a key, and must not make packaging refuse
+    a long run: the key pattern must not match after any base64 / base64url character."""
+    import base64
+    import random
+    import re
+
+    rng = random.Random(20260930)
+    blob = bytearray(base64.urlsafe_b64encode(rng.randbytes(15 * 1024 * 1024)))       # 20 MiB of base64url
+    assert len(blob) >= 20 * 1024 * 1024
+    fake = b"sk-" + b"proj-" + base64.urlsafe_b64encode(rng.randbytes(33))              # 44 key characters
+    # the pattern before this fix (not preceded by a word character only): it matched after "-", "+" and "/"
+    old = re.compile(rb"(?<![A-Za-z0-9_])" + b"sk-" + rb"(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}")
+    step = len(blob) // 8
+    for i, before in enumerate(b"-_+/A9z"):                  # every kind of base64 / base64url character
+        pos = step * (i + 1)
+        blob[pos:pos + 1 + len(fake)] = bytes([before]) + fake
+    blob = bytes(blob)
+    assert old.search(blob), "the synthetic blob should have tripped the old pattern"
+    assert _secret_hits(blob) == []
+    # standard base64 cannot contain "-" at all; a blob of it is clean too
+    assert _secret_hits(base64.b64encode(rng.randbytes(3 * 1024 * 1024))) == []
+    # the whole path: a command printed the blob, the run is packaged, nothing is refused
+    stream = jl(tmp_path / "blob.jsonl", exec_json_stream(extra=[
+        {"type": "item.completed", "item": {"id": "b", "type": "command_execution", "command": "base64 -w0 img.png",
+                                            "aggregated_output": blob.decode("ascii"), "exit_code": 0}}]))
+    out = codex.package_codex(stream, codex_run["prompt"], tmp_path / "pkg_blob", home=codex_run["home"])
+    assert (out / "trajectory.zip").exists()
+
+
+def test_secret_scan_flags_a_standalone_key(codex_run, tmp_path):
+    key = b"sk-" + b"proj-" + b"T3BlbkFJ" + b"a1B2c3D4e5F6g7H8i9J0kLmNoPqRsTuVwXyZ_-12"
+    for context in (key, b"OPENAI_API_KEY=" + key, b"export OPENAI_API_KEY='" + key + b"'",
+                    b"Authorization: Bearer " + key, b'{"api_key": "' + key + b'"}', b"line one\n" + key + b"\n",
+                    json.dumps({"aggregated_output": "line one\r\n" + key.decode()}).encode(),   # escaped: ...\r\nsk-
+                    b"sk-" + b"svcacct-" + b"Zz9" * 10, b"sk-" + b"Q" * 48):
+        assert "openai_api_key_shape" in _secret_hits(context), context
+    # a key next to (not inside) a long blob is still found
+    import base64
+    import random
+    blob = base64.urlsafe_b64encode(random.Random(1).randbytes(3 * 1024 * 1024))
+    assert "openai_api_key_shape" in _secret_hits(blob + b"\n" + key + b"\n" + blob)
+    # and packaging refuses it
+    stream = jl(tmp_path / "key.jsonl", exec_json_stream(extra=[
+        {"type": "item.completed", "item": {"id": "k", "type": "command_execution", "command": "cat .env",
+                                            "aggregated_output": "OPENAI_API_KEY=" + key.decode(), "exit_code": 0}}]))
+    with pytest.raises(SystemExit, match="REFUSED: credential-shaped.*openai_api_key_shape"):
+        codex.package_codex(stream, codex_run["prompt"], tmp_path / "pkg_key", home=codex_run["home"])
+
+
 def test_cli_codex_package(codex_run, tmp_path, capsys):
     r = codex_run
     rc = cli_main(["codex-package", "--stream", str(r["stream"]), "--prompt", str(r["prompt"]), "--out",

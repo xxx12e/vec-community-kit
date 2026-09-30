@@ -126,7 +126,7 @@ only) and works after the fact: no lock, launcher or hooks. See
 [`vec_agent_evidence/README.md`](vec_agent_evidence/README.md).
 
 *Test lines:* `python -m pytest tests/test_evidence.py -q` -> `8 passed` (a stand-in agent, no CLI, no API calls);
-`python -m pytest tests/test_codex_adapter.py -q` -> `6 passed` (synthetic Codex transcripts, no Codex CLI).
+`python -m pytest tests/test_codex_adapter.py -q` -> `8 passed` (synthetic Codex transcripts, no Codex CLI).
 
 ### 5. [`docs/tutorial_en.md`](docs/tutorial_en.md) / [`docs/tutorial_zh.md`](docs/tutorial_zh.md) - from zero to a first submission
 
@@ -144,7 +144,7 @@ citing the official timeline and rules pages as read on 2026-09-30.
 stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
 against the real release inside this repository; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `55 passed` (synthetic data; the scorer tests are skipped without veckit).
+*Test line:* `python -m pytest -q` -> `57 passed` (synthetic data; the scorer tests are skipped without veckit).
 
 ## Install
 
@@ -246,7 +246,7 @@ leaderboard order.
   600 MB 总额）。测试行：`python -m pytest tests/test_evidence.py -q` -> `8 passed`。**Codex CLI（最小适配器，2026-09-30 新增）**：
   `python -m vec_agent_evidence codex-package` 把一次已结束的 `codex exec --json` 运行（JSONL 事件流、按 thread id 找到的会话 rollout、
   提示词、`AGENTS.md` 指令文件、你的 harness 文件和预测文件）打成同样的 trajectory / prompts / harness 三个 zip，同样做凭据扫描和
-  大小检查。它**没有在真实的 Codex 运行上测试过**（只用合成的会话记录测试，`tests/test_codex_adapter.py` -> `6 passed`），而且是事后
+  大小检查。它**没有在真实的 Codex 运行上测试过**（只用合成的会话记录测试，`tests/test_codex_adapter.py` -> `8 passed`），而且是事后
   打包：没有锁定、启动器和 hook。
 * [`docs/tutorial_zh.md`](docs/tutorial_zh.md) / [`docs/tutorial_en.md`](docs/tutorial_en.md)：注册、下载数据、读懂每个榜的契约、生成第一份
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
@@ -255,7 +255,7 @@ leaderboard order.
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交、
   打分器种子随每次提交而变、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `55 passed`。
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `57 passed`。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
 五个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；

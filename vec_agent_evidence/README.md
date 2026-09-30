@@ -161,8 +161,11 @@ post-run verification of what actually happened.
 
 Evidence must never carry credentials. `evidence.secret_scan`, `package` and `codex-package` scan every text-like
 evidence file for credential-shaped byte patterns (an Anthropic key prefix followed by key characters; an
-OpenAI-style `sk-` key not preceded by a word character; OAuth token fields as JSON keys, camelCase or snake_case,
-plain or JSON-escaped inside a transcript) and refuse to package on a hit. Pass any literal gateway key you used to `secret_scan(run, extra_values=[...])`
+OpenAI-style `sk-` key not preceded by a base64 / base64url character (`A-Z a-z 0-9 + / - _`), so that an `sk-`
+occurring by chance inside a long encoded blob in a transcript - about once per 14 MB of random base64url - does not
+refuse a long run, while a key after a space, quote, `=`, `:` or an escaped newline is still caught; OAuth token
+fields as JSON keys, camelCase or snake_case, plain or JSON-escaped inside a transcript) and refuse to package on a
+hit. Pass any literal gateway key you used to `secret_scan(run, extra_values=[...])`
 to scan for its value as well. The patterns are assembled from fragments so the kit's own source never trips the scan.
 
 ## Sizes

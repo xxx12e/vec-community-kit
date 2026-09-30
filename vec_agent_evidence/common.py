@@ -85,9 +85,14 @@ SECRET_PATTERNS = (
     ("oauth_access_token_field", _rx('"', "access", "Token", r'"\s*:')),
     ("oauth_refresh_token_field", _rx('"', "refresh", "Token", r'"\s*:')),
     ("oauth_credentials_block", _rx('"?', "claudeAi", "Oauth", r'"?\s*:')),
-    # OpenAI-style keys (Codex CLI and other agents): "sk-" + optional project prefix + key characters, not preceded
-    # by a word character (so "task-..." / "disk-..." identifiers do not match) and not an Anthropic key (above).
-    ("openai_api_key_shape", _rx(r"(?<![A-Za-z0-9_])", "sk-", r"(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}")),
+    # OpenAI-style keys (Codex CLI and other agents): "sk-" + optional project prefix + key characters, not an
+    # Anthropic key (above), and not preceded by any base64 / base64url character (A-Z a-z 0-9 + / - _): so
+    # "task-..." / "disk-..." identifiers do not match, and neither does an "sk-" that happens to occur in the middle
+    # of a long base64url blob (random data hits "-sk-" + 20 key characters about once per 14 MB, which would
+    # refuse long runs). A key still matches after whitespace, quotes, "=", ":" and the like, and at the start of a
+    # line inside a JSON-escaped transcript (after a literal \n, \r or \t; base64 never contains a backslash).
+    ("openai_api_key_shape", _rx(r"(?:(?<![A-Za-z0-9_+/\-])|(?<=\\[nrt]))", "sk-",
+                                 r"(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}")),
     # snake_case token fields of an auth file (e.g. the Codex CLI's), plain or JSON-escaped inside a transcript
     ("auth_token_field", _rx(r'\\?"', "(?:id|access|refresh)", "_token", r'\\?"\s*:')),
 )
