@@ -26,8 +26,8 @@ run against the real release inside this repository. The only thing you change i
   contribution, up to 100 contributions, rolling until 2026-12-11) rewards work that helps others compete - this
   kit is an example of the genre.
 * Timeline: portal and validation phase live since 2026-08-10; test phase from 2026-10-20 (validation answers are
-  released and become training data, test inputs are released without labels); final submissions 2026-12-02;
-  winners announced 2026-12-11 at NeurIPS. Winners deliver a written method report within 14 days; code may be
+  released and become training data, test inputs are released without labels; section 11 lists everything that
+  changes); final submissions 2026-12-02; winners announced 2026-12-11 at NeurIPS. Winners deliver a written method report within 14 days; code may be
   requested for verification (kept private).
 * Submission quotas: validation phase 20 (later 8) scored submissions per day per task; test phase 2 official
   submissions per board for the whole phase, scores public immediately, no withdrawal. Format checks are
@@ -370,3 +370,66 @@ artefacts into another's workspace, never edit a submission.
 - [ ] Agent track: `run_manifest.json` says `lock_integrity.ok`, `secret_scan.clean`, `abort: null`, and the
       board is `uploadable`; the prediction you upload has the sha256 recorded there; two evidence kinds attached.
 - [ ] External data or pretrained models used? Disclosed in the method summary.
+
+## 11. What changes at the final phase (from 2026-10-20)
+
+Sources, all read on 2026-09-30: the timeline (https://virtualembryo.ai/challenge/timeline, which calls itself
+"the authoritative schedule"), the rules (https://virtualembryo.ai/challenge/rules, sections 10, 11, 13, 14 and the
+Agent Team section), the Data page (https://virtualembryo.ai/challenge/data) and the FAQ. The pages win over this
+section; re-read them on 20 October.
+
+| date (2026) | what happens (timeline) |
+|---|---|
+| 20 Oct | P3, the test phase: the validation data is released for every task, the test inputs are released without labels, the test leaderboard opens |
+| 2 Dec | final submissions due: the last moment a submission can be made or a final entry nominated; nothing after it counts, in either track |
+| 4 Dec | official evaluation on the hidden test sets, both tracks; Agent Team entries are checked against the evidence attached to them |
+| 11 Dec | winners announced at NeurIPS; final rankings use the hidden test set, not the development leaderboard |
+
+1. **The validation answers become development and training data.** At the start of P3 the validation stages are
+   released for every task with their answers (timeline, FAQ); the Data page says they then "become training
+   material". Test answers are never distributed. What you hold then for each hidden test target (Data page):
+
+   | test target | released training / reference stages | validation stages released with answers in P3 |
+   |---|---|---|
+   | T1 E12.5 (extrapolation) | E8.5, E9.5 | E10.5 |
+   | T2 heart E12.5 (extrapolation) | E8.25, E8.75, E9.5 | E8.5, E10.5 |
+   | T2 embryo E7.75 (interpolation) | E6.75, E7.25, E8.0 | E7.5 |
+   | T3 beta-catenin KO at E8.75 | Mab21l2 KO at E9.5; wild types E8.75, E9.5 | Gata4 KO at E8.75 (two replicates) |
+
+   Rules section 10 still lists the validation stages among the held-out stages when it restricts *external* data
+   (for Task 1, for example, no external data after E9.5 up to and including E13.5); those restrictions on outside
+   sources do not lapse. If your method depends on a particular reading of how released validation files may be
+   used, ask the organisers before submitting - the rules invite exactly that.
+2. **Two official submissions per board, for the whole phase** (rules section 11). "Each is scored and published
+   when it is made, and cannot be withdrawn; the board ranks a team by its best." Format checks stay unlimited and
+   free, and a rejected (invalid) upload does not consume a scored attempt, but a valid, weak file uses up half of
+   the phase's quota on that board. Validate every file locally first (section 6), choose your two files per board
+   before the first upload, and keep each uploaded file with its sha256.
+3. **The scorer's subsample seed depends on each submission** from 20 October (the organisers, in their review of
+   this kit; not yet on the public pages on 2026-09-30). An official score is one draw from a band: the same file
+   uploaded twice can score differently. `python -m vec_local_score` prints that band by default (section 7); read
+   a difference between two candidate files against it. The rules (section 10) allow returned scores to choose among
+   predictions, not to compute them.
+4. **Test inputs are released without labels, and the test boards get their own contracts.** The kit's copies in
+   `data/panels/` are the validation boards as of 2026-09-30. When the test boards appear, download the new
+   `panels/index.json` and gene lists into `data/panels/` (or point `VEC_PANELS_DIR` at them); `vec_submit_check`,
+   the baseline writer and the Agent-track lock (`--boards <test board key>`) read board keys and cell bounds from
+   there, so no code change is needed. Check each test board's `min_cells` / `max_cells` again: the portal rejects
+   an upload outside them.
+5. **Final rankings use the hidden test sets** (rules section 13), not the validation leaderboard. A team is
+   prize-eligible only if its final standing exceeds what a floor entry would achieve on the same boards (the floor
+   scores 50 per board, so more than 150 over three tasks); winners may be asked for documentation or code
+   sufficient to reproduce the result and must deliver a written method report within 14 days (sections 14-15).
+   The Generality Award goes to one shared architecture answering at least two tasks, described in the method
+   summary.
+6. **Nomination and evidence.** 2 December is the last moment to nominate a final entry (timeline). Agent Team: a
+   final entry nominated for prizes must carry its evidence, and without it may keep a leaderboard position but is
+   not prize-eligible; every submission is held until at least two kinds of evidence, one of them the trajectory,
+   are attached; every submission states the framework and the model string actually run; predictions must be
+   written by the agent - a file a person edited is not an Agent entry (rules, Agent Team section and section 14).
+   Keep every run directory untouched until the organisers' checks from 4 December; build the upload with
+   `python -m vec_agent_evidence package` (Claude Code runs) or `codex-package` (Codex runs, section 9).
+7. **A better local check.** With the validation answers in hand you can score a prediction locally against a real
+   held-out stage instead of a pseudo split of training stages - for example `--target` the released T2 heart E10.5
+   with `--reference` E9.5, predicted from the earlier stages only. It is still the kit's local protocol (its own
+   subsample and split-half ceiling), not the organisers' score.
