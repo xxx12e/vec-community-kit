@@ -136,8 +136,8 @@ workflow's `GITHUB_TOKEN`, which is sent to api.github.com only.
   GitHub also disables scheduled workflows after 60 days without repository activity (the challenge ends
   2026-12-11).
 * Tested with synthetic fixtures (`python -m pytest tests/test_rules_watch.py -q` -> `31 passed`, no network) and by
-  two live runs from a home connection on 2026-09-30 (42 requests each, no fetch error, the second run found no
-  change, so the normalised text is stable from one request to the next). **Not yet run inside GitHub Actions** at
+  four live runs from a home connection on 2026-09-30, spread over about an hour (42 requests each, no fetch error,
+  the same hash for every page in all four, so the normalised text does not move from one request to the next). **Not yet run inside GitHub Actions** at
   the time of writing: the runner's IP address could be challenged by Cloudflare; the fetcher recognises a challenge
   page and records "blocked by a bot challenge" rather than a change.
 * The first Action run after the baseline commit has no cache yet: if nothing changed it seeds the cache silently;
@@ -277,7 +277,7 @@ Disallow 规则，也没有 content signal）。GitHub API 调用使用工作流
 * 每天一次：两次运行之间改了又改回去的变化会漏掉；GitHub 的定时运行也可能推迟。仓库 60 天没有活动时 GitHub 会停用定时
   工作流（比赛在 2026-12-11 结束）。
 * 测试：合成数据的单元测试（`python -m pytest tests/test_rules_watch.py -q` -> `31 passed`，不联网），以及 2026-09-30 从
-  家里网络做的两次真实运行（每次 42 个请求，没有获取错误，第二次没有发现变化，说明规范化文本在两次请求之间是稳定的）。
+  家里网络做的四次真实运行，前后约一小时（每次 42 个请求，没有获取错误，四次中每个页面的哈希都相同，说明规范化文本不会随请求变动）。
   撰写本文时**还没有在 GitHub Actions 里运行过**：运行器的 IP 可能被 Cloudflare 拦下做人机验证；获取器能认出验证页，会记为
   "blocked by a bot challenge"，而不是记成变化。
 * 基线提交之后的第一次 Action 运行还没有缓存：如果没有变化，它会静默建立缓存；如果中间有页面改动，那条记录只列小节名、
