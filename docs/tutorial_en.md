@@ -70,7 +70,7 @@ The folder names under `raw/` are this kit's convention; the file names are the 
 Data page does not print the knockout's file name: `E9.5_mab21l2_ko.h5ad` is the name used in this tutorial, so if
 your download is named differently, use your name in the section 7 commands. The two wild types are the heart files
 (the Data page lists the same sizes); there is no separate copy under `raw/T3/`. Sizes and counts are those of the
-files used in the real-release pass (the sizes match the Data page).
+files used in the real-release pass (the sizes match the Data page, which lists all but the embryo files).
 
 What each file holds (checked on the released files):
 
@@ -109,8 +109,8 @@ pip install -e ".[test]"                               # the kit + anndata, nump
 python -m pytest -q                                    # synthetic tests, no challenge data needed
 ```
 
-What to expect (real-release pass, Linux, Python 3.10.13, internet access for pip): the install takes about 15 s
-and resolves anndata 0.11.4, numpy 2.2.6, scipy 1.15.3, pandas 2.3.3, h5py 3.16.0 and pytest 9.1.1 (Python 3.10
+What to expect (real-release pass, Linux, Python 3.10.13, internet access for pip): the install took about 15 s
+there and resolved anndata 0.11.4, numpy 2.2.6, scipy 1.15.3, pandas 2.3.3, h5py 3.16.0 and pytest 9.1.1 (Python 3.10
 gets older releases of these than 3.12 does; both work). Without veckit the tests end with `54 passed, 10 skipped`
 (the local-scoring tests, plus the wheel build, which needs setuptools 77 or newer in the environment); with veckit
 installed, `63 passed, 1 skipped`. They also pass when run as root, as in many cloud containers.
@@ -309,7 +309,7 @@ python -m vec_local_score --task T2 --setting heart --pred out/heart_extrap_pseu
 These are examples, not recommendations: any released stage can be held out, as long as the prediction never uses
 it. The `--board` of a pseudo prediction only picks the gene panel and the cell bounds of the file.
 
-What to expect on the real files (runner above, five seeds, `OMP_NUM_THREADS=4`):
+What to expect on the real files (runner above, five seeds, `OMP_NUM_THREADS=4`, `LOKY_MAX_CPU_COUNT=4`):
 
 | split | cells pred/A/B/ref (header line) | time | peak memory |
 |---|---|---|---|
