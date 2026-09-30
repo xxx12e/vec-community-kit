@@ -94,10 +94,13 @@ python -m pytest -q                                    # 合成数据测试，�
 约 75 MB 的包，加上 veckit 再多约 10 MB；家用网络会比那台机器慢），解析出 anndata 0.11.4、numpy 2.2.6、scipy 1.15.3、
 pandas 2.3.3、h5py 3.16.0 和 pytest 9.1.1（Python 3.10 拿到的这些包比 3.12 旧一些，两者都能用）。没有 veckit 时测试结果是
 `54 passed, 10 skipped`（跳过的是本地打分测试，以及需要环境里 setuptools 77 或更新版本的 wheel 构建测试）；装上 veckit 后是
-`63 passed, 1 skipped`。以 root 身份运行（很多云容器就是这样）也能通过。
+`63 passed, 1 skipped`。以 root 身份运行（很多云容器就是这样）也能通过。版本 2026.10.1 新增 68 个测试（规则监测、Trajectory Lens、
+OpenCode 适配器和一个 Codex 测试），都不需要 veckit 或比赛数据，所以在同样的环境里，预计没有 veckit 时是 `122 passed, 10 skipped`，
+装上 veckit 后是 `131 passed, 1 skipped`。
 
 `pip install -e .` 还会安装五个命令，与下文用到的 `python -m` 写法完全相同（`vec-community-check`、`vec-community-baseline`、
-`vec-community-score`、`vec-community-split`、`vec-community-evidence`，见顶层 README）。`pip install -r requirements.txt` 只装依赖，
+`vec-community-score`、`vec-community-split`、`vec-community-evidence`，见顶层 README）；另外还有本教程用不到的
+`vec-community-rules-watch` 和 `vec-community-lens`。`pip install -r requirements.txt` 只装依赖，
 像本教程这样在克隆目录里用 `python -m` 运行时也够用。
 
 按章节列出前置条件（全程 Python 3.10 及以上）：

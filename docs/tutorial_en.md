@@ -113,13 +113,17 @@ What to expect (real-release pass, Linux, Python 3.10.13, internet access for pi
 there, also when repeated with an empty pip cache (it then downloaded about 75 MB of packages, about 10 MB more
 with veckit; a home connection will take longer than the runner's), and resolved anndata 0.11.4, numpy 2.2.6,
 scipy 1.15.3, pandas 2.3.3, h5py 3.16.0 and pytest 9.1.1 (Python 3.10 gets older releases of these than 3.12 does;
-both work). Without veckit the tests end with `54 passed, 10 skipped`
+both work). Without veckit the tests ended there with `54 passed, 10 skipped`
 (the local-scoring tests, plus the wheel build, which needs setuptools 77 or newer in the environment); with veckit
-installed, `63 passed, 1 skipped`. They also pass when run as root, as in many cloud containers.
+installed, `63 passed, 1 skipped`. They also pass when run as root, as in many cloud containers. Release 2026.10.1
+adds 68 tests that need neither veckit nor the challenge data (the rules watch, Trajectory Lens, the OpenCode
+adapter, one Codex test), so expect `122 passed, 10 skipped` there without veckit and
+`131 passed, 1 skipped` with it.
 
 `pip install -e .` also installs five commands that are the same as the `python -m` forms used below
 (`vec-community-check`, `vec-community-baseline`, `vec-community-score`, `vec-community-split`,
-`vec-community-evidence`; see the top-level README). `pip install -r requirements.txt` installs only the
+`vec-community-evidence`; see the top-level README), plus `vec-community-rules-watch` and `vec-community-lens`,
+which this tutorial does not use. `pip install -r requirements.txt` installs only the
 dependencies, which is enough when you run everything from the clone with `python -m`, as this tutorial does.
 
 Prerequisites by section (Python 3.10 or newer throughout):
