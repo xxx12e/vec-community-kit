@@ -266,9 +266,25 @@ prediction gets a skill per metric (veckit's own `skill()`) and a task score. Th
 counts like an undershoot). Your resampled `copy_last` file lands **near** 50, not exactly on it - the wrapper's
 floor row is a 10 % subsample of the reference and your file is a different sample of the same cells; a value a
 few points off 50 is normal. A local score is **not** a preview of the real one; it ranks your own methods on the
-same split with the same seeds. Compare methods by their bands (same target/reference pair, same seeds): a
-difference that sits inside the band is subsampling noise, not a result. `docs/metrics_overview.md` explains every column, and
-`vec_local_score/README.md` states exactly which conventions the wrapper implements.
+same split with the same seeds. `docs/metrics_overview.md` explains every column, and `vec_local_score/README.md`
+states exactly which conventions the wrapper implements.
+
+**Comparing two of your methods: the paired mode.** Pass both predictions of the held-out stage in one call,
+`--pred A --pred B`. In every seed both files are scored against the same subsample, target halves, floor and
+ceiling, so the per-seed difference B - A removes the subsampling noise the two share. The output gives each file's
+band, the per-metric point differences, and B - A per seed with its mean, sd and min..max over the seeds:
+
+```
+python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --pred out/pseudo_pred_mine.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad
+```
+
+`out/pseudo_pred_mine.h5ad` stands for your own method's prediction of E8.75, built from the stages you keep (write
+it with `write_submission`, section 5) - never from E8.75. Read the min..max of B - A: when it stays on one side of
+0, one file is ahead on every seed of this split; when it straddles 0, the seeds disagree and the difference is not
+a result. Two bands can overlap while the paired difference keeps its sign: on the synthetic pair of the dry run, a
+stand-in B (the `copy_last` file with its coordinates grown to the target's size) has the band 52.49..61.32 against
+A's 48.86..56.96, and B - A is +3.63..+4.38 on all five seeds. Either way it is a comparison on this pseudo split,
+not a prediction of the order on the hidden target.
 
 `python -m vec_local_score.make_pseudo_split` is optional: it exports one fixed split as files for inspection or for
 calling the veckit CLI directly. Its outputs are not inputs to `vec_local_score` (the wrapper refuses them, because

@@ -8,6 +8,8 @@ veckit is not vendored: install it or set VECKIT_PATH (see veckit_loader.py and 
 
     python -m vec_local_score --task T2 --setting heart --pred pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad
     python -m vec_local_score --task T2 --setting heart --pred pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad --single-seed
+    python -m vec_local_score --task T2 --setting heart --pred a.h5ad --pred b.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad
+        (paired comparison: B - A per seed over the same seeds and the same draw per seed)
     python -m vec_local_score.make_pseudo_split --target E8.75.h5ad --reference E8.25_late.h5ad --out-dir pseudo/heart
         (exports one fixed split for inspection / the veckit CLI; its outputs are not inputs to vec_local_score)
 """

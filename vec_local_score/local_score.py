@@ -37,16 +37,28 @@ DEFAULT OUTPUT = THE MULTI-SEED BAND. One call scores the prediction under sever
 0 1 2 3 4) and prints mean, sd and the band (min..max over the seeds) of the task score, with a per-metric table
 of means. From 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each submission
 (organisers, review of this kit, 2026-09), so one published score is one draw from such a band; a single-seed
-number hides that. --single-seed [--seed N] restores the old one-seed table (faster; for quick checks).
+number hides that. --single-seed [--seed N] restores the old one-seed table (faster; for quick checks). The
+JSON of the band carries task_score_mean (and task_score_sd / _min / _max, band, task_scores); task_score is the
+key of the single-seed JSON only.
+
+PAIRED COMPARISON (--pred A --pred B). Both predictions are scored under the same seeds, and in each seed against
+the same draw - reference and target subsamples, target halves, probe, floor and ceiling - so the per-seed
+difference B - A removes the subsampling noise the two files share. Output: each file's band, per-metric point
+differences, B - A per seed and its mean, sd and min..max over the seeds. Seed s of either file is exactly its
+--single-seed --seed s result.
 
 Usage:
   python -m vec_local_score --task T1 --pred pred.h5ad --target E9.5_RNA.h5ad --reference E8.5_RNA.h5ad
   python -m vec_local_score --task T2 --setting heart --pred pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad
   python -m vec_local_score --task T3 --pred pred.h5ad --target Mab21l2_KO_E9.5.h5ad --wt WT_E9.5.h5ad
   python -m vec_local_score ... --single-seed --seed 3        (one seed, full per-metric table)
+  python -m vec_local_score --task T2 --setting heart --pred a.h5ad --pred b.h5ad --target E8.75.h5ad
+      --reference E8.25_late.h5ad                              (one command line; paired: B - A per seed, seeds 0-4)
 Options: --seeds 0 1 2 3 4 (default), --single-seed / --seed N (given alone, --seed implies --single-seed),
          --frac 0.1 (stage subsample), --max-cells 4000 (reference cap; target 2x),
-         --pred-max-cells 0 (0 = score every submitted cell, as the server does), --verbose, --json out.json
+         --pred-max-cells 0 (0 = score every submitted cell, as the server does; a cap draws the prediction's
+         cells with a generator of its own, so it never changes the draw of the target, reference or the other
+         prediction), --verbose, --json out.json
 
 veckit must be installed or pointed to with VECKIT_PATH (see veckit_loader.py).
 """
@@ -207,15 +219,18 @@ def run_panel(task, m2, pred, truth, ref, seed, probe=None):
     return m2.score_task3_v2(pred[0], pred[1], pred[2], truth[0], truth[1], truth[2], ref[0], probe=probe, seed=seed)
 
 
-def score(task: str, pred, target, reference, setting: str = "heart", frac: float = 0.1, seed: int = 0,
-          max_cells: int = 4000, pred_max_cells: int = 0, cache=None) -> dict:
-    """Score `pred` on the pseudo board (target, reference) with local floor / ceiling under ONE subsample seed.
-    Returns a result dict: task_score, rows [{group, metric, raw, floor, ceiling, skill, weight, points, folded,
-    degenerate, undefined}], raw_pred, raw_floor, raw_ceiling, cells, veckit, seconds. `cache` (a dict) keeps the
-    stages read from disk for the next call; summarise() uses it so that every seed reads each file once.
-    For the default multi-seed band use summarise()."""
+def score_many(task: str, preds, target, reference, setting: str = "heart", frac: float = 0.1, seed: int = 0,
+               max_cells: int = 4000, pred_max_cells: int = 0, cache=None) -> list:
+    """Score one or more predictions under ONE subsample seed against the SAME draw: the reference and target
+    subsamples, the target halves A / B, the frozen cell-type probe, the floor row and the ceiling are computed once
+    and shared, so the predictions differ only in themselves. Result i is exactly score(preds[i], ..., seed=seed):
+    the draw does not depend on the predictions (each prediction's own subsample, used only when --pred-max-cells
+    caps it, has its own generator seeded by `seed`)."""
     if task not in WEIGHTS:
         raise ValueError("task must be T1, T2 or T3")
+    preds = list(preds)
+    if not preds:
+        raise ValueError("at least one prediction is required")
     need_coords = task in ("T2", "T3")
     rng = np.random.default_rng(seed)
     sh = load_veckit()
@@ -226,9 +241,6 @@ def score(task: str, pred, target, reference, setting: str = "heart", frac: floa
     t0 = time.time()
     ref_X, ref_C, ref_ct, genes = load_arrays(reference, need_coords, rng, frac, max_cells, cache=cache)
     tgt_X, tgt_C, tgt_ct, _ = load_arrays(target, need_coords, rng, frac, 2 * max_cells, genes, cache=cache)
-    prd_X, prd_C, prd_ct, _ = load_arrays(pred, need_coords, rng, 1.0, pred_max_cells or 10 ** 9, genes, cache=cache)
-    if (prd_X < 0).any():
-        raise ValueError("prediction .X has negative values; the veckit scorer rejects negative expression")
 
     # half split of the target: A = scored against, B = ceiling estimate
     perm = rng.permutation(tgt_X.shape[0])
@@ -236,36 +248,58 @@ def score(task: str, pred, target, reference, setting: str = "heart", frac: floa
     A = (tgt_X[ia], None if tgt_C is None else tgt_C[ia], tgt_ct[ia])
     B = (tgt_X[ib], None if tgt_C is None else tgt_C[ib], tgt_ct[ib])
     REF = (ref_X, ref_C, ref_ct)
-    PRED = (prd_X, prd_C, prd_ct)
 
-    # the frozen cell-type probe is trained once on the scored half and shared by the three panel runs
+    loaded = []
+    for pred in preds:
+        prd_X, prd_C, prd_ct, _ = load_arrays(pred, need_coords, np.random.default_rng([seed, 1]), 1.0,
+                                              pred_max_cells or 10 ** 9, genes, cache=cache)
+        if (prd_X < 0).any():
+            raise ValueError(f"{Path(pred).name}: prediction .X has negative values; the veckit scorer rejects negative "
+                             "expression")
+        loaded.append((prd_X, prd_C, prd_ct))
+
+    # the frozen cell-type probe is trained once on the scored half and shared by every panel run
     probe = metrics.train_frozen_probe(A[0], A[2])
-    raw_pred = run_panel(task, m2, PRED, A, REF, seed, probe)
+    raw_preds = [run_panel(task, m2, PRED, A, REF, seed, probe) for PRED in loaded]
     raw_floor = run_panel(task, m2, REF, A, REF, seed, probe)       # copy_last / wt_identity
     raw_ceiling = run_panel(task, m2, B, A, REF, seed, probe)       # other half of the truth
 
-    rows, task_score = [], 0.0
-    for group, members in GROUPS[task].items():
-        for k in members:
-            fl, ce, raw = raw_floor.get(k), raw_ceiling.get(k), raw_pred.get(k)
-            refs_ok = fl is not None and ce is not None and bool(np.isfinite(fl) and np.isfinite(ce))
-            s = skill(raw, fl, ce, DIRECTION[k], base_skill) if refs_ok else 0.0
-            w = WEIGHTS[task][k]
-            task_score += 100 * w * s
-            rows.append({"group": group, "metric": k, "raw": raw, "floor": fl, "ceiling": ce,
-                         "skill": round(s, 4), "weight": round(w, 4), "points": round(100 * w * s, 2),
-                         "folded": DIRECTION[k] == 0, "degenerate": is_degenerate(fl, ce, DIRECTION[k]),
-                         "undefined": not refs_ok})
-
-    return {"mode": "single_seed", "task": task, "setting": setting if task == "T2" else None, "pred": str(pred),
+    results = []
+    for pred, PRED, raw_pred in zip(preds, loaded, raw_preds):
+        rows, task_score = [], 0.0
+        for group, members in GROUPS[task].items():
+            for k in members:
+                fl, ce, raw = raw_floor.get(k), raw_ceiling.get(k), raw_pred.get(k)
+                refs_ok = fl is not None and ce is not None and bool(np.isfinite(fl) and np.isfinite(ce))
+                s = skill(raw, fl, ce, DIRECTION[k], base_skill) if refs_ok else 0.0
+                w = WEIGHTS[task][k]
+                task_score += 100 * w * s
+                rows.append({"group": group, "metric": k, "raw": raw, "floor": fl, "ceiling": ce,
+                             "skill": round(s, 4), "weight": round(w, 4), "points": round(100 * w * s, 2),
+                             "folded": DIRECTION[k] == 0, "degenerate": is_degenerate(fl, ce, DIRECTION[k]),
+                             "undefined": not refs_ok})
+        results.append({
+            "mode": "single_seed", "task": task, "setting": setting if task == "T2" else None, "pred": str(pred),
             "target": str(target), "reference": str(reference), "frac": frac, "seed": seed,
-            "cells": {"pred": int(prd_X.shape[0]), "target_A": int(len(ia)), "target_B": int(len(ib)),
+            "cells": {"pred": int(PRED[0].shape[0]), "target_A": int(len(ia)), "target_B": int(len(ib)),
                       "reference": int(ref_X.shape[0])},
             "task_score": round(task_score, 2), "rows": rows, "raw_pred": raw_pred, "raw_floor": raw_floor,
             "raw_ceiling": raw_ceiling,
             "veckit": dict(vk, skill_source="veckit common.core_metrics.skill" if base_skill else "kit transcription",
                            tested_against=TESTED_VECKIT_VERSION),
-            "seconds": round(time.time() - t0, 1)}
+            "seconds": round(time.time() - t0, 1)})
+    return results
+
+
+def score(task: str, pred, target, reference, setting: str = "heart", frac: float = 0.1, seed: int = 0,
+          max_cells: int = 4000, pred_max_cells: int = 0, cache=None) -> dict:
+    """Score `pred` on the pseudo board (target, reference) with local floor / ceiling under ONE subsample seed.
+    Returns a result dict: task_score, rows [{group, metric, raw, floor, ceiling, skill, weight, points, folded,
+    degenerate, undefined}], raw_pred, raw_floor, raw_ceiling, cells, veckit, seconds. `cache` (a dict) keeps the
+    stages read from disk for the next call; summarise() uses it so that every seed reads each file once.
+    For the default multi-seed band use summarise(); to compare two predictions, compare()."""
+    return score_many(task, [pred], target, reference, setting=setting, frac=frac, seed=seed, max_cells=max_cells,
+                      pred_max_cells=pred_max_cells, cache=cache)[0]
 
 
 def format_table(res: dict) -> str:
@@ -325,11 +359,18 @@ def summarise(task: str, pred, target, reference, seeds=DEFAULT_SEEDS, setting: 
             per.append(score(task, pred, target, reference, setting=setting, frac=frac, seed=s, max_cells=max_cells,
                              pred_max_cells=pred_max_cells, cache=cache))
     cache.clear()
+    return _aggregate(task, pred, target, reference, seeds, setting, frac, per)
+
+
+def _sd(v) -> float:
+    return float(np.nanstd(v, ddof=1)) if len(v) > 1 else 0.0
+
+
+def _aggregate(task, pred, target, reference, seeds, setting, frac, per) -> dict:
+    """The multi-seed summary of per-seed score() results (see summarise())."""
     scores = np.array([r["task_score"] for r in per], dtype=float)
 
-    def sd(v):
-        return float(np.nanstd(v, ddof=1)) if len(per) > 1 else 0.0
-
+    sd = _sd
     metrics = {}
     for row in per[0]["rows"]:
         m = row["metric"]
@@ -394,12 +435,107 @@ def format_summary(res: dict) -> str:
     return "\n".join(lines)
 
 
+# ---- paired comparison of two predictions ---------------------------------------------------------------
+PAIRED_NOTE = ("paired: in every seed both files are scored against the same subsample, target halves, floor and "
+               "ceiling, so the per-seed B - A removes the subsampling noise the two share; if its min..max straddles 0 "
+               "the seeds disagree on which file is better. This compares two of your methods on this pseudo split, "
+               "not on the hidden target")
+
+
+def _metric_values(res: dict, key: str) -> dict:
+    return {r["metric"]: r[key] for r in res["rows"]}
+
+
+def compare(task: str, pred_a, pred_b, target, reference, seeds=DEFAULT_SEEDS, setting: str = "heart",
+            frac: float = 0.1, max_cells: int = 4000, pred_max_cells: int = 0) -> dict:
+    """Paired comparison: score predictions A and B under the same seeds, each seed with ONE shared draw (score_many),
+    and summarise the per-seed differences B - A. Returns mode "paired", pred_a, pred_b, seeds, diff_scores (B - A
+    per seed), diff_mean, diff_sd (ddof=1), diff_min, diff_max, b_higher_seeds / a_higher_seeds / tied_seeds,
+    metric_diffs{name: points_diff_mean, points_diff_sd, skill_diff_mean, raw_diff_mean}, and a / b: the
+    summarise()-style band of each file (task_score_mean, ..., per_seed). Seed s of a / b is exactly score(..., s)."""
+    import warnings
+
+    seeds = [int(s) for s in seeds]
+    if not seeds:
+        raise ValueError("seeds must not be empty")
+    cache: dict = {}
+    per_a, per_b = [], []
+    for s in seeds:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ra, rb = score_many(task, [pred_a, pred_b], target, reference, setting=setting, frac=frac, seed=s,
+                                max_cells=max_cells, pred_max_cells=pred_max_cells, cache=cache)
+        per_a.append(ra)
+        per_b.append(rb)
+    cache.clear()
+    a = _aggregate(task, pred_a, target, reference, seeds, setting, frac, per_a)
+    b = _aggregate(task, pred_b, target, reference, seeds, setting, frac, per_b)
+    diffs = np.array([round(rb["task_score"] - ra["task_score"], 2) for ra, rb in zip(per_a, per_b)], dtype=float)
+    metric_diffs = {}
+    for m in a["metrics"]:
+        d = {}
+        for k in ("points", "skill", "raw"):
+            vals = []
+            for ra, rb in zip(per_a, per_b):
+                va, vb = _metric_values(ra, k)[m], _metric_values(rb, k)[m]
+                vals.append(np.nan if va is None or vb is None else float(vb) - float(va))
+            d[k] = np.array(vals, dtype=float)
+        metric_diffs[m] = {"points_diff_mean": float(np.nanmean(d["points"])), "points_diff_sd": _sd(d["points"]),
+                           "skill_diff_mean": float(np.nanmean(d["skill"])), "raw_diff_mean": float(np.nanmean(d["raw"]))}
+    return {"mode": "paired", "task": task, "setting": setting if task == "T2" else None, "pred_a": str(pred_a),
+            "pred_b": str(pred_b), "target": str(target), "reference": str(reference), "seeds": seeds, "frac": frac,
+            "diff_scores": diffs.tolist(), "diff_mean": float(diffs.mean()), "diff_sd": _sd(diffs),
+            "diff_min": float(diffs.min()), "diff_max": float(diffs.max()),
+            "b_higher_seeds": int((diffs > 0).sum()), "a_higher_seeds": int((diffs < 0).sum()),
+            "tied_seeds": int((diffs == 0).sum()), "metric_diffs": metric_diffs, "a": a, "b": b,
+            "veckit": a.get("veckit"), "paired_note": PAIRED_NOTE, "seed_note": SEED_NOTE,
+            "seconds": round(sum(r["seconds"] for r in per_b), 1)}
+
+
+def paired_line(res: dict) -> str:
+    n = len(res["seeds"])
+    return (f"B - A ({Path(res['pred_b']).name} - {Path(res['pred_a']).name}) on {Path(res['target']).name}: "
+            f"{res['diff_mean']:+.2f} +- {res['diff_sd']:.2f} (sd), min..max {res['diff_min']:+.2f}..{res['diff_max']:+.2f} "
+            f"over seeds {res['seeds']}; B higher on {res['b_higher_seeds']} of {n} seeds")
+
+
+def format_paired(res: dict) -> str:
+    a, b = res["a"], res["b"]
+    head = (f"{res['task']}{' ' + res['setting'] if res['setting'] else ''}  target={Path(res['target']).name}  "
+            f"ref={Path(res['reference']).name}  frac={res['frac']}  seeds={res['seeds']}  (paired comparison)")
+    lines = [head,
+             f"A = {Path(res['pred_a']).name}: mean {a['task_score_mean']:.2f}  sd {a['task_score_sd']:.2f}  band "
+             f"{a['band'][0]:.2f}..{a['band'][1]:.2f}",
+             f"B = {Path(res['pred_b']).name}: mean {b['task_score_mean']:.2f}  sd {b['task_score_sd']:.2f}  band "
+             f"{b['band'][0]:.2f}..{b['band'][1]:.2f}",
+             f"{'metric':18s} {'A pts':>7s} {'B pts':>7s} {'B-A pts':>8s} {'sd':>6s}"]
+    for m, d in res["metric_diffs"].items():
+        name = m + ("*" if a["metrics"][m].get("folded") else "")
+        lines.append(f"{name:18s} {a['metrics'][m]['points_mean']:7.2f} {b['metrics'][m]['points_mean']:7.2f} "
+                     f"{d['points_diff_mean']:+8.2f} {d['points_diff_sd']:6.2f}")
+    per_seed = "  ".join(f"{s}: {d:+.2f}" for s, d in zip(res["seeds"], res["diff_scores"]))
+    lines.append(f"TASK SCORE B - A per seed: {per_seed}")
+    lines.append(f"TASK SCORE B - A: mean {res['diff_mean']:+.2f}  sd {res['diff_sd']:.2f}  min..max "
+                 f"{res['diff_min']:+.2f}..{res['diff_max']:+.2f} over {len(res['seeds'])} seeds  [{res['seconds']}s]")
+    lines.append(paired_line(res))
+    if any(v.get("folded") for v in a["metrics"].values()):
+        lines.append("* target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better")
+    lines.append("note: " + PAIRED_NOTE)
+    vk = res.get("veckit") or {}
+    ver = vk.get("version") or "unknown version"
+    note = "" if ver == TESTED_VECKIT_VERSION else f" (kit tested against {TESTED_VECKIT_VERSION})"
+    lines.append(f"veckit {ver}{note}; the organisers' scorer is the source of truth and this wrapper may lag it")
+    return "\n".join(lines)
+
+
 def main(argv=None, prog: str = "python -m vec_local_score") -> int:
     p = argparse.ArgumentParser(prog=prog, description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--task", required=True, choices=["T1", "T2", "T3"])
     p.add_argument("--setting", default="heart", choices=["heart", "embryo"], help="T2 only, recorded in the output")
-    p.add_argument("--pred", required=True, type=Path)
+    p.add_argument("--pred", required=True, type=Path, action="append",
+                   help="the prediction for the held-out stage; give it twice (--pred A --pred B) for the paired "
+                        "comparison B - A over the same seeds")
     p.add_argument("--target", required=True, type=Path,
                    help="RAW released stage held out as the pseudo-target (the wrapper subsamples and splits it)")
     p.add_argument("--reference", type=Path, help="T1/T2: RAW preceding stage = DE reference and copy_last floor")
@@ -425,13 +561,22 @@ def main(argv=None, prog: str = "python -m vec_local_score") -> int:
     if args.seeds is not None and (args.single_seed or args.seed is not None):
         p.error("--seeds (multi-seed band) cannot be combined with --single-seed / --seed")
     single = args.single_seed or args.seed is not None
+    if len(args.pred) > 2:
+        p.error("at most two --pred: A and B of the paired comparison")
+    paired = len(args.pred) == 2
+    if paired and single:
+        p.error("--single-seed / --seed take one --pred; the paired comparison runs over --seeds (default 0 1 2 3 4)")
     try:
-        if single:
-            res = score(args.task, args.pred, args.target, ref_path, setting=args.setting, frac=args.frac,
+        if paired:
+            res = compare(args.task, args.pred[0], args.pred[1], args.target, ref_path,
+                          seeds=args.seeds or DEFAULT_SEEDS, setting=args.setting, frac=args.frac,
+                          max_cells=args.max_cells, pred_max_cells=args.pred_max_cells)
+        elif single:
+            res = score(args.task, args.pred[0], args.target, ref_path, setting=args.setting, frac=args.frac,
                         seed=0 if args.seed is None else args.seed, max_cells=args.max_cells,
                         pred_max_cells=args.pred_max_cells)
         else:
-            res = summarise(args.task, args.pred, args.target, ref_path, seeds=args.seeds or DEFAULT_SEEDS,
+            res = summarise(args.task, args.pred[0], args.target, ref_path, seeds=args.seeds or DEFAULT_SEEDS,
                             setting=args.setting, frac=args.frac, max_cells=args.max_cells,
                             pred_max_cells=args.pred_max_cells)
     except ImportError as e:
@@ -444,7 +589,13 @@ def main(argv=None, prog: str = "python -m vec_local_score") -> int:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(res, indent=2, default=str) + "\n", encoding="utf-8")
     print()
-    if single:
+    if paired:
+        if args.verbose:
+            for r in (res["a"], res["b"]):
+                print(format_summary(r))
+                print()
+        print(format_paired(res))
+    elif single:
         print(format_table(res))
         print("single seed: from 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each "
               "submission, so one score is one draw from a band; drop --single-seed / --seed to see the band (default)")

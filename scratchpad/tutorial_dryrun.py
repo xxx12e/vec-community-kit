@@ -90,7 +90,27 @@ def run(cmd: str, timeout=1800):
     return r.returncode, r.stdout, r.stderr
 
 
+MINE = (f'"{PY}" -c "import anndata as ad, numpy as np; a = ad.read_h5ad(\'out/pseudo_pred.h5ad\'); '
+        f'a.obsm[\'spatial_3D\'] = (np.asarray(a.obsm[\'spatial_3D\']) * 1.25).astype(np.float32); '
+        f'a.write_h5ad(\'out/pseudo_pred_mine.h5ad\')"')
+PAIRED = (f'"{PY}" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --pred out/pseudo_pred_mine.h5ad '
+          f'--target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad')
+
+
+def paired_only():
+    """--paired-only: plant, build the pseudo prediction and the stand-in, run the paired comparison (section 7)."""
+    plant()
+    OUT.mkdir(exist_ok=True)
+    rcs = {"pseudo_pred": run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000')[0]}
+    rcs["mine"] = run(MINE)[0]
+    rcs["paired_t2"] = run(PAIRED)[0]
+    print("\nSUMMARY", json.dumps(rcs, indent=1))
+    return 0
+
+
 def main():
+    if "--paired-only" in sys.argv:
+        return paired_only()
     if "--clean" in sys.argv:
         runs = ROOT / "scratchpad" / "runs_dryrun"
         if runs.exists():                     # detach workspace/data junctions first: never delete through them
@@ -135,6 +155,10 @@ def main():
     rcs["single_t2"] = run(f'"{PY}" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --single-seed')[0]
     rcs["ls_t1"] = run(f'"{PY}" -m vec_local_score --task T1 --pred out/t1_copy_last.h5ad --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad')[0]
     rcs["ls_t3"] = run(f'"{PY}" -m vec_local_score --task T3 --pred out/t3_wt_identity.h5ad --target data/raw/T2_heart/E8.75.h5ad --wt data/raw/T2_heart/E8.25_late.h5ad')[0]
+    # section 7, comparing two methods: a stand-in "own method" (the copy_last file grown to the target's size), then
+    # the paired comparison exactly as the tutorials write it
+    rcs["mine"] = run(MINE)[0]
+    rcs["paired_t2"] = run(PAIRED)[0]
     rcs["split"] = run(f'"{PY}" -m vec_local_score.make_pseudo_split --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --out-dir pseudo/heart --panel data/panels/T2__heart__val_interp.genes.txt --require-coords')[0]
     rcs["split_refused"] = run(f'"{PY}" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad')[0]
     # section 9

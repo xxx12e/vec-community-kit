@@ -466,3 +466,64 @@ SUMMARY {
  "codex_tests": 0,
  "lock": 0
 }
+
+# Addendum, 2026-09-30T08:40:42Z (UTC), same machine and environment: the paired comparison that section 7 of the tutorials
+# gained after the run above (`python scratchpad/tutorial_dryrun.py --paired-only` plants the same synthetic stages;
+# kit commit 5cb978b + the paired-mode change). The full run above also runs these two steps from now on.
+
+planted synthetic stages under D:\量化竞赛\vec-community-kit-fb\data\raw
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000
+  [make_baseline] loaded last  E8.25_late.h5ad: 2400 cells x 500 genes (+coords)
+  [make_baseline] NOTE: --n-cells 5000 requested but the source has only 2400 cells; writing all 2400 of them.
+  [make_baseline] method info:
+  {
+    "method": "copy_last",
+    "n_cells": 2400,
+    "n_genes": 500,
+    "has_coords": true,
+    "n_source_cells": 2400,
+    "row_selection": {
+      "n_available": 2400,
+      "target": 5000,
+      "n_cells_mode": "explicit",
+      "kept_all_rows": true,
+      "n_written": 2400
+    }
+  }
+  
+  [PASS] out\pseudo_pred.h5ad @ T2:heart:val_interp  n_obs=2400 n_vars=500 X=dense[float32] min=0.0 max=12.1656 size=5.0MB
+    PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+    done in 0.0s
+  -> rc=0 (1.2s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -c "import anndata as ad, numpy as np; a = ad.read_h5ad('out/pseudo_pred.h5ad'); a.obsm['spatial_3D'] = (np.asarray(a.obsm['spatial_3D']) * 1.25).astype(np.float32); a.write_h5ad('out/pseudo_pred_mine.h5ad')"
+
+  -> rc=0 (1.1s)
+
+$ "D:\量化竞赛\virtual-embryo\.venv\Scripts\python.exe" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --pred out/pseudo_pred_mine.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad
+  T2 heart  target=E8.75.h5ad  ref=E8.25_late.h5ad  frac=0.1  seeds=[0, 1, 2, 3, 4]  (paired comparison)
+  A = pseudo_pred.h5ad: mean 53.11  sd 3.54  band 48.86..56.96
+  B = pseudo_pred_mine.h5ad: mean 57.19  sd 3.87  band 52.49..61.32
+  metric               A pts   B pts  B-A pts     sd
+  de_score              4.23    4.23    +0.00   0.00
+  de_direction          5.98    5.98    +0.00   0.00
+  mmd_u                 7.50    7.50    +0.00   0.00
+  variogram             5.00    5.00    +0.00   0.00
+  d2_shape              8.33    8.33    +0.00   0.00
+  occupancy_dice        5.19    5.19    +0.00   0.00
+  scale_log_ratio*      4.20    8.27    +4.07   0.35
+  neighborhood_mmd     12.67   12.67    +0.00   0.00
+  TASK SCORE B - A per seed: 0: +3.77  1: +4.23  2: +4.38  3: +3.63  4: +4.36
+  TASK SCORE B - A: mean +4.07  sd 0.35  min..max +3.63..+4.38 over 5 seeds  [5.5s]
+  B - A (pseudo_pred_mine.h5ad - pseudo_pred.h5ad) on E8.75.h5ad: +4.07 +- 0.35 (sd), min..max +3.63..+4.38 over seeds [0, 1, 2, 3, 4]; B higher on 5 of 5 seeds
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  note: paired: in every seed both files are scored against the same subsample, target halves, floor and ceiling, so the per-seed B - A removes the subsampling noise the two share; if its min..max straddles 0 the seeds disagree on which file is better. This compares two of your methods on this pseudo split, not on the hidden target
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  -> rc=0 (7.4s)
+
+SUMMARY {
+ "pseudo_pred": 0,
+ "mine": 0,
+ "paired_t2": 0
+}

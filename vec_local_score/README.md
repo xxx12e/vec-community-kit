@@ -16,6 +16,20 @@ pseudo split, not on the hidden target; use it to decide whether a difference be
 (outside the band) or noise (inside it). Each input file is read once and reused for every seed; seed `s` of the
 band is exactly the `--single-seed --seed s` result.
 
+**Comparing two predictions: the paired mode (`--pred A --pred B`).** Both files are scored under the same seeds,
+and in each seed against one shared draw - the same reference and target subsamples, target halves, cell-type
+probe, floor and ceiling - so the per-seed difference B - A removes the subsampling noise the two files share. The
+output gives each file's band, the per-metric point differences, and B - A per seed with its mean, sd and min..max
+over the seeds. When min..max stays on one side of 0, one file is ahead on every seed of this split; when it
+straddles 0, the seeds disagree. Two bands can overlap while the paired difference keeps its sign (example below).
+Seed `s` of either file is exactly that file's `--single-seed --seed s` result. `--single-seed` / `--seed` take one
+`--pred`.
+
+**JSON key renamed.** The `--json` of the default (band) output carries `task_score_mean` (with `task_score_sd`,
+`task_score_min`, `task_score_max`, `band`, `task_scores`) where the one-seed default of earlier versions wrote
+`task_score`; `task_score` is now the key of the `--single-seed` JSON only. Scripts that read `task_score` from the
+default output must read `task_score_mean` (or pass `--single-seed`).
+
 **It is not a preview of your real score.** The real target is a stage you do not have; a pseudo board compares
 your own methods against each other under the same metric definitions on the split you chose, nothing more: it
 does not predict the order on the hidden target, and no local number is a competition score. **The organisers'
@@ -61,6 +75,9 @@ python -m vec_local_score --task T3 --pred pseudo_pred.h5ad --target Mab21l2_KO_
 
 # the old behaviour: one seed, the full per-metric table
 python -m vec_local_score --task T2 --setting heart --pred pseudo_pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad --single-seed
+
+# two of your methods, paired over the same seeds: B - A per seed, its mean, sd and min..max
+python -m vec_local_score --task T2 --setting heart --pred pseudo_pred.h5ad --pred pseudo_pred_mine.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad
 ```
 
 Options: `--seeds 0 1 2 3 4` (default), `--single-seed` and `--seed N` (one seed; `--seed` alone implies
@@ -69,9 +86,13 @@ Options: `--seeds 0 1 2 3 4` (default), `--single-seed` and `--seed N` (one seed
 (cap for the reference after the subsample; the target gets twice that), `--pred-max-cells 0` (0 = score every
 submitted cell, as the server does; set a cap only for speed), `--json` (multi-seed: the summary with `mode:
 multi_seed`, `task_score_mean`, `task_score_sd`, `band`, `task_scores`, per-metric means and every per-seed result;
-single seed: the one-seed result with `mode: single_seed`). `python -m vec_local_score.seed_summary` still works and
-is now the same as `python -m vec_local_score`. From Python: `score(...)` is one seed, `summarise(..., seeds=...)`
-the band.
+single seed: the one-seed result with `mode: single_seed` and `task_score`; paired: `mode: paired`, `diff_scores`
+(B - A per seed), `diff_mean`, `diff_sd`, `diff_min`, `diff_max`, `b_higher_seeds`, `metric_diffs`, and `a` / `b`,
+each file's band as in the multi-seed JSON). `--pred-max-cells` draws each prediction's cells with a generator of
+its own, so a cap never changes the draw of the target, the reference or the other prediction.
+`python -m vec_local_score.seed_summary` still works and is now the same as `python -m vec_local_score`. From
+Python: `score(...)` is one seed, `summarise(..., seeds=...)` the band, `compare(task, pred_a, pred_b, ...)` the
+paired comparison, `score_many(...)` several predictions under one seed and one shared draw.
 
 `make_pseudo_split` is a separate, optional tool: it **exports** one fixed split as files (`target_score.h5ad`,
 `target_ceiling.h5ad`, `reference.h5ad`, `meta.json`) for inspection or for calling the veckit CLI directly, which
@@ -156,7 +177,28 @@ veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may
 ```
 
 On this toy pair seed 0 gives 50.02 while the band over five seeds spans 48.86..56.96 (mean 53.11): a single local
-number can sit several points from the mean, which is why the band is the default. Both outputs are copied from
+number can sit several points from the mean, which is why the band is the default.
+
+The paired mode on the same pair, with a stand-in B (the `copy_last` file with its coordinates grown by the factor
+the synthetic target was scaled by, 1.25):
+
+```
+T2 heart  target=E8.75.h5ad  ref=E8.25_late.h5ad  frac=0.1  seeds=[0, 1, 2, 3, 4]  (paired comparison)
+A = pseudo_pred.h5ad: mean 53.11  sd 3.54  band 48.86..56.96
+B = pseudo_pred_mine.h5ad: mean 57.19  sd 3.87  band 52.49..61.32
+metric               A pts   B pts  B-A pts     sd
+de_score              4.23    4.23    +0.00   0.00
+...
+scale_log_ratio*      4.20    8.27    +4.07   0.35
+neighborhood_mmd     12.67   12.67    +0.00   0.00
+TASK SCORE B - A per seed: 0: +3.77  1: +4.23  2: +4.38  3: +3.63  4: +4.36
+TASK SCORE B - A: mean +4.07  sd 0.35  min..max +3.63..+4.38 over 5 seeds  [5.5s]
+B - A (pseudo_pred_mine.h5ad - pseudo_pred.h5ad) on E8.75.h5ad: +4.07 +- 0.35 (sd), min..max +3.63..+4.38 over seeds [0, 1, 2, 3, 4]; B higher on 5 of 5 seeds
+...
+```
+
+The two bands overlap (48.86..56.96 and 52.49..61.32), yet B is ahead on every seed by 3.63 to 4.38 points: the
+paired difference is the reading to use for a comparison. (Copied from the addendum of `scratchpad/dryrun_log.txt`.) Both outputs are copied from
 `scratchpad/dryrun_log.txt` (2026-09-30). A resampled floor file lands **near** 50,
 not exactly on it: the wrapper's floor row is a 10 % subsample of the
 reference stage and your file is a different sample of the same cells. Only the special case `--frac 1.0` with a
@@ -166,5 +208,6 @@ prediction identical to the reference gives exactly 50.0 (that is what the tests
 
 Hold out the latest released stage and predict it from the earlier ones (for an extrapolation board), or hold
 out a middle stage (for an interpolation board). The reference passed to the scorer is the stage the change is
-measured against; for T3 it is the matched wild type at the same stage as the knockout. Keep the same
-target/reference pair and the same seeds when comparing two methods, and report the band (the default output).
+measured against; for T3 it is the matched wild type at the same stage as the knockout. Compare two methods with
+the paired mode (`--pred A --pred B`: same target/reference pair, same seeds, one shared draw per seed) and report
+B - A with its min..max over the seeds.

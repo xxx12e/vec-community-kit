@@ -217,9 +217,22 @@ T1：留出 E9.5_RNA、用 E8.5_RNA 预测它 —— 预测用 `--last data/raw/
 你的预测得到每个指标的 skill（用 veckit 自己的 `skill()`）和一个任务分。两个"目标值为 0"的指标（`scale_log_ratio`、
 `severity_slope`）标有 `*`：它们的 skill 按绝对值计算（过冲和不足同样计）。你重抽样得到的 `copy_last` 文件会落在 50
 **附近**，而不是正好 50 —— 封装里的地板行是参考阶段的 10% 抽样，你的文件是同一批细胞的另一次抽样；偏离 50 几分是正常的。
-本地分数**不是**真实分数的预告；它只是在同一切分、同一组种子上给你自己的方法排序。比较方法时看区间（同一对目标/参考、
-同一组种子）：落在区间之内的差异是抽样噪声，不算结果。每一列的含义见 `docs/metrics_overview.md`；封装到底实现了哪些约定，见
-`vec_local_score/README.md`。
+本地分数**不是**真实分数的预告；它只是在同一切分、同一组种子上给你自己的方法排序。每一列的含义见
+`docs/metrics_overview.md`；封装到底实现了哪些约定，见 `vec_local_score/README.md`。
+
+**比较你自己的两种方法：配对模式。** 在一次调用里传入对留出阶段的两个预测，`--pred A --pred B`。每个种子下两个文件都对着
+同一次抽样、同一对目标半份、同一个地板和天花板打分，所以逐种子的差值 B - A 消掉了两者共有的抽样噪声。输出给出两个文件各自的区间、
+各指标的分数差，以及逐种子的 B - A 和它在各种子上的均值、标准差和最小..最大：
+
+```
+python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --pred out/pseudo_pred_mine.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad
+```
+
+`out/pseudo_pred_mine.h5ad` 代表你自己的方法对 E8.75 的预测，用留下的阶段构造（用第 5 节的 `write_submission` 写出），绝不能用
+E8.75。看 B - A 的最小..最大：整段在 0 的同一侧，说明在这个切分的每个种子上都是同一个文件领先；跨过 0，说明各种子意见不一，
+这个差异不算结果。两个区间可以重叠而配对差值始终同号：在试运行的合成数据上，一个替身 B（把 `copy_last` 文件的坐标放大到目标
+的尺寸）的区间是 52.49..61.32，A 是 48.86..56.96，而 B - A 在全部五个种子上是 +3.63..+4.38。无论哪种情况，这都只是这个伪切分
+上的比较，不预测隐藏目标上的名次。
 
 `python -m vec_local_score.make_pseudo_split` 是可选工具：把一个固定切分导出成文件，供检查或直接调用 veckit 命令行。它的
 输出不是 `vec_local_score` 的输入（封装会拒绝它们，否则会抽样两次）。

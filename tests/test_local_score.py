@@ -185,6 +185,59 @@ def test_band_reads_each_file_once_and_matches_single_seeds(t1_files, monkeypatc
     assert len(set(res["task_scores"])) > 1       # frac < 1: the subsample moves the score, which is what the band shows
 
 
+def test_paired_comparison(t1_files, tmp_path, monkeypatch, capsys):
+    """--pred A --pred B: both files meet the same draw in every seed, so each seed of either file is exactly its own
+    single-seed result, the floor and ceiling are shared, and B - A is reported per seed and summarised."""
+    from vec_local_score import local_score as ls
+    shift = np.zeros(G)
+    shift[100:130] = 1.2
+    shift[130:160] = -0.9
+    make_stage(5, 400, shift).write_h5ad(tmp_path / "pred_better.h5ad")   # an independent sample of the target law
+    A, B = t1_files / "pred_copy_last.h5ad", tmp_path / "pred_better.h5ad"
+    tgt, ref = t1_files / "target.h5ad", t1_files / "reference.h5ad"
+    reads = []
+    real = ls.read_stage
+    monkeypatch.setattr(ls, "read_stage", lambda path: reads.append(Path(path).name) or real(path))
+    res = ls.compare("T1", A, B, tgt, ref, seeds=(0, 1, 2), frac=0.5)
+    assert sorted(reads) == ["pred_better.h5ad", "pred_copy_last.h5ad", "reference.h5ad", "target.h5ad"]
+    assert res["mode"] == "paired" and res["seeds"] == [0, 1, 2] and res["pred_b"] == str(B)
+    for i, s in enumerate((0, 1, 2)):
+        ra, rb = res["a"]["per_seed"][i], res["b"]["per_seed"][i]
+        assert ra["raw_floor"] == rb["raw_floor"] and ra["raw_ceiling"] == rb["raw_ceiling"]   # one shared draw
+        for pred, r in ((A, ra), (B, rb)):
+            alone = score("T1", pred, tgt, ref, frac=0.5, seed=s)
+            assert r["task_score"] == alone["task_score"] and r["raw_pred"] == alone["raw_pred"]
+        assert res["diff_scores"][i] == pytest.approx(rb["task_score"] - ra["task_score"], abs=0.006)
+    d = np.array(res["diff_scores"])
+    assert res["diff_mean"] == pytest.approx(d.mean()) and res["diff_sd"] == pytest.approx(d.std(ddof=1))
+    assert (res["diff_min"], res["diff_max"]) == (d.min(), d.max())
+    assert res["b_higher_seeds"] == 3 and res["a_higher_seeds"] == 0 and res["diff_min"] > 0   # B is the better file
+    assert set(res["metric_diffs"]) == set(WEIGHTS["T1"])
+    assert sum(v["points_diff_mean"] for v in res["metric_diffs"].values()) == pytest.approx(res["diff_mean"], abs=0.05)
+    text = ls.format_paired(res)
+    assert "TASK SCORE B - A per seed" in text and "B higher on 3 of 3 seeds" in text and "paired" in text
+    # a --pred-max-cells cap draws each prediction's cells with its own generator: the shared draw does not move
+    capped = ls.compare("T1", A, B, tgt, ref, seeds=(1,), frac=0.5, pred_max_cells=300)
+    assert capped["a"]["per_seed"][0]["cells"]["pred"] == 300
+    assert capped["a"]["per_seed"][0]["raw_floor"] == res["a"]["per_seed"][1]["raw_floor"]
+    assert capped["b"]["per_seed"][0]["task_score"] == score("T1", B, tgt, ref, frac=0.5, seed=1,
+                                                             pred_max_cells=300)["task_score"]
+    # the CLI: --pred twice
+    files = ["--task", "T1", "--pred", str(A), "--pred", str(B), "--target", str(tgt), "--reference", str(ref),
+             "--frac", "0.5"]
+    out = tmp_path / "paired.json"
+    capsys.readouterr()
+    rc = ls_main(files + ["--seeds", "0", "1", "--json", str(out)])
+    js = json.loads(out.read_text(encoding="utf-8"))
+    assert rc == 0 and js["mode"] == "paired" and js["diff_scores"] == res["diff_scores"][:2]
+    assert js["a"]["task_score_mean"] and js["b"]["mode"] == "multi_seed"
+    so = capsys.readouterr().out
+    assert "TASK SCORE B - A" in so and "B - A (pred_better.h5ad - pred_copy_last.h5ad)" in so
+    for bad in (["--single-seed"], ["--seed", "1"], ["--pred", str(A)]):
+        with pytest.raises(SystemExit):
+            ls_main(files + bad)
+
+
 def test_negative_prediction_is_rejected(t1_files, tmp_path):
     a = ad.read_h5ad(t1_files / "pred_copy_last.h5ad")
     a.X[0, 0] = -1.0
@@ -290,6 +343,21 @@ def test_tutorial_local_scoring_commands_end_to_end(tmp_path, heart_panel):
                            str(raw / "E8.25_late.h5ad"), "--seeds", "0", "1", "--json", str(out / "alias.json")], ROOT)
     assert rc == 0, se
     assert json.loads((out / "alias.json").read_text(encoding="utf-8"))["task_scores"] == summ["task_scores"][:2]
+
+    # the tutorial's comparison of two methods: --pred A --pred B, paired over the same seeds. The stand-in "own
+    # method" is the copy_last file grown by the factor the synthetic target was scaled by (1.25)
+    mine = ad.read_h5ad(out / "pseudo_pred.h5ad")
+    mine.obsm["spatial_3D"] = (np.asarray(mine.obsm["spatial_3D"]) * 1.25).astype(np.float32)
+    mine.write_h5ad(out / "pseudo_pred_mine.h5ad")
+    rc, so, se = run_cli(["vec_local_score", "--task", "T2", "--setting", "heart", "--pred", str(out / "pseudo_pred.h5ad"),
+                          "--pred", str(out / "pseudo_pred_mine.h5ad"), "--target", str(raw / "E8.75.h5ad"),
+                          "--reference", str(raw / "E8.25_late.h5ad"), "--json", str(out / "paired.json")], ROOT)
+    assert rc == 0, se
+    paired = json.loads((out / "paired.json").read_text(encoding="utf-8"))
+    assert paired["mode"] == "paired" and paired["seeds"] == [0, 1, 2, 3, 4] and len(paired["diff_scores"]) == 5
+    assert paired["a"]["task_scores"] == summ["task_scores"]               # A is exactly the band of the file alone
+    assert paired["metric_diffs"]["scale_log_ratio"]["points_diff_mean"] > 0   # the right size is the difference
+    assert "TASK SCORE B - A per seed" in so and "min..max" in so
 
     # T3 on the same files (the tutorial: --task T3 --target <knockout> --wt <matched wild type>); severity_slope is
     # folded and the wt_identity floor row sits at veckit's finite worst case log(1e-3)

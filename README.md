@@ -25,7 +25,10 @@ they cannot be mistaken for the version numbers of the organisers' scorer veckit
 * **`max_cells` is authoritative**: `--ignore-max-cells` (validator) and `--allow-over-max` (writer) are gone; the
   evaluation pages were corrected on 2026-09-22.
 * **Local scoring prints the multi-seed band by default** (`--single-seed` for the old table): from 2026-10-20 the
-  scorer's subsample seed depends on each submission.
+  scorer's subsample seed depends on each submission. The `--json` key of the default output is therefore
+  **`task_score_mean`** (with `_sd`, `_min`, `_max`, `band`); `task_score` is the key of the `--single-seed` JSON only.
+* **Paired comparison** (`--pred A --pred B`): both files scored on the same seeds and the same draw per seed, with
+  B - A per seed and its mean, sd and min..max.
 * **Codex CLI**: a minimal, after-the-fact evidence packager (`codex-package`), untested against a live Codex run.
 * **Tutorials**: a section on what changes at the final phase (from 2026-10-20); the Agent-track lock now accepts
   any board that `index.json` assigns to a task (the test boards), and `package --team-uploaded-mb` works as
@@ -90,7 +93,10 @@ is not vendored: `pip install` it (`pip install -e ".[score]"`) or set `VECKIT_P
 From 20 October 2026 the organisers' scorer draws its subsample with a seed that depends on each submission (the
 organisers, in their review of this kit), so a published score is one draw from a band of this kind and the same
 file uploaded twice can score differently. The local band measures that subsampling noise on your pseudo split
-(not on the hidden target): a difference between two methods that sits inside it is not a result.
+(not on the hidden target). To compare two of your methods, pass both: `--pred A --pred B` scores them on the same
+seeds and, in each seed, against the same subsample, floor and ceiling, and reports B - A per seed with its mean, sd
+and min..max - a difference whose min..max straddles 0 is not a result. The `--json` of the band carries
+`task_score_mean` (the old default's `task_score` is now the single-seed key).
 
 *Adds:* veckit alone scores one file against one target file and prints raw metrics; the wrapper adds the
 protocol around it (subsample, split-half ceiling, floor row, veckit's `skill()`, the published task weights) and
@@ -147,7 +153,7 @@ citing the official timeline and rules pages as read on 2026-09-30.
 stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
 against the real release inside this repository; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `60 passed` (synthetic data; the scorer tests are skipped without veckit).
+*Test line:* `python -m pytest -q` -> `61 passed` (synthetic data; the scorer tests are skipped without veckit).
 
 ## Install
 
@@ -237,7 +243,9 @@ leaderboard order.
   的评审中说明，从 2026-10-20 起打分器的抽样种子随每次提交而变，所以公布的分数只是这类区间里的一次抽取，同一文件传两次分数也可能不同；
   本地区间衡量的是你所选伪切分上的抽样噪声（不是隐藏目标上的），落在区间之内的差异不算结果。比主办方多出来的：
   veckit 本身只对一个目标文件打出原始指标，封装补上了抽样、对半天花板、地板行、veckit 自己的 `skill()` 和公布的任务权重，以及多种子
-  区间（均值 +- 标准差、最小..最大）。只是你所选伪切分上的比较：不是真实分数的预告，也不预测隐藏目标上的名次；在 veckit 0.1.1（commit `46d41e6`，请安装该
+  区间（均值 +- 标准差、最小..最大）。比较自己的两种方法用配对模式 `--pred A --pred B`：同一组种子、每个种子同一次抽样、同一个地板和
+  天花板，输出逐种子的 B - A 及其均值、标准差和最小..最大（跨过 0 的差异不算结果）。区间输出的 `--json` 键是 `task_score_mean`
+  （旧默认输出的 `task_score` 现在只出现在单种子 JSON 里）。只是你所选伪切分上的比较：不是真实分数的预告，也不预测隐藏目标上的名次；在 veckit 0.1.1（commit `46d41e6`，请安装该
   commit）上测试过，主办方的打分器才是最终依据，封装可能滞后。
   示例输出：`pseudo_pred.h5ad on E8.75.h5ad: 53.11 +- 3.54 (sd), band 48.86..56.96 (min..max over seeds [0, 1, 2, 3, 4])`。
 * [`vec_agent_evidence/`](vec_agent_evidence/)：Agent 赛道的配置锁定（哈希提示词、设置、模型、工具策略、数据文件、CLI 二进制）、PreToolUse
@@ -261,7 +269,7 @@ leaderboard order.
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交、
   打分器种子随每次提交而变、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `60 passed`。
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `61 passed`。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
 五个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
