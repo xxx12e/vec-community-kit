@@ -99,8 +99,10 @@ The Codex CLI is the second most declared agent framework on the portal. `codex.
 `codex exec --json` run into the same three evidence kinds, so a Codex team can attach trajectory + prompts (+
 harness) the same way. It is deliberately minimal:
 
-* **Untested against a live Codex run.** It was written from the Codex CLI's documented output as we understand
-  it and is tested only on synthetic transcripts written from those event names (`tests/test_codex_adapter.py`):
+* **Untested against a live Codex run.** It was written from the Codex CLI's documentation
+  (https://developers.openai.com/codex/noninteractive, read 2026-09-30, which lists the event types and shows a
+  sample stream) and our understanding of Codex's session ("rollout") files, which that page does not describe. It
+  is tested only on synthetic transcripts written from those names (`tests/test_codex_adapter.py`):
   `thread.started`, `turn.started` / `turn.completed` (usage) / `turn.failed`, `item.started` / `item.completed`
   with `command_execution`, `file_change`, `agent_message`, `reasoning`, ... items, and the older
   `{"id", "msg": {"type": ...}}` shape. The trajectory is always a byte copy of what Codex wrote; only the summary
@@ -110,8 +112,10 @@ harness) the same way. It is deliberately minimal:
   above has them). Codex's own sandbox (`--sandbox workspace-write`) is the enforcement layer; lock your prompt and
   harness yourself before the run (a commit hash is enough) and keep the exact command.
 
-Run Codex with its JSON event stream on stdout (check `codex exec --help` for your version; `-` reads the prompt
-from stdin), then package:
+Run Codex with its JSON event stream on stdout (check `codex exec --help` for your version; `codex exec -` reads
+the whole prompt from stdin). Do not pass `--ephemeral`: it suppresses the rollout file. `--ignore-user-config`
+keeps `$CODEX_HOME/config.toml` out of the run; if you do rely on that file, pass it with `--harness` so the
+evidence shows the configuration that ran (the credential scan applies). Then package:
 
 ```
 codex exec --json --model <model> --sandbox workspace-write --skip-git-repo-check --cd <workspace> - \

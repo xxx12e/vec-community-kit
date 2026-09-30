@@ -1,17 +1,19 @@
 """Minimal Codex CLI adapter: package a finished `codex exec --json` run as the three Agent-track evidence kinds
 (trajectory, prompts, harness), plus byte-identical, format-checked prediction copies.
 
-STATUS: MINIMAL, AND UNTESTED AGAINST A LIVE CODEX RUN. It was written from the Codex CLI's documented output, as
-the authors understand it, and is tested only on synthetic transcripts written from those names:
+STATUS: MINIMAL, AND UNTESTED AGAINST A LIVE CODEX RUN. It was written from the Codex CLI's documentation
+(https://developers.openai.com/codex/noninteractive, read 2026-09-30: event types and a sample stream) plus the
+authors' understanding of the session files, and is tested only on synthetic transcripts written from those names:
 
   * `codex exec --json` prints one JSON event per line on stdout: thread.started {thread_id}, turn.started,
     turn.completed {usage}, turn.failed {error}, item.started / item.updated / item.completed {item} with item types
     agent_message, reasoning, command_execution, file_change, mcp_tool_call, web_search, todo_list, error; older
     Codex versions printed {"id", "msg": {"type": ...}} events instead (session_configured, exec_command_begin,
     token_count, task_complete, ...). Both shapes are summarised; anything else is counted and kept verbatim.
-  * Codex also writes a session "rollout" file, $CODEX_HOME/sessions/YYYY/MM/DD/rollout-<time>-<thread id>.jsonl
-    (CODEX_HOME defaults to ~/.codex), with session_meta / turn_context / response_item / event_msg records; it is
-    looked up by the thread id and copied byte for byte when found.
+  * Codex also writes a session "rollout" file (not with --ephemeral), as far as we know under
+    $CODEX_HOME/sessions/YYYY/MM/DD/rollout-<time>-<thread id>.jsonl (CODEX_HOME defaults to ~/.codex), with
+    session_meta / turn_context / response_item / event_msg records; it is looked up by the thread id and copied
+    byte for byte when found. The rollout layout is NOT from the page above: treat that part as a best guess.
   * Codex reads instruction files named AGENTS.md (and AGENTS.override.md) from the working tree and from
     $CODEX_HOME; those are prompts in the rules' sense and go into the prompts kind.
 
@@ -23,7 +25,9 @@ launch the agent, enforce a wall clock, or install guard / audit hooks. Codex's 
 workspace-write`) is the enforcement layer there. This module only packages evidence after the run, refusing on a
 credential-shaped string, an oversized file, an unreadable stream, or a prediction that fails the board contract.
 
-Suggested run (check `codex exec --help` for your version; `-` reads the prompt from stdin):
+Suggested run (check `codex exec --help` for your version; `-` reads the whole prompt from stdin; do not pass
+--ephemeral, which suppresses the rollout file; --ignore-user-config keeps $CODEX_HOME/config.toml out of the run,
+otherwise pass that file with --harness so the evidence shows it):
   codex exec --json --model <model> --sandbox workspace-write --skip-git-repo-check --cd <workspace> - \\
       < prompt.md > codex_stream.jsonl 2> codex_stderr.log
 
