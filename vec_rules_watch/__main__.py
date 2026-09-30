@@ -7,7 +7,7 @@ Sub-commands
         Exit code 0 even when a source could not be fetched (the error is recorded in status.json and the entry);
         --strict turns fetch errors into exit code 3.
   diff  compare two saved pages, two JSON files or two --out directories locally (no network). Exit code 0 = no
-        difference, 1 = differences printed.
+        difference, 1 = differences printed, 2 = an input is missing or unreadable (for example not JSON).
 
 Examples
   python -m vec_rules_watch run --state .rules-watch-state --out rules-watch
@@ -89,7 +89,7 @@ def cmd_run(args) -> int:
 
 
 def cmd_diff(args) -> int:
-    from .localdiff import diff_dirs, diff_files, render
+    from .localdiff import BadInput, diff_dirs, diff_files, render
     from .runner import load_watchlist
 
     old, new = Path(args.old), Path(args.new)
@@ -98,12 +98,13 @@ def cmd_diff(args) -> int:
             print(f"not found: {p}", file=sys.stderr)
             return 2
     pinned = (load_watchlist().get("scorer") or {}).get("pinned", "?")
-    if old.is_dir() and new.is_dir():
-        entry = diff_dirs(old, new, pinned)
-    elif old.is_file() and new.is_file():
-        entry = diff_files(old, new, pinned)
-    else:
+    if not ((old.is_dir() and new.is_dir()) or (old.is_file() and new.is_file())):
         print("compare two files or two directories", file=sys.stderr)
+        return 2
+    try:
+        entry = diff_dirs(old, new, pinned) if old.is_dir() else diff_files(old, new, pinned)
+    except BadInput as exc:
+        print(exc, file=sys.stderr)
         return 2
     langs = ("en", "zh") if args.lang == "both" else (args.lang,)
     for i, lang in enumerate(langs):

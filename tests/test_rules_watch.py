@@ -603,6 +603,37 @@ def test_cli_diff_on_two_output_directories(tmp_path, capsys):
     assert 'Changed (by hash, no line detail): "2. Submissions"' in out
 
 
+def test_cli_diff_bad_json_exits_2_without_a_traceback(tmp_path, capsys):
+    bad, good = tmp_path / "bad.json", tmp_path / "good.json"
+    bad.write_text('{"a": 1', encoding="utf-8")
+    good.write_text('{"a": 2}', encoding="utf-8")
+    assert cli.main(["diff", str(bad), str(good)]) == 2
+    err = capsys.readouterr().err
+    assert err.startswith("not JSON: ") and "bad.json" in err and "Traceback" not in err
+    # a corrupted file inside an --out directory
+    do_run(tmp_path, 1, 1, state="s1")
+    import shutil
+    shutil.copytree(tmp_path / "out", tmp_path / "old_out")
+    (tmp_path / "out" / "contract" / "phase.json").write_text("<html>", encoding="utf-8")
+    assert cli.main(["diff", str(tmp_path / "old_out"), str(tmp_path / "out")]) == 2
+    assert "not JSON" in capsys.readouterr().err
+    (tmp_path / "out" / "contract" / "phase.json").write_bytes((tmp_path / "old_out" / "contract" / "phase.json")
+                                                                .read_bytes())
+    (tmp_path / "out" / "scorer" / "scorer.json").write_text("[1, 2]", encoding="utf-8")
+    assert cli.main(["diff", str(tmp_path / "old_out"), str(tmp_path / "out")]) == 2
+    assert "not a scorer snapshot" in capsys.readouterr().err
+    assert cli.main(["diff", str(tmp_path / "nowhere.json"), str(good)]) == 2
+
+
+def test_modules_define_each_top_level_name_once():
+    import ast
+
+    for p in sorted((ROOT / "vec_rules_watch").glob("*.py")):
+        names = [n.name for n in ast.parse(p.read_text(encoding="utf-8")).body
+                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
+        assert sorted({n for n in names if names.count(n) > 1}) == [], p.name
+
+
 def test_cli_run_writes_actions_outputs(tmp_path, monkeypatch, capsys):
     stub = StubFetcher(routes(1))
     monkeypatch.setattr(R, "make_fetcher", lambda cfg, delay=None: stub)
