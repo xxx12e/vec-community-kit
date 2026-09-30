@@ -15,11 +15,13 @@ The organisers publish the board contracts (`panels/index.json` + gene lists), t
 veckit, a local validator/scorer in the starter kit (`score_h5ad.py`) and the portal's own format check. What each
 part here adds beyond those is stated below; official sources are cited with the date they were read.
 
-## Since 2026.10.0: one pass over the real release (2026-09-30)
+## What changed in 2026.10.1 (2026-09-30): one pass over the real release
 
 At the organisers' request the tutorials' commands were run, in order and as written, on the real release (a fresh
-copy of the kit on a cloud Linux runner, Python 3.10; trimmed log without scores or expression values:
-`scratchpad/realrun_log_2026-10-01.txt`). What it changed:
+copy of the kit in a fresh venv on a shared cloud Linux runner, Python 3.10; trimmed log without scores or
+expression values: `scratchpad/realrun_log_2026-10-01.txt`). The final pass ran commit 74a2a18, which already
+had the fixes below but still carried the version number 2026.10.0; 2026.10.1 is the release with them. What it
+changed:
 
 * `veckit_info()` said `matches_tested: False` for the tested veckit commit when it was installed on Linux: the
   recorded hashes came from a Windows checkout with CRLF line endings. Files are now hashed with LF line endings.
@@ -295,7 +297,7 @@ leaderboard order.
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
   Claude Code CLI。命令已于 2026-09-30 按顺序、原样在真实发布数据上执行过（云端 Linux 机器；版本、退出码、细胞数、运行时间和内存见
   `scratchpad/realrun_log_2026-10-01.txt`，更早的合成数据执行见 `scratchpad/dryrun_log.txt`），上传和一次真实的 Agent 赛道运行不在
-  那次执行范围内；细胞数范围写在命令旁边。那次执行带来的修正：veckit 在 Linux 上安装时 `matches_tested` 误报 False（记录的哈希来自
+  那次执行范围内；细胞数范围写在命令旁边。那次执行带来的修正（2026.10.1）：veckit 在 Linux 上安装时 `matches_tested` 误报 False（记录的哈希来自
   CRLF 换行的 Windows 检出，现在按 LF 计算）；以 root 身份运行时两个证据测试失败（现在检查权限位）；教程补上发布文件的大小、细胞数
   与基因数、E7.75 单细胞文件未发布、T3 敲除文件用 `obs["genotype"]`、心脏阶段上本地打分的参考阶段上限（`--max-cells`）、每个榜
   一个伪切分例子以及各步骤的运行时间和内存。

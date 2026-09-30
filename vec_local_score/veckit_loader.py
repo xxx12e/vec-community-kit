@@ -33,7 +33,7 @@ TESTED_VECKIT_COMMIT = "46d41e63f42a9aab815db20b742feeccd249cb17"
 # sha256 of each file's content with LF line endings, i.e. the bytes stored in the repository at that commit.
 # _sha256() normalises CRLF to LF before hashing, so a Windows clone (git core.autocrlf=true writes CRLF) and a
 # pip install on Linux give the same value. (Up to 2026.10.0 the raw bytes of a Windows CRLF checkout were
-# recorded here, so the same commit installed on Linux reported matches_tested=False.)
+# recorded here, so the same commit installed on Linux reported matches_tested=False; fixed in 2026.10.1.)
 TESTED_VECKIT_SHA256 = {
     "score_h5ad.py": "52034554f03aec10193cb09baa2c78a1de04218ef678f327eb63acc58fa28add",
     "common/core_metrics.py": "3be7099a0c9a7ad5b609f86078871ed8290ed0bd8916b0cb3e14fb9831909f31",

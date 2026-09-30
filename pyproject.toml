@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vec-community-kit"
-version = "2026.10.0"
+version = "2026.10.1"
 description = "Community tooling for the Virtual Embryo Challenge (NeurIPS 2026): board-contract validator, baseline generators and submission writer, local scoring wrapper around the organisers' scorer veckit, Agent-track evidence skeleton"
 readme = "README.md"
 requires-python = ">=3.10"

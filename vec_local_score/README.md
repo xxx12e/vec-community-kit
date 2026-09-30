@@ -41,7 +41,7 @@ stored at that commit; CRLF is normalised to LF before hashing, so a Windows clo
 same commit match). Every result records the version, location and file hashes of the veckit that actually ran
 (`result["veckit"]`; `veckit_info()`, whose `matches_tested` compares them with the tested ones). Up to 2026.10.0
 the recorded hashes were those of a Windows CRLF checkout, so the tested commit installed on Linux reported
-`matches_tested: False`; the pass over the real release on a Linux runner found this.
+`matches_tested: False`; the pass over the real release on a Linux runner found this (fixed in 2026.10.1).
 
 ## veckit is not vendored
 
