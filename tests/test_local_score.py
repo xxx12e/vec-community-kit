@@ -18,6 +18,7 @@ from vec_local_score import TESTED_VECKIT_VERSION, veckit_available, veckit_info
 from vec_local_score.local_score import (DIRECTION, GROUPS, WEIGHTS, format_table, main as ls_main, score, skill,
                                          skill_hyperbolic, veckit_skill_fn)
 from vec_local_score.make_pseudo_split import MARKER, make_split
+from vec_local_score.local_score import DEFAULT_SEEDS, SEED_NOTE
 from vec_local_score.seed_summary import format_summary, summarise
 
 from conftest import make_adata
@@ -130,18 +131,58 @@ def test_seed_summary_and_json(t1_files, tmp_path, capsys):
     for m, v in res["metrics"].items():
         assert v["raw_mean"] == pytest.approx(v["floor_mean"], rel=1e-6, abs=1e-9)   # frac=1.0: pred IS the reference
     assert res["task_score_mean"] == pytest.approx(50.0, abs=0.01) and res["veckit"]["version"]
-    assert "+-" in format_summary(res)
+    assert "+-" in format_summary(res) and "band" in format_summary(res)
+    assert res["mode"] == "multi_seed" and res["band"] == [min(res["task_scores"]), max(res["task_scores"])]
     # with a real subsample the reference and the prediction differ, so raw moves away from the floor; it still runs
     sub = summarise("T1", t1_files / "pred_copy_last.h5ad", t1_files / "target.h5ad", t1_files / "reference.h5ad",
                     seeds=(0,), frac=0.8)
     assert np.isfinite(sub["task_score_mean"]) and sub["per_seed"][0]["cells"]["reference"] == 320
+    files = ["--task", "T1", "--pred", str(t1_files / "pred_copy_last.h5ad"), "--target", str(t1_files / "target.h5ad"),
+             "--reference", str(t1_files / "reference.h5ad"), "--frac", "1.0"]
+    # the DEFAULT output of one call is the multi-seed band (organisers' suggestion: from 2026-10-20 the scorer's
+    # subsample seed depends on each submission)
+    out = tmp_path / "band.json"
+    rc = ls_main(files + ["--json", str(out)])
+    band = json.loads(out.read_text(encoding="utf-8"))
+    assert rc == 0 and band["mode"] == "multi_seed" and band["seeds"] == list(DEFAULT_SEEDS) == [0, 1, 2, 3, 4]
+    assert band["task_score_mean"] == pytest.approx(50.0, abs=0.01) and len(band["per_seed"]) == 5
+    assert band["task_score_min"] <= band["task_score_mean"] <= band["task_score_max"] and band["seed_note"] == SEED_NOTE
+    text = capsys.readouterr().out
+    assert "TASK SCORE" in text and "band" in text and "+-" in text and "depends on each submission" in text
+    # --single-seed (or --seed alone) gives the old one-seed table
     out = tmp_path / "ls.json"
-    rc = ls_main(["--task", "T1", "--pred", str(t1_files / "pred_copy_last.h5ad"), "--target", str(t1_files / "target.h5ad"),
-                  "--reference", str(t1_files / "reference.h5ad"), "--frac", "1.0", "--json", str(out)])
-    assert rc == 0 and json.loads(out.read_text(encoding="utf-8"))["task_score"] == pytest.approx(50.0, abs=0.01)
+    rc = ls_main(files + ["--single-seed", "--json", str(out)])
+    one = json.loads(out.read_text(encoding="utf-8"))
+    assert rc == 0 and one["mode"] == "single_seed" and one["seed"] == 0
+    assert one["task_score"] == pytest.approx(50.0, abs=0.01)
     assert "TASK SCORE" in capsys.readouterr().out
+    rc = ls_main(files + ["--seed", "3", "--json", str(out)])
+    assert rc == 0 and json.loads(out.read_text(encoding="utf-8"))["seed"] == 3
+    rc = ls_main(files + ["--seeds", "4", "7", "--json", str(out)])
+    assert rc == 0 and json.loads(out.read_text(encoding="utf-8"))["seeds"] == [4, 7]
+    capsys.readouterr()
+    for bad in (["--seeds", "0", "1", "--single-seed"], ["--seeds", "0", "1", "--seed", "2"]):
+        with pytest.raises(SystemExit):
+            ls_main(files + bad)
     with pytest.raises(SystemExit):
         ls_main(["--task", "T1", "--pred", str(t1_files / "pred_copy_last.h5ad"), "--target", str(t1_files / "target.h5ad")])
+
+
+def test_band_reads_each_file_once_and_matches_single_seeds(t1_files, monkeypatch):
+    """summarise() keeps the stages it read for the next seed; seed s must give exactly score(..., seed=s)."""
+    from vec_local_score import local_score as ls
+    reads = []
+    real = ls.read_stage
+    monkeypatch.setattr(ls, "read_stage", lambda path: reads.append(Path(path).name) or real(path))
+    res = summarise("T1", t1_files / "pred_copy_last.h5ad", t1_files / "target.h5ad", t1_files / "reference.h5ad",
+                    seeds=(0, 1, 2), frac=0.5)
+    assert sorted(reads) == ["pred_copy_last.h5ad", "reference.h5ad", "target.h5ad"]      # once each, not per seed
+    for s, r in zip((0, 1, 2), res["per_seed"]):
+        alone = score("T1", t1_files / "pred_copy_last.h5ad", t1_files / "target.h5ad", t1_files / "reference.h5ad",
+                      frac=0.5, seed=s)
+        assert r["task_score"] == alone["task_score"] and r["cells"] == alone["cells"]
+        assert [x["raw"] for x in r["rows"]] == [x["raw"] for x in alone["rows"]]
+    assert len(set(res["task_scores"])) > 1       # frac < 1: the subsample moves the score, which is what the band shows
 
 
 def test_negative_prediction_is_rejected(t1_files, tmp_path):
@@ -204,8 +245,9 @@ def run_cli(args, cwd):
 
 
 def test_tutorial_local_scoring_commands_end_to_end(tmp_path, heart_panel):
-    """docs/tutorial_*.md section 7 on a tiny synthetic pair of heart stages: baseline -> vec_local_score ->
-    seed_summary, each run as a subprocess with the tutorial's flags (only the paths differ)."""
+    """docs/tutorial_*.md section 7 on a tiny synthetic pair of heart stages: baseline -> vec_local_score --single-seed
+    -> vec_local_score (default multi-seed band), each run as a subprocess with the tutorial's flags (only the paths
+    differ)."""
     raw = tmp_path / "data" / "raw" / "T2_heart"
     raw.mkdir(parents=True)
     heart_stage(heart_panel, 2400, seed=21).write_h5ad(raw / "E8.25_late.h5ad")
@@ -221,7 +263,7 @@ def test_tutorial_local_scoring_commands_end_to_end(tmp_path, heart_panel):
 
     rc, so, se = run_cli(["vec_local_score", "--task", "T2", "--setting", "heart", "--pred", str(out / "pseudo_pred.h5ad"),
                           "--target", str(raw / "E8.75.h5ad"), "--reference", str(raw / "E8.25_late.h5ad"),
-                          "--frac", "0.1", "--seed", "0", "--json", str(out / "ls.json")], ROOT)
+                          "--single-seed", "--json", str(out / "ls.json")], ROOT)
     assert rc == 0, se
     res = json.loads((out / "ls.json").read_text(encoding="utf-8"))
     assert res["cells"] == {"pred": 2400, "target_A": 120, "target_B": 120, "reference": 240}
@@ -234,19 +276,26 @@ def test_tutorial_local_scoring_commands_end_to_end(tmp_path, heart_panel):
     assert slr["skill"] == pytest.approx(skill(slr["raw"], slr["floor"], slr["ceiling"], 0), abs=1e-4)
     assert "TASK SCORE" in so and "scale_log_ratio*" in so and "veckit" in so
 
-    rc, so, se = run_cli(["vec_local_score.seed_summary", "--task", "T2", "--setting", "heart", "--pred", str(out / "pseudo_pred.h5ad"),
+    rc, so, se = run_cli(["vec_local_score", "--task", "T2", "--setting", "heart", "--pred", str(out / "pseudo_pred.h5ad"),
                           "--target", str(raw / "E8.75.h5ad"), "--reference", str(raw / "E8.25_late.h5ad"),
-                          "--seeds", "0", "1", "2", "3", "4", "--json", str(out / "summary.json")], ROOT)
+                          "--json", str(out / "summary.json")], ROOT)
     assert rc == 0, se
     summ = json.loads((out / "summary.json").read_text(encoding="utf-8"))
     assert summ["seeds"] == [0, 1, 2, 3, 4] and len(summ["per_seed"]) == 5 and np.isfinite(summ["task_score_mean"])
-    assert "+-" in so and summ["veckit"]["version"]
+    assert summ["per_seed"][0]["task_score"] == res["task_score"]          # seed 0 of the band = the single-seed run
+    assert "+-" in so and "band" in so and summ["veckit"]["version"]
+    # the old module name still works and gives the same numbers
+    rc, so2, se = run_cli(["vec_local_score.seed_summary", "--task", "T2", "--setting", "heart", "--pred",
+                           str(out / "pseudo_pred.h5ad"), "--target", str(raw / "E8.75.h5ad"), "--reference",
+                           str(raw / "E8.25_late.h5ad"), "--seeds", "0", "1", "--json", str(out / "alias.json")], ROOT)
+    assert rc == 0, se
+    assert json.loads((out / "alias.json").read_text(encoding="utf-8"))["task_scores"] == summ["task_scores"][:2]
 
     # T3 on the same files (the tutorial: --task T3 --target <knockout> --wt <matched wild type>); severity_slope is
     # folded and the wt_identity floor row sits at veckit's finite worst case log(1e-3)
     rc, so, se = run_cli(["vec_local_score", "--task", "T3", "--pred", str(out / "pseudo_pred.h5ad"),
                           "--target", str(raw / "E8.75.h5ad"), "--wt", str(raw / "E8.25_late.h5ad"),
-                          "--frac", "0.1", "--seed", "0", "--json", str(out / "t3.json")], ROOT)
+                          "--frac", "0.1", "--seed", "0", "--json", str(out / "t3.json")], ROOT)      # --seed: one seed
     assert rc == 0, se
     t3 = json.loads((out / "t3.json").read_text(encoding="utf-8"))
     sev = [r for r in t3["rows"] if r["metric"] == "severity_slope"][0]

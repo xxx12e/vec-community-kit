@@ -66,19 +66,26 @@ merely look plausible.
 
 Follows the veckit scorer's protocol as of veckit 0.1.1 - 10 % subsample, split-half ceiling, floor row, skill
 scale - on a pseudo split built from **raw released stages** (hold one out, predict it from the others), running
-the organisers' veckit in-process; a multi-seed summary (`seed_summary`) and an optional split exporter for the
-veckit CLI (`make_pseudo_split`). veckit is not vendored: `pip install` it or set `VECKIT_PATH`.
+the organisers' veckit in-process, and an optional split exporter for the veckit CLI (`make_pseudo_split`). veckit
+is not vendored: `pip install` it (`pip install -e ".[score]"`) or set `VECKIT_PATH`.
+
+**The default output of one call is the multi-seed band** (since 2026-09-30): the task score over subsample seeds
+0-4 as mean, sd and band (min..max), with per-metric means; `--single-seed [--seed N]` gives the old one-seed table.
+From 20 October 2026 the organisers' scorer draws its subsample with a seed that depends on each submission (the
+organisers, in their review of this kit), so a published score is one draw from a band of this kind and the same
+file uploaded twice can score differently. The local band measures that subsampling noise on your pseudo split
+(not on the hidden target): a difference between two methods that sits inside it is not a result.
 
 *Adds:* veckit alone scores one file against one target file and prints raw metrics; the wrapper adds the
 protocol around it (subsample, split-half ceiling, floor row, veckit's `skill()`, the published task weights) and
-mean +- sd over seeds, so two of your methods can be compared on the 0-100 scale on the pseudo split you built.
+the band over seeds, so two of your methods can be compared on the 0-100 scale on the pseudo split you built.
 That comparison holds for that split only: it is not a preview of the real score and not a prediction of the
 hidden-target ranking. Tested against **veckit 0.1.1** (commit `46d41e6`; install that commit, see below); the
 organisers' scorer is the source of truth and the wrapper may lag it - every result records the veckit version
 and file hashes that ran.
 
 *Example output (synthetic heart pair, `copy_last` as the prediction):*
-`pseudo_pred.h5ad on E8.75.h5ad: 53.11 +- 3.54 (seeds [0, 1, 2, 3, 4])` above a per-metric table.
+`pseudo_pred.h5ad on E8.75.h5ad: 53.11 +- 3.54 (sd), band 48.86..56.96 (min..max over seeds [0, 1, 2, 3, 4])` under a per-metric table of means.
 
 ### 4. [`vec_agent_evidence/`](vec_agent_evidence/) - Agent-track evidence skeleton
 
@@ -193,11 +200,14 @@ leaderboard order.
   （覆盖表见 `vec_community_baselines/README.md`），细胞数明说而不是猜；你自己的模型输出也能用它写。校验只管格式，分不清对数归一化和看起来像样的计数。
   示例输出：`[PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 ...`。
 * [`vec_local_score/`](vec_local_score/)：遵循 veckit 打分器截至 0.1.1 版的流程（10% 抽样、对半天花板、地板行、skill 尺度）在你用
-  **原始发布阶段**构造的伪切分上打分，调用主办方的 veckit（不内置，`pip install` 或设置 `VECKIT_PATH`）；含多种子汇总。比主办方多出来的：
+  **原始发布阶段**构造的伪切分上打分，调用主办方的 veckit（不内置，`pip install` 或设置 `VECKIT_PATH`）。**一次调用的默认输出就是多种子区间**（2026-09-30 起）：
+  种子 0-4 下任务分的均值、标准差和区间（最小..最大），外加各指标均值；`--single-seed [--seed N]` 恢复旧的单种子表。主办方在对本工具包
+  的评审中说明，从 2026-10-20 起打分器的抽样种子随每次提交而变，所以公布的分数只是这类区间里的一次抽取，同一文件传两次分数也可能不同；
+  本地区间衡量的是你所选伪切分上的抽样噪声（不是隐藏目标上的），落在区间之内的差异不算结果。比主办方多出来的：
   veckit 本身只对一个目标文件打出原始指标，封装补上了抽样、对半天花板、地板行、veckit 自己的 `skill()` 和公布的任务权重，以及多种子
   的均值 +- 标准差。只是你所选伪切分上的比较：不是真实分数的预告，也不预测隐藏目标上的名次；在 veckit 0.1.1（commit `46d41e6`，请安装该
   commit）上测试过，主办方的打分器才是最终依据，封装可能滞后。
-  示例输出：`pseudo_pred.h5ad on E8.75.h5ad: 53.11 +- 3.54 (seeds [0, 1, 2, 3, 4])`。
+  示例输出：`pseudo_pred.h5ad on E8.75.h5ad: 53.11 +- 3.54 (sd), band 48.86..56.96 (min..max over seeds [0, 1, 2, 3, 4])`。
 * [`vec_agent_evidence/`](vec_agent_evidence/)：Agent 赛道的配置锁定（哈希提示词、设置、模型、工具策略、数据文件、CLI 二进制）、PreToolUse
   守卫 hook 与审计 hook、启动器、运行后证据收集（按 session id 复制会话记录、凭据扫描、大小上限）、上传打包器（trajectory / prompts /
   harness 三个 zip）。面向 Claude Code CLI（`claude -p --output-format stream-json`），换 CLI 需改 `launch.build_command`。hook 是正则

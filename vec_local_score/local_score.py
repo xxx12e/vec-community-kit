@@ -33,12 +33,20 @@ Conventions this wrapper adds on top of veckit (veckit itself only returns raw m
     the metric cannot discriminate on this split; the wrapper assigns 1.0 when the prediction is at least as good
     as the ceiling and 0.0 otherwise and flags the row (`degenerate`). Treat such a metric as uninformative.
 
+DEFAULT OUTPUT = THE MULTI-SEED BAND. One call scores the prediction under several subsample seeds (default
+0 1 2 3 4) and prints mean, sd and the band (min..max over the seeds) of the task score, with a per-metric table
+of means. From 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each submission
+(organisers, review of this kit, 2026-09), so one published score is one draw from such a band; a single-seed
+number hides that. --single-seed [--seed N] restores the old one-seed table (faster; for quick checks).
+
 Usage:
   python -m vec_local_score --task T1 --pred pred.h5ad --target E9.5_RNA.h5ad --reference E8.5_RNA.h5ad
   python -m vec_local_score --task T2 --setting heart --pred pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad
   python -m vec_local_score --task T3 --pred pred.h5ad --target Mab21l2_KO_E9.5.h5ad --wt WT_E9.5.h5ad
-Options: --frac 0.1 (stage subsample), --seed 0, --max-cells 4000 (reference cap; target 2x),
-         --pred-max-cells 0 (0 = score every submitted cell, as the server does), --json out.json
+  python -m vec_local_score ... --single-seed --seed 3        (one seed, full per-metric table)
+Options: --seeds 0 1 2 3 4 (default), --single-seed / --seed N (given alone, --seed implies --single-seed),
+         --frac 0.1 (stage subsample), --max-cells 4000 (reference cap; target 2x),
+         --pred-max-cells 0 (0 = score every submitted cell, as the server does), --verbose, --json out.json
 
 veckit must be installed or pointed to with VECKIT_PATH (see veckit_loader.py).
 """
@@ -133,11 +141,10 @@ def is_degenerate(floor, ceiling, direction) -> bool:
 
 
 # ---- data -------------------------------------------------------------------------------------------
-def load_arrays(path, need_coords: bool, rng: np.random.Generator, frac: float, max_cells: int, genes=None):
-    """Read a RAW stage .h5ad, subsample rows (sparse-aware) BEFORE densifying, return (X, C, celltypes, genes).
-    Files exported by make_pseudo_split are refused (they are already subsampled and split)."""
+def read_stage(path):
+    """Read a RAW stage .h5ad (var_names as str). Files exported by make_pseudo_split are refused (they are already
+    subsampled and split)."""
     import anndata as ad
-    import scipy.sparse as sp
 
     path = Path(path)
     a = ad.read_h5ad(path)
@@ -146,6 +153,28 @@ def load_arrays(path, need_coords: bool, rng: np.random.Generator, frac: float, 
                          "The wrapper takes the RAW released stage files and subsamples / splits them itself; the exported "
                          "files are for inspection and for the veckit CLI only")
     a.var_names = a.var_names.astype(str)
+    return a
+
+
+def _stage(path, cache):
+    """read_stage(path), memoised in `cache` (a dict) when one is given: a multi-seed run reads each file once."""
+    if cache is None:
+        return read_stage(path)
+    key = str(Path(path).resolve())
+    if key not in cache:
+        cache[key] = read_stage(path)
+    return cache[key]
+
+
+def load_arrays(path, need_coords: bool, rng: np.random.Generator, frac: float, max_cells: int, genes=None,
+                cache=None):
+    """Read a RAW stage .h5ad (or take it from `cache`), subsample rows (sparse-aware) BEFORE densifying, return
+    (X, C, celltypes, genes). Files exported by make_pseudo_split are refused. The stage read from disk is never
+    modified, so a cached copy serves every seed."""
+    import scipy.sparse as sp
+
+    path = Path(path)
+    a = _stage(path, cache)
     names = list(a.var_names)
     if genes is not None and names != genes:
         # the reference file defines the panel; a target/prediction with extra genes is subset by name
@@ -179,10 +208,12 @@ def run_panel(task, m2, pred, truth, ref, seed, probe=None):
 
 
 def score(task: str, pred, target, reference, setting: str = "heart", frac: float = 0.1, seed: int = 0,
-          max_cells: int = 4000, pred_max_cells: int = 0) -> dict:
-    """Score `pred` on the pseudo board (target, reference) with local floor / ceiling. Returns a result dict:
-    task_score, rows [{group, metric, raw, floor, ceiling, skill, weight, points, folded, degenerate, undefined}],
-    raw_pred, raw_floor, raw_ceiling, cells, veckit, seconds."""
+          max_cells: int = 4000, pred_max_cells: int = 0, cache=None) -> dict:
+    """Score `pred` on the pseudo board (target, reference) with local floor / ceiling under ONE subsample seed.
+    Returns a result dict: task_score, rows [{group, metric, raw, floor, ceiling, skill, weight, points, folded,
+    degenerate, undefined}], raw_pred, raw_floor, raw_ceiling, cells, veckit, seconds. `cache` (a dict) keeps the
+    stages read from disk for the next call; summarise() uses it so that every seed reads each file once.
+    For the default multi-seed band use summarise()."""
     if task not in WEIGHTS:
         raise ValueError("task must be T1, T2 or T3")
     need_coords = task in ("T2", "T3")
@@ -193,9 +224,9 @@ def score(task: str, pred, target, reference, setting: str = "heart", frac: floa
     vk = veckit_info()
 
     t0 = time.time()
-    ref_X, ref_C, ref_ct, genes = load_arrays(reference, need_coords, rng, frac, max_cells)
-    tgt_X, tgt_C, tgt_ct, _ = load_arrays(target, need_coords, rng, frac, 2 * max_cells, genes)
-    prd_X, prd_C, prd_ct, _ = load_arrays(pred, need_coords, rng, 1.0, pred_max_cells or 10 ** 9, genes)
+    ref_X, ref_C, ref_ct, genes = load_arrays(reference, need_coords, rng, frac, max_cells, cache=cache)
+    tgt_X, tgt_C, tgt_ct, _ = load_arrays(target, need_coords, rng, frac, 2 * max_cells, genes, cache=cache)
+    prd_X, prd_C, prd_ct, _ = load_arrays(pred, need_coords, rng, 1.0, pred_max_cells or 10 ** 9, genes, cache=cache)
     if (prd_X < 0).any():
         raise ValueError("prediction .X has negative values; the veckit scorer rejects negative expression")
 
@@ -226,8 +257,8 @@ def score(task: str, pred, target, reference, setting: str = "heart", frac: floa
                          "folded": DIRECTION[k] == 0, "degenerate": is_degenerate(fl, ce, DIRECTION[k]),
                          "undefined": not refs_ok})
 
-    return {"task": task, "setting": setting if task == "T2" else None, "pred": str(pred), "target": str(target),
-            "reference": str(reference), "frac": frac, "seed": seed,
+    return {"mode": "single_seed", "task": task, "setting": setting if task == "T2" else None, "pred": str(pred),
+            "target": str(target), "reference": str(reference), "frac": frac, "seed": seed,
             "cells": {"pred": int(prd_X.shape[0]), "target_A": int(len(ia)), "target_B": int(len(ib)),
                       "reference": int(ref_X.shape[0])},
             "task_score": round(task_score, 2), "rows": rows, "raw_pred": raw_pred, "raw_floor": raw_floor,
@@ -267,8 +298,104 @@ def format_table(res: dict) -> str:
     return "\n".join(lines)
 
 
-def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="python -m vec_local_score", description=__doc__,
+# ---- the multi-seed band (default output) ------------------------------------------------------------
+DEFAULT_SEEDS = (0, 1, 2, 3, 4)
+SEED_NOTE = ("from 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each submission: "
+             "one published score is one draw from a band like this one (this band measures subsampling noise on "
+             "YOUR pseudo split, not on the hidden target)")
+
+
+def summarise(task: str, pred, target, reference, seeds=DEFAULT_SEEDS, setting: str = "heart", frac: float = 0.1,
+              max_cells: int = 4000, pred_max_cells: int = 0) -> dict:
+    """Score over several subsample seeds (each file read once) and summarise. Returns a dict with task_score_mean,
+    task_score_sd (ddof=1), task_score_min / task_score_max and band [min, max] over the seeds, task_scores,
+    metrics{name: group, weight, folded, raw_mean, raw_sd, skill_mean, skill_sd, points_mean, floor_mean,
+    ceiling_mean, degenerate_seeds, undefined_seeds}, per_seed [score() result dicts]. Seed s gives exactly
+    score(..., seed=s)."""
+    import warnings
+
+    seeds = [int(s) for s in seeds]
+    if not seeds:
+        raise ValueError("seeds must not be empty")
+    cache: dict = {}
+    per = []
+    for s in seeds:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            per.append(score(task, pred, target, reference, setting=setting, frac=frac, seed=s, max_cells=max_cells,
+                             pred_max_cells=pred_max_cells, cache=cache))
+    cache.clear()
+    scores = np.array([r["task_score"] for r in per], dtype=float)
+
+    def sd(v):
+        return float(np.nanstd(v, ddof=1)) if len(per) > 1 else 0.0
+
+    metrics = {}
+    for row in per[0]["rows"]:
+        m = row["metric"]
+        mine = [[rr for rr in r["rows"] if rr["metric"] == m][0] for r in per]
+        vals = {k: np.array([np.nan if x[k] is None else float(x[k]) for x in mine], dtype=float)
+                for k in ("raw", "skill", "points", "floor", "ceiling")}
+        metrics[m] = {"group": row["group"], "weight": row["weight"], "folded": row["folded"],
+                      "raw_mean": float(np.nanmean(vals["raw"])), "raw_sd": sd(vals["raw"]),
+                      "skill_mean": float(np.mean(vals["skill"])), "skill_sd": sd(vals["skill"]),
+                      "points_mean": float(np.mean(vals["points"])),
+                      "floor_mean": float(np.nanmean(vals["floor"])), "ceiling_mean": float(np.nanmean(vals["ceiling"])),
+                      "degenerate_seeds": int(sum(bool(x["degenerate"]) for x in mine)),
+                      "undefined_seeds": int(sum(bool(x["undefined"]) for x in mine))}
+    return {"mode": "multi_seed", "task": task, "setting": setting if task == "T2" else None, "pred": str(pred),
+            "target": str(target), "reference": str(reference), "seeds": seeds, "frac": frac,
+            "cells": per[0]["cells"],
+            "task_score_mean": float(scores.mean()), "task_score_sd": sd(scores),
+            "task_score_min": float(scores.min()), "task_score_max": float(scores.max()),
+            "band": [float(scores.min()), float(scores.max())], "task_scores": scores.tolist(),
+            "metrics": metrics, "veckit": per[0].get("veckit"), "seed_note": SEED_NOTE,
+            "seconds": round(sum(r["seconds"] for r in per), 1), "per_seed": per}
+
+
+def summary_line(res: dict) -> str:
+    lo, hi = res["band"]
+    return (f"{Path(res['pred']).name} on {Path(res['target']).name}: {res['task_score_mean']:.2f} +- "
+            f"{res['task_score_sd']:.2f} (sd), band {lo:.2f}..{hi:.2f} (min..max over seeds {res['seeds']})")
+
+
+def format_summary(res: dict) -> str:
+    c = res["cells"]
+    head = (f"{res['task']}{' ' + res['setting'] if res['setting'] else ''}  pred={Path(res['pred']).name}  "
+            f"target={Path(res['target']).name}  ref={Path(res['reference']).name}  "
+            f"cells pred/A/B/ref = {c['pred']}/{c['target_A']}/{c['target_B']}/{c['reference']}  frac={res['frac']}  "
+            f"seeds={res['seeds']}")
+    lines = [head, f"{'metric':18s} {'raw_mean':>10s} {'raw_sd':>9s} {'floor':>10s} {'ceiling':>10s} {'skill':>7s} "
+                   f"{'sd':>6s} {'pts':>6s}"]
+    flags = False
+    for m, v in res["metrics"].items():
+        name = m + ("*" if v.get("folded") else "")
+        mark = ""
+        if v.get("degenerate_seeds") or v.get("undefined_seeds"):
+            mark = f" (degenerate/undefined on {v['degenerate_seeds'] + v['undefined_seeds']} seed(s))"
+            flags = True
+        lines.append(f"{name:18s} {v['raw_mean']:10.4f} {v['raw_sd']:9.4f} {v['floor_mean']:10.4f} "
+                     f"{v['ceiling_mean']:10.4f} {v['skill_mean']:7.3f} {v['skill_sd']:6.3f} {v['points_mean']:6.2f}{mark}")
+    lo, hi = res["band"]
+    lines.append(f"TASK SCORE (0-100; floor=50, ceiling=100): mean {res['task_score_mean']:.2f}  sd "
+                 f"{res['task_score_sd']:.2f}  band {lo:.2f}..{hi:.2f} (min..max over {len(res['seeds'])} seeds)  "
+                 f"[{res['seconds']}s]")
+    lines.append(summary_line(res))
+    if any(v.get("folded") for v in res["metrics"].values()):
+        lines.append("* target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better")
+    if flags:
+        lines.append("degenerate / undefined: floor and ceiling coincide or are missing on some seeds; the metric cannot "
+                     "discriminate there")
+    lines.append("note: " + SEED_NOTE)
+    vk = res.get("veckit") or {}
+    ver = vk.get("version") or "unknown version"
+    note = "" if ver == TESTED_VECKIT_VERSION else f" (kit tested against {TESTED_VECKIT_VERSION})"
+    lines.append(f"veckit {ver}{note}; the organisers' scorer is the source of truth and this wrapper may lag it")
+    return "\n".join(lines)
+
+
+def main(argv=None, prog: str = "python -m vec_local_score") -> int:
+    p = argparse.ArgumentParser(prog=prog, description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--task", required=True, choices=["T1", "T2", "T3"])
     p.add_argument("--setting", default="heart", choices=["heart", "embryo"], help="T2 only, recorded in the output")
@@ -282,16 +409,31 @@ def main(argv=None) -> int:
     p.add_argument("--max-cells", type=int, default=4000, help="cap for the reference (target: 2x) after the --frac subsample")
     p.add_argument("--pred-max-cells", type=int, default=0,
                    help="cap for the PREDICTION (0 = score every submitted cell, as the server does)")
-    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--seeds", type=int, nargs="+", default=None,
+                   help="subsample seeds of the multi-seed band, the default output (default: 0 1 2 3 4)")
+    p.add_argument("--single-seed", action="store_true",
+                   help="the old behaviour: one seed (--seed, default 0) and its full per-metric table")
+    p.add_argument("--seed", type=int, default=None,
+                   help="the seed of --single-seed (given alone, it implies --single-seed)")
+    p.add_argument("--verbose", action="store_true", help="multi-seed: also print every per-seed table")
     p.add_argument("--json", type=Path)
     args = p.parse_args(argv)
 
     ref_path = args.wt if args.task == "T3" else args.reference
     if ref_path is None:
         p.error("--reference (T1/T2) or --wt (T3) is required for a meaningful score")
+    if args.seeds is not None and (args.single_seed or args.seed is not None):
+        p.error("--seeds (multi-seed band) cannot be combined with --single-seed / --seed")
+    single = args.single_seed or args.seed is not None
     try:
-        res = score(args.task, args.pred, args.target, ref_path, setting=args.setting, frac=args.frac, seed=args.seed,
-                    max_cells=args.max_cells, pred_max_cells=args.pred_max_cells)
+        if single:
+            res = score(args.task, args.pred, args.target, ref_path, setting=args.setting, frac=args.frac,
+                        seed=0 if args.seed is None else args.seed, max_cells=args.max_cells,
+                        pred_max_cells=args.pred_max_cells)
+        else:
+            res = summarise(args.task, args.pred, args.target, ref_path, seeds=args.seeds or DEFAULT_SEEDS,
+                            setting=args.setting, frac=args.frac, max_cells=args.max_cells,
+                            pred_max_cells=args.pred_max_cells)
     except ImportError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -302,7 +444,16 @@ def main(argv=None) -> int:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(res, indent=2, default=str) + "\n", encoding="utf-8")
     print()
-    print(format_table(res))
+    if single:
+        print(format_table(res))
+        print("single seed: from 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each "
+              "submission, so one score is one draw from a band; drop --single-seed / --seed to see the band (default)")
+    else:
+        if args.verbose:
+            for r in res["per_seed"]:
+                print(format_table(r))
+                print()
+        print(format_summary(res))
     return 0
 
 

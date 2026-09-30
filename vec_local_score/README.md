@@ -5,6 +5,17 @@ split built from RAW released stages and turns the raw metrics into the 0-100 sk
 scorer's protocol as of veckit 0.1.1: 10 % subsample, split-half ceiling, floor row, skill scale, plus the task
 weights published on the evaluation pages (floor = 50, ceiling = 100).
 
+**The default output is the multi-seed band.** One call scores your prediction under subsample seeds 0 1 2 3 4
+and prints the task score as mean, sd and band (min..max over the seeds), with a per-metric table of means;
+`--single-seed [--seed N]` gives the old one-seed table (faster, for quick checks), `--seeds ...` other seeds,
+`--verbose` every per-seed table as well. Why: from 20 October 2026 the organisers' scorer draws its subsample with
+a seed that depends on each submission (the organisers, in their review of this kit, September 2026). A published
+score is then one draw from a band of this kind - the same file uploaded twice can score differently - and a single
+local seed hides how wide that band is. The local band measures the subsampling noise of the protocol on your
+pseudo split, not on the hidden target; use it to decide whether a difference between two of your methods is real
+(outside the band) or noise (inside it). Each input file is read once and reused for every seed; seed `s` of the
+band is exactly the `--single-seed --seed s` result.
+
 **It is not a preview of your real score.** The real target is a stage you do not have; a pseudo board compares
 your own methods against each other under the same metric definitions on the split you chose, nothing more: it
 does not predict the order on the hidden target, and no local number is a competition score. **The organisers'
@@ -43,19 +54,24 @@ meaningless. Do not reuse a file built for another board (an extrapolation predi
 score an earlier held-out stage:
 
 ```
-# one seed, full table
+# the default: the band over seeds 0-4 (mean, sd, min..max of the task score; per-metric means)
 python -m vec_local_score --task T1 --pred pseudo_pred.h5ad --target E9.5_RNA.h5ad --reference E8.5_RNA.h5ad
-python -m vec_local_score --task T2 --setting heart --pred pseudo_pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad
+python -m vec_local_score --task T2 --setting heart --pred pseudo_pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad --json band.json
 python -m vec_local_score --task T3 --pred pseudo_pred.h5ad --target Mab21l2_KO_E9.5.h5ad --wt WT_E9.5.h5ad
 
-# several seeds, mean +- sd per metric and for the task score
-python -m vec_local_score.seed_summary --task T2 --setting heart --pred pseudo_pred.h5ad --target E8.75.h5ad \
-    --reference E8.25_late.h5ad --seeds 0 1 2 3 4 --json summary.json
+# the old behaviour: one seed, the full per-metric table
+python -m vec_local_score --task T2 --setting heart --pred pseudo_pred.h5ad --target E8.75.h5ad --reference E8.25_late.h5ad --single-seed
 ```
 
-Options: `--frac 0.1` (subsample fraction applied to the raw target and reference; veckit protocol 0.1), `--seed`,
-`--max-cells 4000` (cap for the reference after the subsample; the target gets twice that), `--pred-max-cells 0`
-(0 = score every submitted cell, as the server does; set a cap only for speed), `--json`.
+Options: `--seeds 0 1 2 3 4` (default), `--single-seed` and `--seed N` (one seed; `--seed` alone implies
+`--single-seed`; either with `--seeds` is an error), `--verbose` (multi-seed: also every per-seed table),
+`--frac 0.1` (subsample fraction applied to the raw target and reference; veckit protocol 0.1), `--max-cells 4000`
+(cap for the reference after the subsample; the target gets twice that), `--pred-max-cells 0` (0 = score every
+submitted cell, as the server does; set a cap only for speed), `--json` (multi-seed: the summary with `mode:
+multi_seed`, `task_score_mean`, `task_score_sd`, `band`, `task_scores`, per-metric means and every per-seed result;
+single seed: the one-seed result with `mode: single_seed`). `python -m vec_local_score.seed_summary` still works and
+is now the same as `python -m vec_local_score`. From Python: `score(...)` is one seed, `summarise(..., seeds=...)`
+the band.
 
 `make_pseudo_split` is a separate, optional tool: it **exports** one fixed split as files (`target_score.h5ad`,
 `target_ceiling.h5ad`, `reference.h5ad`, `meta.json`) for inspection or for calling the veckit CLI directly, which
@@ -109,7 +125,24 @@ Conventions the wrapper adds (veckit only returns raw metrics, so these are the 
 | skill | veckit's skill(): floor -> 0.5, ceiling -> 1.0, worse than floor -> below 0.5; `*` = computed on the absolute values |
 | pts | 100 * weight * skill; the task score is the sum |
 
-Example (a `copy_last` file scored on a small synthetic heart pair; the real tables look the same):
+Example of the default output (a `copy_last` file scored on a small synthetic heart pair, the one the tutorial dry
+run plants; the real tables look the same):
+
+```
+T2 heart  pred=pseudo_pred.h5ad  target=E8.75.h5ad  ref=E8.25_late.h5ad  cells pred/A/B/ref = 2400/120/120/240  frac=0.1  seeds=[0, 1, 2, 3, 4]
+metric               raw_mean    raw_sd      floor    ceiling   skill     sd    pts
+de_score              -0.9569    0.0875     0.0000     1.0000   0.338  0.010   4.23
+...
+scale_log_ratio*      -0.2424    0.0190    -0.2473     0.0021   0.504  0.032   4.20
+neighborhood_mmd       0.4421    0.0457     0.4500     0.2188   0.507  0.015  12.67
+TASK SCORE (0-100; floor=50, ceiling=100): mean 53.11  sd 3.54  band 48.86..56.96 (min..max over 5 seeds)  [4.5s]
+pseudo_pred.h5ad on E8.75.h5ad: 53.11 +- 3.54 (sd), band 48.86..56.96 (min..max over seeds [0, 1, 2, 3, 4])
+* target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+note: from 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each submission: ...
+veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+```
+
+The same file with `--single-seed` (seed 0; the old default) prints one seed's full table:
 
 ```
 T2 heart  pred=pseudo_pred.h5ad  target=E8.75.h5ad  ref=E8.25_late.h5ad  cells pred/A/B/ref = 2400/120/120/240  frac=0.1 seed=0
@@ -122,7 +155,9 @@ Tissue shape and growth      scale_log_ratio*      -0.2968    -0.3007    -0.0069
 veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
 ```
 
-A resampled floor file lands **near** 50, not exactly on it: the wrapper's floor row is a 10 % subsample of the
+On this toy pair one seed gives 49.85 and the band over five seeds spans 48.86..56.96: a single local number can
+sit several points from the mean, which is why the band is the default. A resampled floor file lands **near** 50,
+not exactly on it: the wrapper's floor row is a 10 % subsample of the
 reference stage and your file is a different sample of the same cells. Only the special case `--frac 1.0` with a
 prediction identical to the reference gives exactly 50.0 (that is what the tests check).
 
@@ -131,4 +166,4 @@ prediction identical to the reference gives exactly 50.0 (that is what the tests
 Hold out the latest released stage and predict it from the earlier ones (for an extrapolation board), or hold
 out a middle stage (for an interpolation board). The reference passed to the scorer is the stage the change is
 measured against; for T3 it is the matched wild type at the same stage as the knockout. Keep the same
-target/reference pair and the same seeds when comparing two methods, and report the spread (`seed_summary`).
+target/reference pair and the same seeds when comparing two methods, and report the band (the default output).

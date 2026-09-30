@@ -242,9 +242,16 @@ interpolation board with E8.75 held out and the `copy_last` baseline built from 
 
 ```
 python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000
-python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --frac 0.1 --seed 0
-python -m vec_local_score.seed_summary --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --seeds 0 1 2 3 4
+python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad
+python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --single-seed
 ```
+
+The first scoring command prints the **band** - the default output since 2026-09-30: the task score over subsample
+seeds 0-4 as mean, sd and min..max, with a per-metric table of means. The second (`--single-seed`, optionally
+`--seed N`) prints one seed's full per-metric table. The band is the default because from 20 October 2026 the
+organisers' scorer draws its subsample with a seed that depends on each submission (the organisers, in their review
+of this kit): one published score is one draw from a band of this kind, and the same file uploaded twice can score
+differently.
 
 For T1 hold out E9.5_RNA and predict it from E8.5_RNA: build the prediction from `--last data/raw/T1/E8.5_RNA.h5ad`
 and score with `--task T1 --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad`. For T3 hold
@@ -258,8 +265,8 @@ prediction gets a skill per metric (veckit's own `skill()`) and a task score. Th
 counts like an undershoot). Your resampled `copy_last` file lands **near** 50, not exactly on it - the wrapper's
 floor row is a 10 % subsample of the reference and your file is a different sample of the same cells; a value a
 few points off 50 is normal. A local score is **not** a preview of the real one; it ranks your own methods on the
-same split with the same seeds. Report mean and spread over several seeds (`seed_summary`); a difference within
-one standard deviation is not a result. `docs/metrics_overview.md` explains every column, and
+same split with the same seeds. Compare methods by their bands (same target/reference pair, same seeds): a
+difference that sits inside the band is subsampling noise, not a result. `docs/metrics_overview.md` explains every column, and
 `vec_local_score/README.md` states exactly which conventions the wrapper implements.
 
 `python -m vec_local_score.make_pseudo_split` is optional: it exports one fixed split as files for inspection or for

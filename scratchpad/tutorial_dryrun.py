@@ -114,8 +114,8 @@ def main():
     # section 7
     rcs["avail"] = run(f'"{PY}" -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"')[0]
     rcs["pseudo_pred"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000')[0]
-    rcs["ls_t2"] = run(f'"{PY}" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --frac 0.1 --seed 0')[0]
-    rcs["ss_t2"] = run(f'"{PY}" -m vec_local_score.seed_summary --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --seeds 0 1 2 3 4')[0]
+    rcs["band_t2"] = run(f'"{PY}" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad')[0]
+    rcs["single_t2"] = run(f'"{PY}" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --single-seed')[0]
     rcs["ls_t1"] = run(f'"{PY}" -m vec_local_score --task T1 --pred out/t1_copy_last.h5ad --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad')[0]
     rcs["ls_t3"] = run(f'"{PY}" -m vec_local_score --task T3 --pred out/t3_wt_identity.h5ad --target data/raw/T2_heart/E8.75.h5ad --wt data/raw/T2_heart/E8.25_late.h5ad')[0]
     rcs["split"] = run(f'"{PY}" -m vec_local_score.make_pseudo_split --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --out-dir pseudo/heart --panel data/panels/T2__heart__val_interp.genes.txt --require-coords')[0]

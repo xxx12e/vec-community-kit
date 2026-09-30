@@ -201,9 +201,13 @@ veckit，遵循 veckit 打分器截至 0.1.1 版的流程：每个阶段抽样 1
 
 ```
 python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000
-python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --frac 0.1 --seed 0
-python -m vec_local_score.seed_summary --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --seeds 0 1 2 3 4
+python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad
+python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --single-seed
 ```
+
+第一条打分命令输出的是**区间**（2026-09-30 起的默认输出）：抽样种子 0-4 下任务分的均值、标准差和最小..最大值，外加各指标均值表。
+第二条（`--single-seed`，可加 `--seed N`）输出单个种子的完整指标表。之所以默认给区间，是因为主办方在对本工具包的评审中说明：
+从 2026-10-20 起，打分器的抽样种子随每次提交而变。公布的分数只是这类区间里的一次抽取，同一个文件传两次也可能得到不同分数。
 
 T1：留出 E9.5_RNA、用 E8.5_RNA 预测它 —— 预测用 `--last data/raw/T1/E8.5_RNA.h5ad` 构造，打分用
 `--task T1 --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad`。T3：留出训练用敲除 ——
@@ -213,8 +217,8 @@ T1：留出 E9.5_RNA、用 E8.5_RNA 预测它 —— 预测用 `--last data/raw/
 你的预测得到每个指标的 skill（用 veckit 自己的 `skill()`）和一个任务分。两个"目标值为 0"的指标（`scale_log_ratio`、
 `severity_slope`）标有 `*`：它们的 skill 按绝对值计算（过冲和不足同样计）。你重抽样得到的 `copy_last` 文件会落在 50
 **附近**，而不是正好 50 —— 封装里的地板行是参考阶段的 10% 抽样，你的文件是同一批细胞的另一次抽样；偏离 50 几分是正常的。
-本地分数**不是**真实分数的预告；它只是在同一切分、同一组种子上给你自己的方法排序。请报告多个种子的均值和离散度
-（`seed_summary`）；差异在一个标准差以内不算结果。每一列的含义见 `docs/metrics_overview.md`；封装到底实现了哪些约定，见
+本地分数**不是**真实分数的预告；它只是在同一切分、同一组种子上给你自己的方法排序。比较方法时看区间（同一对目标/参考、
+同一组种子）：落在区间之内的差异是抽样噪声，不算结果。每一列的含义见 `docs/metrics_overview.md`；封装到底实现了哪些约定，见
 `vec_local_score/README.md`。
 
 `python -m vec_local_score.make_pseudo_split` 是可选工具：把一个固定切分导出成文件，供检查或直接调用 veckit 命令行。它的

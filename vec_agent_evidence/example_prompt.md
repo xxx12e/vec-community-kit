@@ -53,7 +53,7 @@ not available in this run.
 | `python -m vec_submit_check --board <board> <file.h5ad>` | board-contract check; run before every finalize |
 | `python -m vec_community_baselines.make_baseline --method copy_last|wt_identity|pseudobulk_shift --board <board> ... --out <file> --n-cells <count>` | a valid baseline file (`--n-cells` is required: an integer inside the board's cell bounds, or `all` when the source fits) |
 | `python -m vec_local_score --task <T> [--setting heart|embryo] --pred <file> --target <held-out RAW stage> --reference <earlier RAW stage> | --wt <matched WT>` | the veckit scorer's protocol (10 % subsample, split-half ceiling, floor row, skill scale) on a pseudo split of released data (not a preview of the real score) |
-| `python -m vec_local_score.seed_summary ... --seeds 0 1 2` | mean +- sd over seeds |
+| `python -m vec_local_score ... --single-seed` | one seed and its full per-metric table (the default output is the band over seeds 0-4: mean, sd, min..max) |
 | `python tools/finalize_submission.py --board <board> --candidate <file> --candidate-id <k>` | THE ONLY way to write the submission; validates, hashes, atomic-replaces, appends MANIFEST.json |
 
 ## Rules (a guard hook rejects the violations it recognises and logs them; every tool call is audited)
