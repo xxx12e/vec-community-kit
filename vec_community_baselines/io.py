@@ -137,7 +137,7 @@ def select_rows(n_available: int, spec: dict, n_cells=None, seed: int = 0, relax
                       min_cells raises unless relax_cells)
              None  -> raises ValueError telling the caller what to pass
     max_cells comes from the organisers' panels/index.json, which is authoritative: the portal rejects an upload
-    outside [min_cells, max_cells] before scoring (the former allow_over_max escape hatch was removed in 0.2.0).
+    outside [min_cells, max_cells] before scoring (the former allow_over_max escape hatch was removed in 2026.10.0).
       n >= target             -> random subset of `target` rows, WITHOUT replacement, sorted
       min_cells <= n < target -> every row, original order (duplicating would add nothing); notes["kept_all_rows"]
       n < min_cells           -> every row + (min_cells - n) rows drawn with replacement (duplicates),

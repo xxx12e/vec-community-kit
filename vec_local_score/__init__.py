@@ -14,4 +14,4 @@ veckit is not vendored: install it or set VECKIT_PATH (see veckit_loader.py and 
 from .veckit_loader import (INSTALL_HINT, TESTED_VECKIT_COMMIT, TESTED_VECKIT_VERSION, load_veckit,  # noqa: F401
                             veckit_available, veckit_dir, veckit_info)
 
-__version__ = "0.2.0"
+__version__ = "2026.10.0"

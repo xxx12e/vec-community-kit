@@ -15,7 +15,10 @@ The organisers publish the board contracts (`panels/index.json` + gene lists), t
 veckit, a local validator/scorer in the starter kit (`score_h5ad.py`) and the portal's own format check. What each
 part here adds beyond those is stated below; official sources are cited with the date they were read.
 
-## What changed in 0.2.0 (2026-09-30, after the organisers' review)
+## What changed in 2026.10.0 (2026-09-30, after the organisers' review)
+
+From this release on the kit's versions are calendar-based (year.month.patch; the previous release was 0.1.0), so
+they cannot be mistaken for the version numbers of the organisers' scorer veckit (its next release is 0.2.0).
 
 * `vec_baselines` is now **`vec_community_baselines`** (the old name is the organisers' official package; no alias).
 * **`pyproject.toml`**: `pip install -e ".[test]"` installs the four packages and five `vec-community-*` commands.

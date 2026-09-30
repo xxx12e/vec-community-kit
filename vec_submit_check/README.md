@@ -29,7 +29,7 @@ cells while `index.json` carried a `max_cells` per board, so earlier versions of
 a "stricter" rule with an `--ignore-max-cells` opt-out. The organisers corrected the pages on 2026-09-22 (uploads
 above `max_cells` had been rejected by the portal all along); they now say that both bounds "differ by board and
 are listed on the Data page and in index.json" and that an upload outside them "is rejected before scoring".
-`index.json` is authoritative, and the opt-out was removed in 0.2.0. Every rule below says where it comes from and
+`index.json` is authoritative, and the opt-out was removed in 2026.10.0. Every rule below says where it comes from and
 what the checker does with it. **portal** = the portal's validator rejects on it (a file that fails here would fail
 there); **stricter** = the checker is stricter than the pages; **advisory** = a warning for something no validator
 catches.

@@ -137,7 +137,7 @@ def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB) -> di
     """Validate one file against one board. Returns a report dict with ok / errors / warnings / info.
 
     The cell count must lie inside index.json's [min_cells, max_cells]; the portal rejects an upload outside them
-    before scoring, so there is no opt-out (the former ignore_max_cells escape hatch was removed in 0.2.0).
+    before scoring, so there is no opt-out (the former ignore_max_cells escape hatch was removed in 2026.10.0).
     """
     import anndata as ad
     import scipy.sparse as sp
