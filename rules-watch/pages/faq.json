@@ -1,0 +1,76 @@
+{
+  "full_text_in_repo": false,
+  "id": "faq",
+  "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
+  "sections": [
+    {
+      "chars": 0,
+      "heading": "Common questions",
+      "level": 1,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "chars": 349,
+      "heading": "Eligibility",
+      "level": 2,
+      "lines": 4,
+      "sha256": "3e9d034f3372dbe7f49eaa8d59dc8cdb37715d21495dd3291611131cf9dfd155"
+    },
+    {
+      "chars": 836,
+      "heading": "Tracks",
+      "level": 2,
+      "lines": 4,
+      "sha256": "001406bf5c2e65c6d931e70af0d19c915c8978027c8deeccd632a8582b2155f1"
+    },
+    {
+      "chars": 1138,
+      "heading": "Submissions",
+      "level": 2,
+      "lines": 8,
+      "sha256": "e12de8302db72ffe659ea371138135aeeaf0e55ba056607fa49df3a57cbb72c4"
+    },
+    {
+      "chars": 4011,
+      "heading": "Data",
+      "level": 2,
+      "lines": 10,
+      "sha256": "70ab7df5ed7068d915eca79dae40b04b238c021a14e41a5431758ba5cfde5001"
+    },
+    {
+      "chars": 1132,
+      "heading": "Scoring",
+      "level": 2,
+      "lines": 8,
+      "sha256": "3f089a79286d805052e443a351d136765fdd9efa1ca49af8f581e2bef5cff005"
+    },
+    {
+      "chars": 2209,
+      "heading": "Contact",
+      "level": 2,
+      "lines": 16,
+      "sha256": "b18c70a67b46e0a17005c40f38fab35f5f743b70d0b07b793fcc191499fbb1b4"
+    }
+  ],
+  "sha256": "f643f8e33c2fffcdc3f8caa3f3aa4fa4b64e89f09f8ad50316527758e594c69f",
+  "url": "https://virtualembryo.ai/challenge/faq"
+}

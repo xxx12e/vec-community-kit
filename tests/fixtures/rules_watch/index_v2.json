@@ -1,0 +1,71 @@
+{
+ "TX:beta:val": {
+  "key": "TX:beta:val",
+  "label": "TX beta, validation (E8.75)",
+  "task": "TX",
+  "setting": null,
+  "split": "val",
+  "target_ko": null,
+  "public": true,
+  "n_genes": 4,
+  "genes_file": "TX__beta.genes.txt",
+  "genes_sha256": "9b35cb4224dc3e7d",
+  "needs_coords": true,
+  "obs_required": [],
+  "obsm_required": [
+   "spatial_3D"
+  ],
+  "min_cells": 500,
+  "max_cells": 1500,
+  "truth_cells": 500,
+  "ref_cells": 900,
+  "floor_model": "copy_last",
+  "anchors": {
+   "de_score": {
+    "floor": 0.0,
+    "ceiling": 0.8
+   },
+   "mmd_u": {
+    "floor": 0.09,
+    "ceiling": 0.004
+   },
+   "variogram": {
+    "floor": 0.05,
+    "ceiling": 0.001
+   }
+  },
+  "new_field": "x"
+ },
+ "TX:gamma:test": {
+  "key": "TX:gamma:test",
+  "label": "TX gamma, test (E12.5)",
+  "task": "TX",
+  "setting": null,
+  "split": "test",
+  "target_ko": null,
+  "public": true,
+  "n_genes": 2,
+  "genes_file": "TX__gamma.genes.txt",
+  "genes_sha256": "45908e7c4aa5026b",
+  "needs_coords": true,
+  "obs_required": [],
+  "obsm_required": [
+   "spatial_3D"
+  ],
+  "min_cells": 800,
+  "max_cells": 3000,
+  "truth_cells": 800,
+  "ref_cells": 900,
+  "floor_model": "copy_last",
+  "anchors": {
+   "de_score": {
+    "floor": 0.0,
+    "ceiling": 0.8
+   },
+   "mmd_u": {
+    "floor": 0.08,
+    "ceiling": 0.004
+   }
+  }
+ }
+}

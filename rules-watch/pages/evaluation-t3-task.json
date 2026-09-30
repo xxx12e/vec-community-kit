@@ -1,0 +1,50 @@
+{
+  "full_text_in_repo": false,
+  "id": "evaluation-t3-task",
+  "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/evaluation?section=task&task=3",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/tasks/perturbation",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
+  "sections": [
+    {
+      "chars": 103,
+      "heading": "Evaluation",
+      "level": 1,
+      "lines": 1,
+      "sha256": "6b0276a9a0b1fe83036c311bf476e48d0197227cb2e3993a8a0ff80777bdfa92"
+    },
+    {
+      "chars": 1176,
+      "heading": "Task",
+      "level": 2,
+      "lines": 4,
+      "sha256": "46c15534a8e11aa7fc9b32f58ba714d86f6d3f7300182ffcb312190948555f84"
+    },
+    {
+      "chars": 1244,
+      "heading": "Splits",
+      "level": 3,
+      "lines": 14,
+      "sha256": "4e2113138c68bbe080c66fcbaf07a73cece335cdc4d1e6e9541b24080674a97d"
+    }
+  ],
+  "sha256": "2e39372e7a02d099c62178aee6c18c1c22d46dc3bdf6feffda73254f8160d8dc",
+  "url": "https://virtualembryo.ai/challenge/evaluation?section=task&task=3"
+}

@@ -1,0 +1,102 @@
+{
+  "full_text_in_repo": false,
+  "id": "tasks-perturbation",
+  "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/evaluation?task=3&section=scoring",
+    "/challenge/evaluation?task=3&section=submissions",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/tasks/perturbation",
+    "/challenge/tasks/spatial",
+    "/challenge/tasks/temporal",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
+  "sections": [
+    {
+      "chars": 137,
+      "heading": "Mutant perturbation prediction",
+      "level": 1,
+      "lines": 1,
+      "sha256": "1b2145bf56eba75d41ae11d97386f4c5d8e057e50c8254496612c1877965a2ad"
+    },
+    {
+      "chars": 1176,
+      "heading": "The question",
+      "level": 2,
+      "lines": 4,
+      "sha256": "46c15534a8e11aa7fc9b32f58ba714d86f6d3f7300182ffcb312190948555f84"
+    },
+    {
+      "chars": 213,
+      "heading": "Modality",
+      "level": 2,
+      "lines": 1,
+      "sha256": "785582030e370b1d923531fb27ca50d152f9d53bbcf68efc7e1c8d38a7f25af5"
+    },
+    {
+      "chars": 873,
+      "heading": "Splits",
+      "level": 2,
+      "lines": 13,
+      "sha256": "63347544792f31e284bbd0e17bc001671799024210a21f0392d57729b51d3eea"
+    },
+    {
+      "chars": 371,
+      "heading": "Input and output",
+      "level": 2,
+      "lines": 5,
+      "sha256": "8d07f36d7b03400a4b92a1a158bfdfff04a01736aa644690976f9735fd705179"
+    },
+    {
+      "chars": 819,
+      "heading": "How it is scored",
+      "level": 2,
+      "lines": 14,
+      "sha256": "2b40442d52b6b8367aefe9c54c9bc7698ef6bd1ee1adf60fb5987f81dba11c39"
+    },
+    {
+      "chars": 535,
+      "heading": "What the starter kit ships",
+      "level": 2,
+      "lines": 6,
+      "sha256": "9782067161f71fe312124cac0432feb395e7c7339d18d9cd3ba6075a2af13390"
+    },
+    {
+      "chars": 712,
+      "heading": "Why it\u2019s hard",
+      "level": 2,
+      "lines": 4,
+      "sha256": "48e1efb683802c50aaa81424aeec0cd40b8d186b5d10a618c4a0bdecedcd93b2"
+    },
+    {
+      "chars": 583,
+      "heading": "Common pitfalls",
+      "level": 2,
+      "lines": 4,
+      "sha256": "bd5135507416bf1c66405886f96d828396782a55b45b059ca35ed0bee3e9ecf8"
+    },
+    {
+      "chars": 438,
+      "heading": "Other tasks",
+      "level": 2,
+      "lines": 5,
+      "sha256": "ee064720c0dad4faa96da0b4fb3d3f065b6fa3e181b5c591aca86e6f2c91b4ac"
+    }
+  ],
+  "sha256": "ce5253cd40a3cdd83736c841fbd4c824919ef36d1b3488421fe9c04152f84c49",
+  "url": "https://virtualembryo.ai/challenge/tasks/perturbation"
+}

@@ -1,0 +1,102 @@
+{
+  "full_text_in_repo": false,
+  "id": "tasks-spatial",
+  "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/evaluation?task=2&section=scoring",
+    "/challenge/evaluation?task=2&section=submissions",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/tasks/perturbation",
+    "/challenge/tasks/spatial",
+    "/challenge/tasks/temporal",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
+  "sections": [
+    {
+      "chars": 188,
+      "heading": "Spatial-temporal multiscale prediction",
+      "level": 1,
+      "lines": 1,
+      "sha256": "d6f47f2702a7a1d7500e6d1b9b080d28bbb70001a5420fecf3328973872496b4"
+    },
+    {
+      "chars": 1264,
+      "heading": "The question",
+      "level": 2,
+      "lines": 4,
+      "sha256": "94541c38620ff211c86fae75ef3558f2286a50feebbff7f3fae214bbb117d241"
+    },
+    {
+      "chars": 309,
+      "heading": "Modality",
+      "level": 2,
+      "lines": 1,
+      "sha256": "d20eb40e54ce3bd1e119958add9aaa1b225b3ef8847ad3b529b5b92ea9283bc3"
+    },
+    {
+      "chars": 1311,
+      "heading": "Splits",
+      "level": 2,
+      "lines": 19,
+      "sha256": "9cb449eb8eab6b14b09a4599c9816133e84d263719797a551ce5b0845ece2bcf"
+    },
+    {
+      "chars": 418,
+      "heading": "Input and output",
+      "level": 2,
+      "lines": 5,
+      "sha256": "94fd30c749bd84311ad16dd13a4e179256d40fa389b4b58b486e512fab651518"
+    },
+    {
+      "chars": 875,
+      "heading": "How it is scored",
+      "level": 2,
+      "lines": 14,
+      "sha256": "bb1a1a045b4238e2c209fba3c0bd691068b7d4fa253169605727f7e90e7c5370"
+    },
+    {
+      "chars": 491,
+      "heading": "What the starter kit ships",
+      "level": 2,
+      "lines": 5,
+      "sha256": "2d1ac2d176e5721817e01986043bba5b8b1e7323bae1f2fcf7f2e6dec010dc8b"
+    },
+    {
+      "chars": 710,
+      "heading": "Why it\u2019s hard",
+      "level": 2,
+      "lines": 4,
+      "sha256": "a6ed5350f94f9e643e7a6f9ea0ce74603486103021e417ea4b3f9110a05087c8"
+    },
+    {
+      "chars": 586,
+      "heading": "Common pitfalls",
+      "level": 2,
+      "lines": 4,
+      "sha256": "26636f74573f5fa320eedc05dd44b85531e434a08fce73f948897b87e07aa214"
+    },
+    {
+      "chars": 383,
+      "heading": "Other tasks",
+      "level": 2,
+      "lines": 5,
+      "sha256": "259214c088bb638b7ba2788a798d91cda312791d00c819c32a4d5598578e9d1a"
+    }
+  ],
+  "sha256": "aa9adf81eec23fd7ab423d08120606cb739090ca35c438b4b26c8a9bba8de86f",
+  "url": "https://virtualembryo.ai/challenge/tasks/spatial"
+}

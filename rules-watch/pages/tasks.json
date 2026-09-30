@@ -1,0 +1,68 @@
+{
+  "full_text_in_repo": false,
+  "id": "tasks",
+  "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/evaluation?task=1",
+    "/challenge/evaluation?task=2",
+    "/challenge/evaluation?task=3",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/tasks/perturbation",
+    "/challenge/tasks/spatial",
+    "/challenge/tasks/temporal",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
+  "sections": [
+    {
+      "chars": 414,
+      "heading": "Three tasks, one shared resource",
+      "level": 1,
+      "lines": 2,
+      "sha256": "7b82bafe47dce497b2eb1f1c453302e2410daf85b5867ef1790c6997adba3527"
+    },
+    {
+      "chars": 923,
+      "heading": "Temporal gene-expression distribution prediction",
+      "level": 2,
+      "lines": 13,
+      "sha256": "755736e730d4e59607bde3ed8ae640a4c6af1d7c0dac1cbb7f93f5791aaac11a"
+    },
+    {
+      "chars": 1504,
+      "heading": "Spatial-temporal multiscale prediction",
+      "level": 2,
+      "lines": 13,
+      "sha256": "2b1e0e325b140aa42554a2f5480950683588eb4e769d38882c331f2146c75447"
+    },
+    {
+      "chars": 852,
+      "heading": "Mutant perturbation prediction",
+      "level": 2,
+      "lines": 12,
+      "sha256": "ecd8bf832b78831ad4f11e528238d5b8b48629ddb7a508feafd3b00ce43adddb"
+    },
+    {
+      "chars": 945,
+      "heading": "Two parallel tracks",
+      "level": 2,
+      "lines": 9,
+      "sha256": "91363a4578ad275a732ec25fa594c18ed9757f6a40cc37e45fb34a6864ea2a05"
+    }
+  ],
+  "sha256": "8e93a91797c42c8642f0e2e0ddfe4b688eb26adcc35322db1d44743c8bb56fa2",
+  "url": "https://virtualembryo.ai/challenge/tasks"
+}

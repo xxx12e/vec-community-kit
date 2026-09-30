@@ -1,0 +1,12 @@
+{
+  "accepts_submissions": true,
+  "board": "validation",
+  "daily_quota": 8,
+  "data_open": true,
+  "label": "P2 \u00b7 Baselines released",
+  "nominations_open": false,
+  "note": null,
+  "phase": "p2",
+  "shows_scores": true,
+  "split": "val"
+}

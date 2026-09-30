@@ -1,0 +1,12 @@
+{
+ "phase": "p2",
+ "label": "P2 - Baselines released",
+ "accepts_submissions": true,
+ "shows_scores": true,
+ "nominations_open": false,
+ "data_open": true,
+ "board": "validation",
+ "daily_quota": 8,
+ "split": "val",
+ "note": null
+}

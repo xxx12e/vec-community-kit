@@ -1,0 +1,69 @@
+{
+ "repo": {
+  "full_name": "example/scorer",
+  "default_branch": "main",
+  "stargazers_count": 3,
+  "pushed_at": "2026-08-25T00:00:00Z"
+ },
+ "branches_v1": [
+  {
+   "name": "main",
+   "commit": {
+    "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   }
+  },
+  {
+   "name": "feat/x",
+   "commit": {
+    "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   }
+  }
+ ],
+ "branches_v2": [
+  {
+   "name": "main",
+   "commit": {
+    "sha": "cccccccccccccccccccccccccccccccccccccccc"
+   }
+  }
+ ],
+ "tags_v1": [],
+ "tags_v2": [
+  {
+   "name": "v0.2.0",
+   "commit": {
+    "sha": "cccccccccccccccccccccccccccccccccccccccc"
+   }
+  }
+ ],
+ "releases_v1": [],
+ "releases_v2": [
+  {
+   "tag_name": "v0.2.0",
+   "name": "Scorer 0.2.0",
+   "published_at": "2026-10-19T10:00:00Z",
+   "prerelease": false,
+   "draft": false
+  }
+ ],
+ "commit_v1": {
+  "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "commit": {
+   "message": "Initial scorer\n\nlong body",
+   "committer": {
+    "date": "2026-08-10T19:07:56Z"
+   }
+  }
+ },
+ "commit_v2": {
+  "sha": "cccccccccccccccccccccccccccccccccccccccc",
+  "commit": {
+   "message": "Harden the metrics, bump to 0.2.0",
+   "committer": {
+    "date": "2026-10-19T09:00:00Z"
+   }
+  }
+ },
+ "pyproject_v1": "[project]\nname = \"scorer\"\nversion = \"0.1.1\"\n",
+ "pyproject_v2": "[project]\nname = \"scorer\"\nversion = \"0.2.0\"\n"
+}

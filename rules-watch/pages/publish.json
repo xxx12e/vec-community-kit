@@ -1,0 +1,63 @@
+{
+  "full_text_in_repo": false,
+  "id": "publish",
+  "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/messages",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
+  "sections": [
+    {
+      "chars": 15,
+      "heading": "",
+      "level": 0,
+      "lines": 1,
+      "sha256": "480d24879ea89e583268f09cb1b66eea43ccea47b3c4c2f2d3030ee33b64d41e"
+    },
+    {
+      "chars": 366,
+      "heading": "Let the work outlast the leaderboard",
+      "level": 1,
+      "lines": 2,
+      "sha256": "49d04e5dd178a568efd8f8f144fe6bf45af7d59a1f767cf7cb1d420edf775f8c"
+    },
+    {
+      "chars": 1128,
+      "heading": "The Challenge analysis paper",
+      "level": 2,
+      "lines": 4,
+      "sha256": "ac36d61ab696b5e9efa6192d0ae6bb54f5f3acaf0569d5457a0839caa9bfc6c1"
+    },
+    {
+      "chars": 569,
+      "heading": "Data permission is required",
+      "level": 2,
+      "lines": 3,
+      "sha256": "e46afb3bd57f73bb75d8246dd4238b845cea065864c46a07a4bf2eba9a67d0b1"
+    },
+    {
+      "chars": 1332,
+      "heading": "What this asks of you",
+      "level": 2,
+      "lines": 8,
+      "sha256": "bf330a19ffb32823c5e1d100ca3e4fa4a96a33024ac19f1ef65f07fc74e7c888"
+    }
+  ],
+  "sha256": "eb7ae0505714cb0b6422886c013f3b6db3165b5f7a4bb601e5e98cf6fe4c0028",
+  "url": "https://virtualembryo.ai/challenge/publish"
+}

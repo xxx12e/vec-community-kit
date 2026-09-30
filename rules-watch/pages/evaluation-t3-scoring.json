@@ -1,0 +1,148 @@
+{
+  "full_text_in_repo": false,
+  "id": "evaluation-t3-scoring",
+  "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/evaluation?section=scoring&task=3",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/panels/index.json",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
+  "sections": [
+    {
+      "chars": 103,
+      "heading": "Evaluation",
+      "level": 1,
+      "lines": 1,
+      "sha256": "6b0276a9a0b1fe83036c311bf476e48d0197227cb2e3993a8a0ff80777bdfa92"
+    },
+    {
+      "chars": 692,
+      "heading": "Scoring",
+      "level": 2,
+      "lines": 2,
+      "sha256": "1281ee540b16e536f529e5872d9c1848aeadcfea813384262297c0698da626cb"
+    },
+    {
+      "chars": 994,
+      "heading": "Notation",
+      "level": 3,
+      "lines": 2,
+      "sha256": "36b7a409945a95706d62caabf3b315a1d187222f2e9eff6be1df23e756f82855"
+    },
+    {
+      "chars": 56,
+      "heading": "Response gene recovery",
+      "level": 3,
+      "lines": 2,
+      "sha256": "b93bf60d1b54598ebe0163f62c8093d75646c39a246dc22218e3cf4ac2a3ec21"
+    },
+    {
+      "chars": 2182,
+      "heading": "Differential Expression Score (DES)",
+      "level": 4,
+      "lines": 14,
+      "sha256": "694df113d0d69136ed52c2a6c2f7a87b43688893d0de3f06096a91113438f832"
+    },
+    {
+      "chars": 72,
+      "heading": "Response direction",
+      "level": 3,
+      "lines": 2,
+      "sha256": "84fd4d4feb47f9c5aa8ae9fb5d1d3d5297937a28284d6b34bfa898633ca93969"
+    },
+    {
+      "chars": 1588,
+      "heading": "Directional Concordance Score (DCS)",
+      "level": 4,
+      "lines": 9,
+      "sha256": "71a87ecf690c02c3282d759fb743b227847e0de05e0b7306cbb966ef41c1376d"
+    },
+    {
+      "chars": 84,
+      "heading": "Response magnitude",
+      "level": 3,
+      "lines": 2,
+      "sha256": "033be1ef50bda498149e786c7a379be3182992052ee1ef8fc265e2e61e246a4b"
+    },
+    {
+      "chars": 1325,
+      "heading": "Perturbation Severity Score (PSS)",
+      "level": 4,
+      "lines": 8,
+      "sha256": "37e70210ea288b102df1cd7ee58ce04cf7efe529eac1d57fcceaa31a515e0dee"
+    },
+    {
+      "chars": 145,
+      "heading": "Cell-state distribution",
+      "level": 3,
+      "lines": 2,
+      "sha256": "a49e6d7b5d5dca5692b80a00c162e2f72e9e08a97c1595a976736dee566bdb64"
+    },
+    {
+      "chars": 1409,
+      "heading": "Maximum Mean Discrepancy (MMD)",
+      "level": 4,
+      "lines": 8,
+      "sha256": "e21f804632b049b0743ce29418c8d8fbd04ced616820fce47a3dbe5c5802625c"
+    },
+    {
+      "chars": 1107,
+      "heading": "Co-expression Structure Score (CSS)",
+      "level": 4,
+      "lines": 7,
+      "sha256": "7223232c6dcc9f126a34bf83ab98d22f36ce22266ffe2d10878f4ea87c46e57b"
+    },
+    {
+      "chars": 94,
+      "heading": "Overall score",
+      "level": 3,
+      "lines": 1,
+      "sha256": "901a675fd022fbdbfcfe888bd07ab2e870d15bf81ab8d66749d2cf2fd7c31b3c"
+    },
+    {
+      "chars": 2011,
+      "heading": "Per-metric skill",
+      "level": 4,
+      "lines": 8,
+      "sha256": "569b38539e94fbaeb7c8ecf1a89a686bcf3e1ff0e8d93da75e31bedfa4ea0767"
+    },
+    {
+      "chars": 956,
+      "heading": "Combining the questions",
+      "level": 4,
+      "lines": 4,
+      "sha256": "7462e8d415397edacb4a79615e9dc42ee638bef61a85f3391d14bd1ff769d957"
+    },
+    {
+      "chars": 245,
+      "heading": "Task 3 in full",
+      "level": 4,
+      "lines": 6,
+      "sha256": "96bdf5e4adc315a3eb5f1f379bc807cb0fffb4f68be749a87cc09ab467832655"
+    },
+    {
+      "chars": 751,
+      "heading": "Calibration anchors",
+      "level": 4,
+      "lines": 10,
+      "sha256": "74f2b4ea9c01636baf3eccf6cffa7addeadd5996d8a2e3642c873c5ab6a0605a"
+    }
+  ],
+  "sha256": "092c79afb1b7ecff3ad747625b9f3e627458f11bc0f44caaec5cf6612ae418fc",
+  "url": "https://virtualembryo.ai/challenge/evaluation?section=scoring&task=3"
+}

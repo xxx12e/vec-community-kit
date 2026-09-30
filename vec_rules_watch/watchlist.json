@@ -1,0 +1,52 @@
+{
+  "_about": "What the rules watch fetches. Page URLs come from the site navigation of https://virtualembryo.ai/challenge (read 2026-09-30); every page is server-rendered HTML, so no browser is needed. The phase URL is the endpoint the site's own JavaScript calls (apiBase https://kg.virtualembryo.ai). Not watched: the leaderboard (changes with every submission), the submit and account pages (sign-in), the data manifest (sign-in). A page with \"issue\": true opens a GitHub issue when it changes (so does a change of the contract, the phase endpoint, or the scorer's default branch, version, tags and releases); still_failing_days: after this many days of fetch errors the changelog says so again, and for the contract, the phase endpoint, the scorer or every page an issue is opened.",
+  "user_agent": "vec-community-kit-rules-watch/2026.10 (+https://github.com/xxx12e/vec-community-kit)",
+  "delay_seconds": 1.5,
+  "timeout_seconds": 30,
+  "robots_hosts": ["virtualembryo.ai", "kg.virtualembryo.ai"],
+  "min_page_chars": 300,
+  "still_failing_days": 2,
+  "pages": [
+    {"id": "overview", "url": "https://virtualembryo.ai/challenge", "hint": "none"},
+    {"id": "rules", "url": "https://virtualembryo.ai/challenge/rules", "hint": "rules", "issue": true},
+    {"id": "terms", "url": "https://virtualembryo.ai/challenge/terms", "hint": "terms", "issue": true},
+    {"id": "faq", "url": "https://virtualembryo.ai/challenge/faq", "hint": "faq", "issue": true},
+    {"id": "timeline", "url": "https://virtualembryo.ai/challenge/timeline", "hint": "timeline", "issue": true},
+    {"id": "prizes", "url": "https://virtualembryo.ai/challenge/prizes", "hint": "prizes", "issue": true},
+    {"id": "community-award", "url": "https://virtualembryo.ai/challenge/community", "hint": "prizes"},
+    {"id": "publish", "url": "https://virtualembryo.ai/challenge/publish", "hint": "none"},
+    {"id": "data", "url": "https://virtualembryo.ai/challenge/data", "hint": "data"},
+    {"id": "tasks", "url": "https://virtualembryo.ai/challenge/tasks", "hint": "tasks"},
+    {"id": "tasks-temporal", "url": "https://virtualembryo.ai/challenge/tasks/temporal", "hint": "tasks"},
+    {"id": "tasks-spatial", "url": "https://virtualembryo.ai/challenge/tasks/spatial", "hint": "tasks"},
+    {"id": "tasks-perturbation", "url": "https://virtualembryo.ai/challenge/tasks/perturbation", "hint": "tasks"},
+    {"id": "reference-rows", "url": "https://virtualembryo.ai/challenge/baselines", "hint": "evaluation"},
+    {"id": "resources", "url": "https://virtualembryo.ai/challenge/resources", "hint": "none"},
+    {"id": "evaluation-t1-task", "url": "https://virtualembryo.ai/challenge/evaluation?section=task&task=1", "hint": "evaluation"},
+    {"id": "evaluation-t1-submissions", "url": "https://virtualembryo.ai/challenge/evaluation?section=submissions&task=1", "hint": "evaluation"},
+    {"id": "evaluation-t1-scoring", "url": "https://virtualembryo.ai/challenge/evaluation?section=scoring&task=1", "hint": "evaluation"},
+    {"id": "evaluation-t1-resources", "url": "https://virtualembryo.ai/challenge/evaluation?section=resources&task=1", "hint": "evaluation"},
+    {"id": "evaluation-t2-task", "url": "https://virtualembryo.ai/challenge/evaluation?section=task&task=2", "hint": "evaluation"},
+    {"id": "evaluation-t2-submissions", "url": "https://virtualembryo.ai/challenge/evaluation?section=submissions&task=2", "hint": "evaluation"},
+    {"id": "evaluation-t2-scoring", "url": "https://virtualembryo.ai/challenge/evaluation?section=scoring&task=2", "hint": "evaluation"},
+    {"id": "evaluation-t2-resources", "url": "https://virtualembryo.ai/challenge/evaluation?section=resources&task=2", "hint": "evaluation"},
+    {"id": "evaluation-t3-task", "url": "https://virtualembryo.ai/challenge/evaluation?section=task&task=3", "hint": "evaluation"},
+    {"id": "evaluation-t3-submissions", "url": "https://virtualembryo.ai/challenge/evaluation?section=submissions&task=3", "hint": "evaluation"},
+    {"id": "evaluation-t3-scoring", "url": "https://virtualembryo.ai/challenge/evaluation?section=scoring&task=3", "hint": "evaluation"},
+    {"id": "evaluation-t3-resources", "url": "https://virtualembryo.ai/challenge/evaluation?section=resources&task=3", "hint": "evaluation"}
+  ],
+  "contract": {
+    "index_url": "https://virtualembryo.ai/challenge/panels/index.json",
+    "genes_base_url": "https://virtualembryo.ai/challenge/panels/"
+  },
+  "phase": {
+    "url": "https://kg.virtualembryo.ai/challenge/phase"
+  },
+  "scorer": {
+    "repo": "aristoteleo/veckit",
+    "api": "https://api.github.com",
+    "raw": "https://raw.githubusercontent.com",
+    "html": "https://github.com/aristoteleo/veckit",
+    "pinned": "46d41e6 (0.1.1)"
+  }
+}

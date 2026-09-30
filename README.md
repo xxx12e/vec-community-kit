@@ -15,7 +15,13 @@ The organisers publish the board contracts (`panels/index.json` + gene lists), t
 veckit, a local validator/scorer in the starter kit (`score_h5ad.py`) and the portal's own format check. What each
 part here adds beyond those is stated below; official sources are cited with the date they were read.
 
-## What changed in 2026.10.1 (2026-09-30): one pass over the real release
+**Rules and contract watch (new, 2026-09-30):** a daily GitHub Action checks the challenge pages, the board contract, the phase endpoint and the scorer, and writes [`rules-watch/CHANGES.md`](rules-watch/CHANGES.md) when something changes; how it works and how to subscribe: [`vec_rules_watch/README.md`](vec_rules_watch/README.md).
+
+## What changed in 2026.10.1 (2026-09-30)
+
+* **New package `vec_rules_watch`**, the daily rules and contract watch above, with the command
+  `vec-community-rules-watch`, the workflow `.github/workflows/rules-watch.yml` and its output folder `rules-watch/`.
+* **One pass over the real release**, and the two Linux fixes it found (below).
 
 At the organisers' request the tutorials' commands were run, in order and as written, on the real release (a fresh
 copy of the kit in a fresh venv on a shared cloud Linux runner, Python 3.10; trimmed log without scores or
@@ -178,7 +184,7 @@ written, against the real release on 2026-09-30 (cloud Linux runner; versions, e
 memory in `scratchpad/realrun_log_2026-10-01.txt`, earlier synthetic runs in `scratchpad/dryrun_log.txt`); the
 upload and a live Agent-track run were not part of that pass; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `64 passed` (synthetic data; without veckit the scorer tests are skipped, and
+*Test line:* `python -m pytest -q` -> `103 passed` (synthetic data; without veckit the scorer tests are skipped, and
 the wheel-build test needs setuptools 77 or newer).
 
 ## Install
@@ -190,8 +196,8 @@ python -m pytest -q               # synthetic data only
 ```
 
 `pip install -e .` (or `pip install .`, or `pip install "git+https://github.com/xxx12e/vec-community-kit"`) installs the
-four packages - `vec_submit_check`, `vec_community_baselines`, `vec_local_score`, `vec_agent_evidence` - and five
-commands, each the same as its `python -m` form:
+packages - `vec_submit_check`, `vec_community_baselines`, `vec_local_score`, `vec_agent_evidence` and (since the
+rules watch) `vec_rules_watch` - and these commands, each the same as its `python -m` form:
 
 | command | same as |
 |---|---|
@@ -200,6 +206,7 @@ commands, each the same as its `python -m` form:
 | `vec-community-score` | `python -m vec_local_score` |
 | `vec-community-split` | `python -m vec_local_score.make_pseudo_split` |
 | `vec-community-evidence` | `python -m vec_agent_evidence` |
+| `vec-community-rules-watch` | `python -m vec_rules_watch` |
 
 The command names carry a `vec-community-` prefix so they cannot collide with the organisers' tools or other community
 packages. The module names can: a future pip-installable `vec-submit-check` by another author that ships a
@@ -251,6 +258,12 @@ leaderboard order.
 基线生成器与提交文件写入器、主办方打分器 veckit 的本地封装、Agent 赛道的证据骨架，以及一份"从零到第一次提交"的中英文教程。
 全部是通用工具，不含任何建模思路。MIT 许可。面向两个赛道的首次参赛者、想在自己构造的伪切分上比较自己几种方法的队伍（只是该切分上的比较，
 不预测隐藏目标上的名次），以及需要配置锁定和证据包的 Agent 赛道队伍。
+
+**规则与契约监测（2026-09-30 新增）**：每日运行的 GitHub Action 检查比赛页面、榜契约、阶段接口和打分器，有变化就写入 [`rules-watch/CHANGES.zh.md`](rules-watch/CHANGES.zh.md)；说明和订阅方法见 [`vec_rules_watch/README.md`](vec_rules_watch/README.md)。
+
+版本 2026.10.1（2026-09-30）：新增规则监测包 `vec_rules_watch`、命令 `vec-community-rules-watch`、工作流
+`.github/workflows/rules-watch.yml` 和输出目录 `rules-watch/`；按顺序、原样在真实发布数据上执行了一遍教程命令，并修正了那次执行发现的
+两个 Linux 问题（见下面教程一项）。
 
 * [`vec_submit_check/`](vec_submit_check/)：`python -m vec_submit_check --board <榜> pred.h5ad` 对照已公布的榜契约做本地上传前
   检查（基因面板与顺序、细胞数范围、数值有限/非负/可转 float32、坐标、文件大小）；每条规则标明是 portal（门户会拒）、stricter（常数矩阵）
@@ -304,11 +317,11 @@ leaderboard order.
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交
   （当场打分、不可撤回）、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）；关于打分器的抽样种子只写一句：主办方在对本工具包的评审中说，抽样种子将随每次提交而定。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `64 passed`
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `103 passed`
   （没有 veckit 时跳过打分器测试；wheel 构建测试需要 setuptools 77 或更新版本）。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
-五个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
+五个命令以及规则监测的 `vec-community-rules-watch`，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
 然后 `python -m pytest -q`（合成数据测试，不需要比赛数据；没有 veckit 时打分器测试被跳过）。安装后的副本把榜契约放在
 `vec_submit_check/panels/` 里，在任何目录下都能用。命令名都带 `vec-community-` 前缀，不会与别的工具冲突；模块名可能冲突：
 将来若有别的作者发布可 pip 安装、并带 `vec_submit_check` 包的 `vec-submit-check`，装进同一环境会与本工具包的校验器互相覆盖

@@ -1,0 +1,62 @@
+{
+ "TX:alpha": {
+  "key": "TX:alpha",
+  "label": "TX alpha, validation (E10.5)",
+  "task": "TX",
+  "setting": null,
+  "split": "val",
+  "target_ko": null,
+  "public": true,
+  "n_genes": 5,
+  "genes_file": "TX__alpha.genes.txt",
+  "genes_sha256": "9dfbb9b6441994c6",
+  "needs_coords": false,
+  "obs_required": [],
+  "obsm_required": [],
+  "min_cells": 1000,
+  "max_cells": 5000,
+  "truth_cells": 1000,
+  "ref_cells": 900,
+  "floor_model": "copy_last",
+  "anchors": {
+   "de_score": {
+    "floor": 0.0,
+    "ceiling": 0.8
+   },
+   "mmd_u": {
+    "floor": 0.08,
+    "ceiling": 0.004
+   }
+  }
+ },
+ "TX:beta:val": {
+  "key": "TX:beta:val",
+  "label": "TX beta, validation (E8.5)",
+  "task": "TX",
+  "setting": null,
+  "split": "val",
+  "target_ko": null,
+  "public": true,
+  "n_genes": 3,
+  "genes_file": "TX__beta.genes.txt",
+  "genes_sha256": "191dea8b1f28b577",
+  "needs_coords": false,
+  "obs_required": [],
+  "obsm_required": [],
+  "min_cells": 500,
+  "max_cells": 2000,
+  "truth_cells": 500,
+  "ref_cells": 900,
+  "floor_model": "copy_last",
+  "anchors": {
+   "de_score": {
+    "floor": 0.0,
+    "ceiling": 0.8
+   },
+   "mmd_u": {
+    "floor": 0.08,
+    "ceiling": 0.004
+   }
+  }
+ }
+}

@@ -1,0 +1,63 @@
+{
+  "full_text_in_repo": false,
+  "id": "prizes",
+  "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/evaluation?section=scoring",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
+  "sections": [
+    {
+      "chars": 966,
+      "heading": "Prizes",
+      "level": 1,
+      "lines": 13,
+      "sha256": "ad782b3264a416f43cb1282f557d23acf08977de0865a9be28c0b2977147bdee"
+    },
+    {
+      "chars": 841,
+      "heading": "Where the $112K goes",
+      "level": 2,
+      "lines": 12,
+      "sha256": "5d17d47bc11c656e0c96e0c8adaa655dce4d2c1c04aa77dd2876877a13fc2632"
+    },
+    {
+      "chars": 329,
+      "heading": "Winner prizes in full",
+      "level": 2,
+      "lines": 6,
+      "sha256": "0991e50837b156e9968b65f9ef4b9d3c0495becfe10d5d132512b639059bd282"
+    },
+    {
+      "chars": 1446,
+      "heading": "The two tracks",
+      "level": 2,
+      "lines": 11,
+      "sha256": "78a4ce965e48eb83214d5d5e9bfb36157358b0ffb81beb07455105d9f8b71d59"
+    },
+    {
+      "chars": 260,
+      "heading": "Funding",
+      "level": 2,
+      "lines": 1,
+      "sha256": "ecbdec8c18f142549a27561de43f894ebe792fd79623dd7d0f288948140cefd9"
+    }
+  ],
+  "sha256": "8d8227b9ec6b988d3756d4f0d37477349c558d983e8b6d21fa58394b68d9966c",
+  "url": "https://virtualembryo.ai/challenge/prizes"
+}

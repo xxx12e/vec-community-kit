@@ -1,0 +1,48 @@
+{
+  "full_text_in_repo": false,
+  "id": "resources",
+  "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
+  "sections": [
+    {
+      "chars": 475,
+      "heading": "Community resources",
+      "level": 1,
+      "lines": 2,
+      "sha256": "fa6f10750d7113e204b127409c2d3e46802080ef40dab10e00b4e367c11fb9d6"
+    },
+    {
+      "chars": 36,
+      "heading": "Reviewed",
+      "level": 2,
+      "lines": 1,
+      "sha256": "0673b1d7215ead5af2e2fb3aa35cb02422d79de3ddd9430a2addf0a03595562b"
+    },
+    {
+      "chars": 143,
+      "heading": "Filed, not yet reviewed",
+      "level": 2,
+      "lines": 1,
+      "sha256": "2c8eb41304225799b326de415ba89cee6340047f9f61287c90a41b1e915796a6"
+    }
+  ],
+  "sha256": "16aad626bf74e7b21c3e23768def2dd14f87d272427e0fca0e22b984a850b0d4",
+  "url": "https://virtualembryo.ai/challenge/resources"
+}

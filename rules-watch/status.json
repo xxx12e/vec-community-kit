@@ -1,0 +1,147 @@
+{
+  "full_text_in_repo": false,
+  "schema": 1,
+  "sources": {
+    "contract": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/index.json"
+    },
+    "genes:T1__val.genes.txt": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/T1__val.genes.txt"
+    },
+    "genes:T2__embryo__val_interp.genes.txt": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/T2__embryo__val_interp.genes.txt"
+    },
+    "genes:T2__heart__val_extrap.genes.txt": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/T2__heart__val_extrap.genes.txt"
+    },
+    "genes:T2__heart__val_interp.genes.txt": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/T2__heart__val_interp.genes.txt"
+    },
+    "genes:T3__gata4.genes.txt": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/T3__gata4.genes.txt"
+    },
+    "page:community-award": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/community"
+    },
+    "page:data": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/data"
+    },
+    "page:evaluation-t1-resources": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=resources&task=1"
+    },
+    "page:evaluation-t1-scoring": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=scoring&task=1"
+    },
+    "page:evaluation-t1-submissions": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=submissions&task=1"
+    },
+    "page:evaluation-t1-task": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=task&task=1"
+    },
+    "page:evaluation-t2-resources": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=resources&task=2"
+    },
+    "page:evaluation-t2-scoring": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=scoring&task=2"
+    },
+    "page:evaluation-t2-submissions": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=submissions&task=2"
+    },
+    "page:evaluation-t2-task": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=task&task=2"
+    },
+    "page:evaluation-t3-resources": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=resources&task=3"
+    },
+    "page:evaluation-t3-scoring": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=scoring&task=3"
+    },
+    "page:evaluation-t3-submissions": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=submissions&task=3"
+    },
+    "page:evaluation-t3-task": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/evaluation?section=task&task=3"
+    },
+    "page:faq": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/faq"
+    },
+    "page:overview": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge"
+    },
+    "page:prizes": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/prizes"
+    },
+    "page:publish": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/publish"
+    },
+    "page:reference-rows": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/baselines"
+    },
+    "page:resources": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/resources"
+    },
+    "page:rules": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/rules"
+    },
+    "page:tasks": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/tasks"
+    },
+    "page:tasks-perturbation": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/tasks/perturbation"
+    },
+    "page:tasks-spatial": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/tasks/spatial"
+    },
+    "page:tasks-temporal": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/tasks/temporal"
+    },
+    "page:terms": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/terms"
+    },
+    "page:timeline": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/timeline"
+    },
+    "phase": {
+      "ok": true,
+      "url": "https://kg.virtualembryo.ai/challenge/phase"
+    },
+    "scorer": {
+      "ok": true,
+      "url": "https://github.com/aristoteleo/veckit"
+    }
+  },
+  "tool": "vec_rules_watch"
+}

@@ -1,0 +1,101 @@
+name: rules-watch
+
+# Daily watch of the Virtual Embryo Challenge's public pages, board contract (panels/index.json + gene lists), phase
+# endpoint and the organisers' scorer veckit on GitHub. Writes rules-watch/ (per-section hashes, the contract,
+# CHANGES.md and CHANGES.zh.md) and commits it only when something changed. A source that cannot be fetched is
+# recorded and written to the changelog; it never fails the job. See vec_rules_watch/README.md.
+#
+# Repository settings this needs (Settings > Actions > General > Workflow permissions: "Read and write
+# permissions"). Optional repository variables (Settings > Secrets and variables > Actions > Variables):
+#   RULES_WATCH_FULL_TEXT = true   also commit the full normalised page text (off by default)
+#   RULES_WATCH_ISSUES    = false  never open issues (see "Open an issue" below for when they are opened)
+
+on:
+  schedule:
+    - cron: "17 6 * * *"          # once a day, 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write                 # commit rules-watch/
+  issues: write                   # open an issue (label rules-watch) for the changes listed below
+
+concurrency:
+  group: rules-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The full normalised page text of the previous run lives in the Actions cache, not in the repository. If
+      # the cache is gone (evicted after 7 days without a run), the watcher compares section hashes and says so.
+      - name: Restore the previous page text
+        uses: actions/cache/restore@v4
+        with:
+          path: .rules-watch-state
+          key: rules-watch-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            rules-watch-state-
+
+      # Standard library only: no install step. A page that is down is recorded, it does not fail the job.
+      - name: Run the watcher
+        id: watch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          # sent to api.github.com only (rate limit)
+          RULES_WATCH_FULL_TEXT: ${{ vars.RULES_WATCH_FULL_TEXT == 'true' && 'true' || 'false' }}
+        run: >-
+          python -m vec_rules_watch run --state .rules-watch-state --out rules-watch
+          --issue-file "$RUNNER_TEMP/rules-watch-issue.md"
+
+      - name: Commit the snapshot and the changelog if something changed
+        env:
+          WATCH_DATE: ${{ steps.watch.outputs.date }}
+          WATCH_HEADLINE: ${{ steps.watch.outputs.headline }}
+        run: |
+          git add rules-watch
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "rules-watch $WATCH_DATE: $WATCH_HEADLINE"
+          for i in 1 2 3; do
+            if git push -q; then exit 0; fi
+            sleep 5
+            git pull -q --rebase
+          done
+          echo "::error::could not push the rules-watch commit"
+          exit 1
+
+      # An issue is opened for: a change of the board contract or the phase endpoint; a change of the scorer's
+      # default branch, version, tags or releases (other branches: changelog only); a change of a page marked
+      # "issue" in watchlist.json (rules, terms, FAQ, timeline, prizes); the contract, the phase endpoint, the
+      # scorer or every page not fetched for still_failing_days (2) days. Everything else: the changelog only.
+      - name: Open an issue
+        if: steps.watch.outputs.high_signal == 'true' && vars.RULES_WATCH_ISSUES != 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WATCH_DATE: ${{ steps.watch.outputs.date }}
+          WATCH_HEADLINE: ${{ steps.watch.outputs.headline }}
+        run: |
+          gh label create rules-watch --color 0E8A16 \
+            --description "Daily rules watch: contract, phase, scorer, rules/FAQ/timeline pages, fetch outages" \
+            2>/dev/null || true
+          gh issue create --label rules-watch --title "Rules watch $WATCH_DATE: $WATCH_HEADLINE" \
+            --body-file "$RUNNER_TEMP/rules-watch-issue.md" || echo "::warning::could not open the issue"
+
+      # Saved only after the commit was pushed, so a failed push is diffed again (not lost) on the next run.
+      - name: Save the page text for the next run
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: .rules-watch-state
+          key: rules-watch-state-${{ github.run_id }}-${{ github.run_attempt }}

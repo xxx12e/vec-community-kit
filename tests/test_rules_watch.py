@@ -1,0 +1,824 @@
+"""vec_rules_watch: normalisation, section split, JSON canonicalisation, contract / phase / scorer messages in English
+and Chinese, excerpt cap, cache-missing re-baseline, fetch failures, the full-text switch and the CLI.
+
+No network: every request goes to a stub fetcher that serves the synthetic fixtures in tests/fixtures/rules_watch/
+(made-up pages and boards, not the organisers' text)."""
+from __future__ import annotations
+
+import json
+import re
+import socket
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pytest
+
+from vec_rules_watch import __main__ as cli
+from vec_rules_watch import contract as C
+from vec_rules_watch import fetch as F
+from vec_rules_watch import pages as P
+from vec_rules_watch import runner as R
+from vec_rules_watch.messages import Joined, Message, catalogue, placeholders
+from vec_rules_watch.normalize import (canonical_json, html_to_sections, page_sha, parse_json_bytes,
+                                       sections_to_text, text_to_sections)
+
+ROOT = Path(__file__).resolve().parents[1]
+FIX = ROOT / "tests" / "fixtures" / "rules_watch"
+BASE = "https://example.test/challenge"
+API = "https://api.example.test"
+RAW = "https://raw.example.test"
+
+
+def fx(name: str) -> bytes:
+    return (FIX / name).read_bytes()
+
+
+def gh(key: str):
+    return json.loads(fx("github_api.json"))[key]
+
+
+def config(pages=("rules",)) -> dict:
+    return {
+        "user_agent": "test-agent",
+        "min_page_chars": 50,
+        "pages": [{"id": p, "url": f"{BASE}/{p}", "hint": "rules"} for p in pages],
+        "contract": {"index_url": f"{BASE}/panels/index.json", "genes_base_url": f"{BASE}/panels/"},
+        "phase": {"url": "https://api.example.test/challenge/phase"},
+        "scorer": {"repo": "example/scorer", "api": API, "raw": RAW, "html": "https://github.test/example/scorer",
+                   "pinned": "aaaaaaa (0.1.1)"},
+    }
+
+
+class StubFetcher:
+    """Serves bytes by URL; a value may be an int (HTTP error status) or an error string."""
+
+    def __init__(self, routes: dict):
+        self.routes = dict(routes)
+        self.requests = 0
+        self.seen = []
+
+    def fetch(self, url):
+        self.requests += 1
+        self.seen.append(url)
+        v = self.routes.get(url)
+        if v is None:
+            return F.FetchResult(url, 404, b"", "HTTP 404")
+        if isinstance(v, int):
+            return F.FetchResult(url, v, b"", f"HTTP {v}")
+        if isinstance(v, str):
+            return F.FetchResult(url, 0, b"", v)
+        return F.FetchResult(url, 200, v)
+
+
+def routes(version: int, page: str = None) -> dict:
+    v = version
+    r = {
+        f"{BASE}/rules": fx(page or f"page_v{v}.html"),
+        f"{BASE}/panels/index.json": fx(f"index_v{v}.json"),
+        "https://api.example.test/challenge/phase": fx(f"phase_v{v}.json"),
+        f"{API}/repos/example/scorer": json.dumps(gh("repo")).encode(),
+        f"{API}/repos/example/scorer/branches?per_page=100": json.dumps(gh(f"branches_v{v}")).encode(),
+        f"{API}/repos/example/scorer/tags?per_page=100": json.dumps(gh(f"tags_v{v}")).encode(),
+        f"{API}/repos/example/scorer/releases?per_page=30": json.dumps(gh(f"releases_v{v}")).encode(),
+        f"{API}/repos/example/scorer/commits/main": json.dumps(gh(f"commit_v{v}")).encode(),
+        f"{RAW}/example/scorer/{gh(f'commit_v{v}')['sha']}/pyproject.toml": gh(f"pyproject_v{v}").encode(),
+    }
+    if v == 1:
+        r[f"{BASE}/panels/TX__alpha.genes.txt"] = fx("alpha.genes.txt")
+        r[f"{BASE}/panels/TX__beta.genes.txt"] = fx("beta_v1.genes.txt")
+    else:
+        r[f"{BASE}/panels/TX__beta.genes.txt"] = fx("beta_v2.genes.txt")
+        r[f"{BASE}/panels/TX__gamma.genes.txt"] = fx("gamma.genes.txt")
+    return r
+
+
+def day(n: int) -> datetime:
+    return datetime(2026, 10, n, 7, 17, tzinfo=timezone.utc)
+
+
+def do_run(tmp_path, version=1, n=1, full_text=False, extra=None, page=None, state="state"):
+    r = routes(version, page)
+    r.update(extra or {})
+    return R.run(tmp_path / state, tmp_path / "out", fetcher=StubFetcher(r), now=day(n), full_text=full_text,
+                 config=config(), log=lambda *a: None)
+
+
+def snapshot(d: Path) -> dict:
+    return {p.relative_to(d).as_posix(): p.read_bytes() for p in sorted(d.rglob("*")) if p.is_file()}
+
+
+# -- normalisation --
+
+def test_section_split_reads_main_only_and_drops_chrome():
+    secs, used_main = html_to_sections(fx("page_v1.html").decode())
+    assert used_main
+    heads = [s["heading"] for s in secs]
+    assert heads == ["", "Example Rules", "1. Agreement", "2. Submissions", "3. Boards", "Notes", "Notes (2)",
+                     "4. Old heading", "5. Removed later"]
+    assert secs[0]["lines"] == ["Synthetic Challenge"]
+    text = sections_to_text(secs)
+    for gone in ("window.__NUXT__", "color:red", "Copy", "svg label", "On this page", "Footer text", "late script",
+                 "Overview"):
+        assert gone not in text, gone
+    boards = next(s for s in secs if s["heading"] == "3. Boards")["lines"]
+    assert boards[:3] == ["board | cells", "TX:alpha | 1000-5000", "TX:beta:val | 500-2000"]
+    assert boards[3:] == ["python -m tool --board TX:alpha", "python -m tool --check"]
+    assert "[email protected]" in text                           # entity + NBSP collapsed to one space
+    last = secs[-1]["lines"]
+    assert last == ["This section disappears in the second version.", "Question one?", "Answer one."]
+
+
+def test_section_split_without_main_falls_back_to_body():
+    secs, used_main = html_to_sections(fx("page_nomain.html").decode())
+    assert not used_main
+    assert [s["heading"] for s in secs] == ["Plain page", "Second"]
+    text = sections_to_text(secs)
+    assert "Site header" not in text and "Menu" not in text and "Footer" not in text
+
+
+def test_text_form_round_trips():
+    secs = [{"heading": "", "level": 0, "lines": ["top line"]},
+            {"heading": "A", "level": 2, "lines": ["# not a heading", "\\ backslash", "plain"]},
+            {"heading": "B", "level": 3, "lines": []}]
+    assert text_to_sections(sections_to_text(secs)) == secs
+    real, _ = html_to_sections(fx("page_v2.html").decode())
+    assert text_to_sections(sections_to_text(real)) == real
+    assert page_sha(text_to_sections(sections_to_text(real))) == page_sha(real)
+
+
+def test_json_canonicalisation_is_stable():
+    a = parse_json_bytes(b'\xef\xbb\xbf{"b": 1, "a": {"y": [2, 1], "x": "\\u00b7"}}')
+    b = json.loads('{"a": {"x": "\\u00b7", "y": [2, 1]}, "b": 1}')
+    ca, cb = canonical_json(a), canonical_json(b)
+    assert ca == cb and ca.endswith("\n") and ca.isascii()
+    assert ca.index('"a"') < ca.index('"b"') and ca.index('"x"') < ca.index('"y"')
+    assert '"y": [\n      2,\n      1\n    ]' in ca                 # list order is data, not sorted
+
+
+# -- excerpts --
+
+def test_excerpt_cap_and_centering():
+    long_old = "word " * 100 + "limit is 2 per board" + " tail" * 100
+    long_new = long_old.replace("limit is 2", "limit is 3")
+    lines = P.excerpt_pair(long_old, long_new)
+    assert len(lines) == 2
+    for line in lines:
+        assert len(line[2:]) <= P.EXCERPT_CAP
+    assert "limit is 2" in lines[0] and "limit is 3" in lines[1]
+    assert lines[0].startswith("- ...") and lines[0].endswith("...")
+    only_added = P.excerpt_pair(None, "x" * 5000)
+    assert len(only_added[0][2:]) <= P.EXCERPT_CAP
+    assert P.excerpt("short") == "short"
+    for start in (0, 10, 400, 999):
+        assert len(P.excerpt("y" * 1000, start, start + 1)) <= P.EXCERPT_CAP
+    assert len(P.excerpt("z" * 1000, 0, 1000)) <= P.EXCERPT_CAP
+
+
+def test_page_diff_full_mode_names_sections_and_quotes_short_lines():
+    old, _ = html_to_sections(fx("page_v1.html").decode())
+    new, _ = html_to_sections(fx("page_v2.html").decode())
+    d = P.compare_full(old, new)
+    assert [c["heading"] for c in d["changed"]] == ["2. Submissions"]
+    assert [a["heading"] for a in d["added"]] == ["6. Appeals"]
+    assert [r["heading"] for r in d["removed"]] == ["5. Removed later"]
+    assert d["renamed"] == [{"old": "4. Old heading", "new": "4. Renamed heading"}]
+    quoted = [x for _, lines in d["blocks"] for x in lines]
+    assert any(x.startswith("- ") and "two" in x for x in quoted)
+    assert any(x.startswith("+ ") and "three" in x for x in quoted)
+    assert any(x == "+ Coordinates go in obsm." for x in quoted)
+    assert all(len(x) - 2 <= P.EXCERPT_CAP for x in quoted)
+    en = " ".join(m.render("en") for m in P.detail_messages(d))
+    zh_text = " ".join(m.render("zh") for m in P.detail_messages(d))
+    assert 'Renamed: "4. Old heading" -> "4. Renamed heading"' in en
+    assert zh("page.section_renamed", old="4. Old heading", new="4. Renamed heading") in zh_text
+    assert zh("page.section_added", heading="6. Appeals", lines=3) in zh_text
+    assert zh("page.section_removed", heading="5. Removed later", lines=3) in zh_text
+
+
+# -- contract, phase, scorer messages --
+
+CJK = re.compile("[\u4e00-\u9fff]")
+
+
+def zh(key, **params) -> str:
+    """The Chinese template, filled: the tests stay ASCII (tests/test_ascii.py) and still check the zh output."""
+    return Message(key, **params).render("zh")
+
+
+def _render(items, lang):
+    out = []
+    for it in items:
+        out.append(it["msg"].render(lang))
+        out += [m.render(lang) for m in it["impact"]]
+    return "\n".join(out)
+
+
+def test_contract_diff_messages_en_and_zh():
+    v1, v2 = json.loads(fx("index_v1.json")), json.loads(fx("index_v2.json"))
+    g1 = {"TX__alpha.genes.txt": C.parse_genes(fx("alpha.genes.txt").decode()),
+          "TX__beta.genes.txt": C.parse_genes(fx("beta_v1.genes.txt").decode())}
+    g2 = {"TX__beta.genes.txt": C.parse_genes(fx("beta_v2.genes.txt").decode()),
+          "TX__gamma.genes.txt": C.parse_genes(fx("gamma.genes.txt").decode())}
+    items = C.diff_index(v1, v2, g1, g2, "rules-watch/contract/panels")
+    en, zh_text = _render(items, "en"), _render(items, "zh")
+    assert "Board TX:alpha (TX alpha, validation (E10.5)) is no longer in index.json." in en
+    assert "New board TX:gamma:test (TX gamma, test (E12.5)): task TX, split test, 2 genes" in en
+    assert "VEC_PANELS_DIR=rules-watch/contract/panels" in en
+    assert "TX:beta:val: gene panel changed: 3 -> 4 genes, 1 added, 0 removed, the order of the kept genes changed" in en
+    assert "Added: Beta4. Removed: none." in en
+    assert "TX:beta:val: cell bounds [500, 2000] -> [500, 1500]." in en
+    assert "must now have between 500 and 1500 cells" in en
+    assert "TX:beta:val: required .obsm keys [] -> [spatial_3D]." in en
+    assert "Your TX:beta:val file must carry [spatial_3D] in .obsm." in en
+    assert "TX:beta:val now needs 3D coordinates" in en
+    assert "anchors of mmd_u: floor 0.08 -> 0.09" in en
+    assert "variogram added to the anchors" in en
+    assert "stage in the label E8.5 -> E8.75" in en
+    assert "TX:beta:val: new field new_field = x." in en
+    # the same changes from the Chinese templates
+    for s in (zh("contract.board_removed", board="TX:alpha", label="TX alpha, validation (E10.5)"),
+              zh("contract.genes_changed", board="TX:beta:val", old_n=3, new_n=4, added=1, removed=0,
+                 order_note=Message("genes.order_changed"), old_sha="191dea8b1f28b577", new_sha="9b35cb4224dc3e7d"),
+              zh("contract.cells_changed", board="TX:beta:val", old_min=500, old_max=2000, new_min=500, new_max=1500),
+              zh("impact.obsm_required", board="TX:beta:val", keys=["spatial_3D"]),
+              zh("contract.stage_changed", board="TX:beta:val", old=Joined(["E8.5"]), new=Joined(["E8.75"])),
+              zh("contract.field_added", board="TX:beta:val", field="new_field", new="x"),
+              zh("contract.genes_examples", added_list=Joined(["Beta4"]), removed_list=Joined([]))):
+        assert s in zh_text, s
+    assert en.isascii() and len(CJK.findall(zh_text)) > 100
+
+
+def test_contract_baseline_and_sha_mismatch():
+    v1 = json.loads(fx("index_v1.json"))
+    genes = {"TX__alpha.genes.txt": C.parse_genes(fx("alpha.genes.txt").decode()),
+             "TX__beta.genes.txt": ["Beta1", "Beta2"]}                          # does not match genes_sha256
+    items = C.diff_index(None, v1, {}, genes, "p")
+    en = _render(items, "en")
+    assert en.startswith("Baseline: 2 boards in index.json.")
+    assert "TX:alpha: 5 genes (TX__alpha.genes.txt, genes_sha256 9dfbb9b6441994c6), cells 1000-5000" in en
+    assert "TX:beta:val: the published TX__beta.genes.txt does not match index.json" in en
+    assert "TX:alpha: the published" not in en
+    assert C.panel_sha256(C.parse_genes(fx("alpha.genes.txt").decode())) == v1["TX:alpha"]["genes_sha256"]
+
+
+def test_phase_diff_en_and_zh():
+    p1, p2 = json.loads(fx("phase_v1.json")), json.loads(fx("phase_v2.json"))
+    items = C.diff_phase(p1, p2)
+    en, zh_text = _render(items, "en"), _render(items, "zh")
+    assert "Phase p2 -> p3 (P3 - Test phase)." in en
+    assert "Scored board validation -> test." in en
+    assert "daily_quota 8 -> 2." in en
+    assert "Nominations are open" in en
+    assert "split val -> test." in en
+    assert "Note on the phase endpoint: Two official submissions per board." in en
+    assert zh("phase.phase_changed", old="p2", new="p3", label="P3 - Test phase") in zh_text
+    assert zh("phase.board_changed", old="validation", new="test") in zh_text
+    assert zh("phase.nominations_open.true") in zh_text and CJK.search(zh_text)
+    assert C.diff_phase(p1, dict(p1)) == []
+    assert "Baseline: phase p2" in _render(C.diff_phase(None, p1), "en")
+    extra = _render(C.diff_phase(p1, dict(p1, deadline="2026-12-02")), "en")
+    assert extra == "deadline null -> 2026-12-02."
+
+
+def test_scorer_diff():
+    old = {"repo": "r", "default_branch": "main", "head": {"sha": "a" * 40, "date": "2026-08-10", "subject": "s"},
+           "version": "0.1.1", "branches": {"main": "a" * 40, "feat/x": "b" * 40}, "tags": {}, "releases": {}}
+    new = {"repo": "r", "default_branch": "main", "head": {"sha": "c" * 40, "date": "2026-10-19", "subject": "Bump"},
+           "version": "0.2.0", "branches": {"main": "c" * 40}, "tags": {"v0.2.0": "c" * 40},
+           "releases": {"v0.2.0": {"name": "Scorer 0.2.0", "published": "2026-10-19", "prerelease": True,
+                                   "draft": False}}}
+    items = C.diff_scorer(old, new, "aaaaaaa (0.1.1)")
+    en, zh_text = _render(items, "en"), _render(items, "zh")
+    assert 'main moved aaaaaaa -> ccccccc (2026-10-19: "Bump").' in en
+    assert "pins veckit aaaaaaa (0.1.1)" in en
+    assert "Version on main: 0.1.1 -> 0.2.0." in en
+    assert "New tag v0.2.0 at ccccccc." in en
+    assert "New release v0.2.0: Scorer 0.2.0 (2026-10-19, pre-release)." in en
+    assert "Branch feat/x removed (was at bbbbbbb)." in en
+    assert zh("impact.head_moved", pinned="aaaaaaa (0.1.1)") in zh_text
+    assert zh("word.prerelease") in zh_text
+
+
+# -- whole runs --
+
+def test_first_run_baseline_then_changes_then_no_change(tmp_path):
+    res = do_run(tmp_path, 1, 1)
+    out = tmp_path / "out"
+    assert res["first_run"] and res["entry"] and not res["high_signal"] and res["errors"] == []
+    en = (out / "CHANGES.md").read_text(encoding="utf-8")
+    zh_text = (out / "CHANGES.zh.md").read_text(encoding="utf-8")
+    assert zh("changes.title") in zh_text
+    assert "First run" in en and zh("entry.first_run") in zh_text
+    assert (out / "contract" / "panels" / "index.json").read_text() == canonical_json(json.loads(fx("index_v1.json")))
+    assert (out / "contract" / "panels" / "TX__alpha.genes.txt").read_bytes() == fx("alpha.genes.txt")
+    meta = json.loads((out / "pages" / "rules.json").read_text())
+    assert meta["url"] == f"{BASE}/rules" and meta["last_changed"] == "2026-10-01"
+    assert [s["heading"] for s in meta["sections"]][:3] == ["", "Example Rules", "1. Agreement"]
+    assert all(p.name.endswith(".genes.txt") for p in out.rglob("*.txt"))         # no page text by default
+    assert "Each team may make up to" not in "".join(p.read_text(encoding="utf-8") for p in out.rglob("*")
+                                                     if p.is_file())
+    assert (tmp_path / "state" / "pages" / "rules.json").exists()
+
+    res2 = do_run(tmp_path, 2, 2)
+    assert res2["high_signal"] and res2["entry"] and not res2["first_run"]
+    assert res2["headline"] == "contract, phase, scorer, 1 page, site links"
+    en2 = (out / "CHANGES.md").read_text(encoding="utf-8")
+    assert en2.index("## 2026-10-02") < en2.index("## 2026-10-01")                # newest first
+    assert en2.count("<!-- entries below, newest first -->") == 1
+    assert "```diff" in en2 and "+ Each team may make up to three official" in en2
+    assert "What this changes for your file: A TX:beta:val file must now have between 500 and 1500 cells" in en2
+    assert not (out / "contract" / "panels" / "TX__alpha.genes.txt").exists()      # board gone: its list removed
+    assert "TX:gamma:test" in res2["issue_body"]
+    assert zh("head.contract", url=f"{BASE}/panels/index.json") in res2["issue_body"]
+    zh2 = (out / "CHANGES.zh.md").read_text(encoding="utf-8")
+    impact = Message("impact.cells_changed", board="TX:beta:val", new_min=500, new_max=1500)
+    assert zh("entry.impact", text=impact) in zh2
+    assert zh("page.excerpt_label") in zh2 and "+ Each team may make up to three official" in zh2
+
+    before = snapshot(out)
+    res3 = do_run(tmp_path, 2, 3)
+    assert not res3["changed"] and not res3["entry"] and res3["headline"] == "no change"
+    assert snapshot(out) == before
+
+
+def test_contract_copy_is_a_drop_in_panels_dir_for_the_validator(tmp_path):
+    from vec_submit_check import panel_for_board
+
+    do_run(tmp_path, 2, 1)
+    panels = tmp_path / "out" / "contract" / "panels"
+    spec, genes = panel_for_board("TX:beta:val", panels=panels)       # verifies genes_sha256 and n_genes
+    assert genes == ["Beta2", "Beta1", "Beta3", "Beta4"] and spec["max_cells"] == 1500
+    assert panel_for_board("TX:gamma:test", panels=panels)[0]["obsm_required"] == ["spatial_3D"]
+
+
+def test_page_dropped_from_the_watch_list_is_removed(tmp_path):
+    do_run(tmp_path, 1, 1)
+    extra = tmp_path / "out" / "pages" / "old-page.json"
+    extra.write_text("{}", encoding="utf-8")
+    res = do_run(tmp_path, 1, 2)
+    assert not extra.exists() and res["changed"] and not res["entry"]
+
+
+def test_cache_missing_rebaselines_by_section_hash(tmp_path):
+    do_run(tmp_path, 1, 1)
+    res = do_run(tmp_path, 1, 2, page="page_v2.html", state="fresh_state")        # the Actions cache was lost
+    assert res["rebaselined"] and res["entry"]
+    en = res["entry_en"]
+    assert "compared by section hash only" in en
+    assert 'Changed (by hash, no line detail): "2. Submissions"' in en
+    assert 'Renamed: "4. Old heading" -> "4. Renamed heading"' in en
+    assert "```diff" not in en and "three" not in en
+    assert zh("entry.rebaseline") in res["entry_zh"]
+    # the fresh state is now the baseline: the next change is quoted again
+    res2 = do_run(tmp_path, 1, 3, page="page_v1.html", state="fresh_state")
+    assert not res2["rebaselined"] and "```diff" in res2["entry_en"]
+
+
+def test_unchanged_page_with_missing_cache_is_silent(tmp_path):
+    do_run(tmp_path, 1, 1)
+    before = snapshot(tmp_path / "out")
+    res = do_run(tmp_path, 1, 2, state="fresh_state")
+    assert not res["entry"] and not res["changed"] and not res["rebaselined"]
+    assert snapshot(tmp_path / "out") == before
+    assert (tmp_path / "fresh_state" / "pages" / "rules.json").exists()
+
+
+def test_fetch_failure_is_recorded_not_fatal(tmp_path):
+    do_run(tmp_path, 1, 1)
+    out = tmp_path / "out"
+    before = snapshot(out)
+    down = {f"{BASE}/rules": 503, "https://api.example.test/challenge/phase": "timeout"}
+    res = do_run(tmp_path, 2, 2, extra=down)
+    assert dict(res["errors"]) == {"page:rules": "HTTP 503", "phase": "timeout"}
+    status = json.loads((out / "status.json").read_text())["sources"]
+    assert status["page:rules"] == {"url": f"{BASE}/rules", "ok": False, "error": "HTTP 503",
+                                    "failing_since": "2026-10-02"}
+    for keep in ("contract/phase.json", "pages/rules.json"):                      # previous snapshot kept
+        assert snapshot(out)[keep] == before[keep], keep
+    assert "Could not fetch in this run" in res["entry_en"]                        # the contract did change
+    assert zh("entry.fetch_errors", sources="X").split("X")[0] in res["entry_zh"]
+    assert 'Removed: "' not in res["entry_en"] and "Phase p2" not in res["entry_en"]
+    # the second day: failing_since does not move; the entry says once that they are still failing, and the phase
+    # endpoint is a key source, so an issue is due
+    res2 = do_run(tmp_path, 2, 3, extra=down)
+    status = json.loads((out / "status.json").read_text())["sources"]
+    assert status["page:rules"] == {"url": f"{BASE}/rules", "ok": False, "error": "HTTP 503",
+                                    "failing_since": "2026-10-02", "alerted": True}
+    assert res2["entry"] and res2["high_signal"] and res2["headline"] == "fetch errors: 2, still failing: 2"
+    still = ("Still not fetched after 2 or more days: Phase endpoint (timeout, since 2026-10-02), Challenge Rules "
+             "(HTTP 503, since 2026-10-02).")
+    assert still in res2["entry_en"] and still in res2["issue_body"]
+    assert "Could not fetch in this run" not in res2["entry_en"]                  # not said twice
+    zh_still = zh("entry.still_failing", days=2, sources="X").split("X")[0]
+    assert zh_still in res2["entry_zh"] and zh_still in res2["issue_body"]
+    # the third day: nothing new to say, nothing written
+    status_bytes = (out / "status.json").read_bytes()
+    res3 = do_run(tmp_path, 2, 4, extra=down)
+    assert (out / "status.json").read_bytes() == status_bytes
+    assert not res3["entry"] and not res3["changed"] and not res3["high_signal"]
+    assert res3["headline"] == "fetch errors: 2"                                  # the commit message is not "no change"
+    # recovered: the changes show up, and the entry says the sources are back
+    res4 = do_run(tmp_path, 2, 5)
+    assert res4["errors"] == [] and res4["high_signal"]
+    assert json.loads((out / "status.json").read_text())["sources"]["page:rules"] == {"url": f"{BASE}/rules",
+                                                                                      "ok": True}
+    assert ("Fetched again after an error: Phase endpoint (failing since 2026-10-02), Challenge Rules (failing "
+            "since 2026-10-02).") in res4["entry_en"]
+    assert "three official" in res4["entry_en"] and "Phase p2 -> p3" in res4["entry_en"]
+
+
+def test_a_day_with_every_source_blocked_is_not_silent(tmp_path):
+    """The case a Cloudflare challenge on the runner would cause: nothing else changed, every source failed."""
+    do_run(tmp_path, 1, 1)
+    out = tmp_path / "out"
+    blocked = {u: "blocked by a bot challenge" for u in routes(1)}
+
+    def run_blocked(n):
+        return R.run(tmp_path / "state", out, fetcher=StubFetcher(blocked), now=day(n), config=config(),
+                     log=lambda *a: None)
+
+    res = run_blocked(2)
+    assert res["entry"] and res["changed"] and not res["high_signal"]            # one bad day: no issue yet
+    assert res["headline"] == "fetch errors: 4"
+    en = (out / "CHANGES.md").read_text(encoding="utf-8")
+    assert en.index("## 2026-10-02") < en.index("## 2026-10-01")
+    assert ("Could not fetch in this run: Board contract (index.json: blocked by a bot challenge), Phase endpoint "
+            "(blocked by a bot challenge)") in en
+    zh_item = zh("entry.error_item", source=Message("title.contract"), error="index.json: blocked by a bot challenge")
+    assert zh_item in (out / "CHANGES.zh.md").read_text(encoding="utf-8")
+    # the second day: the watch is blind on the contract, the phase endpoint and the scorer: an issue
+    res2 = run_blocked(3)
+    assert res2["high_signal"] and res2["entry"]
+    assert res2["headline"] == "fetch errors: 4, still failing: 4"
+    assert ("Still not fetched after 2 or more days: Board contract (index.json: blocked by a bot challenge, since "
+            "2026-10-02)") in res2["issue_body"]
+    assert "---" in res2["issue_body"] and zh("head.pages") not in res2["issue_body"]
+    # later days: said already, nothing written
+    before = snapshot(out)
+    res3 = run_blocked(4)
+    assert not res3["entry"] and not res3["changed"] and not res3["high_signal"] and snapshot(out) == before
+    # back again: one short entry, no issue
+    res4 = do_run(tmp_path, 1, 5)
+    assert res4["entry"] and not res4["high_signal"] and res4["headline"] == "fetched again: 4"
+    assert "Fetched again after an error: Board contract (failing since 2026-10-02)" in res4["entry_en"]
+    assert zh("entry.recovered_item", source=Message("title.contract"), since="2026-10-02") in res4["entry_zh"]
+
+
+def test_still_failing_days_1_reports_each_source_once(tmp_path):
+    cfg = dict(config(), still_failing_days=1)
+    R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(routes(1)), now=day(1), config=cfg,
+          log=lambda *a: None)
+    r = dict(routes(1), **{"https://api.example.test/challenge/phase": "timeout"})
+    res = R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(r), now=day(2), config=cfg,
+                log=lambda *a: None)
+    assert res["high_signal"] and "Could not fetch in this run" not in res["entry_en"]
+    assert res["entry_en"].count("Phase endpoint (timeout") == 1
+    assert "Still not fetched after 1 or more days: Phase endpoint (timeout, since 2026-10-02)." in res["entry_en"]
+
+
+def test_pages_alone_open_an_issue_only_when_every_page_is_blind(tmp_path):
+    cfg = config(pages=("rules", "faq"))
+    r = routes(1)
+    r[f"{BASE}/faq"] = fx("page_v1.html")
+
+    def run(n, extra):
+        rr = dict(r)
+        rr.update(extra)
+        return R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(rr), now=day(n), config=cfg,
+                     log=lambda *a: None)
+
+    run(1, {})
+    one_down = {f"{BASE}/rules": 503}
+    assert not run(2, one_down)["high_signal"]
+    res = run(3, one_down)
+    assert "Still not fetched after 2 or more days: Challenge Rules" in res["entry_en"] and not res["high_signal"]
+    both_down = {f"{BASE}/rules": 503, f"{BASE}/faq": 503}
+    assert not run(4, both_down)["high_signal"]                                   # faq: first day
+    res = run(5, both_down)
+    assert res["high_signal"] and "Still not fetched after 2 or more days: FAQ (HTTP 503, since 2026-10-04)" \
+        in res["issue_body"]
+
+
+def test_issue_rules_scorer_branches_and_issue_pages(tmp_path):
+    do_run(tmp_path, 1, 1)
+    # only a work-in-progress branch of the scorer moved: changelog, no issue
+    moved = [{"name": "main", "commit": {"sha": "a" * 40}}, {"name": "feat/x", "commit": {"sha": "d" * 40}}]
+    res = do_run(tmp_path, 1, 2, extra={f"{API}/repos/example/scorer/branches?per_page=100":
+                                        json.dumps(moved).encode()})
+    assert res["entry"] and not res["high_signal"] and res["issue_body"] == ""
+    assert res["headline"] == "scorer branches"
+    assert "Branch feat/x moved bbbbbbb -> ddddddd." in res["entry_en"]
+    # a page change: an issue only for a page marked "issue" in the watch list
+    cfg = config()
+    res2 = R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(dict(routes(1, "page_v2.html"), **{
+        f"{API}/repos/example/scorer/branches?per_page=100": json.dumps(moved).encode()})), now=day(3), config=cfg,
+        log=lambda *a: None)
+    assert res2["entry"] and not res2["high_signal"]
+    cfg["pages"][0]["issue"] = True
+    res3 = R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(dict(routes(1, "page_v1.html"), **{
+        f"{API}/repos/example/scorer/branches?per_page=100": json.dumps(moved).encode()})), now=day(4), config=cfg,
+        log=lambda *a: None)
+    assert res3["high_signal"]
+    body = res3["issue_body"]
+    assert 'Removed: "6. Appeals"' in body and "```diff" in body
+    assert zh("head.pages") in body and zh("hint.rules") in body
+    assert "New link" not in body and "Link no longer" not in body               # site links: changelog only
+    assert "Link no longer on the watched pages" in res3["entry_en"]
+    # the issue page list in the packaged watch list
+    marked = {p["id"] for p in R.load_watchlist()["pages"] if p.get("issue")}
+    assert marked == {"rules", "terms", "faq", "timeline", "prizes"}
+
+
+def test_issue_body_is_cut_below_the_github_limit(monkeypatch):
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+    entry = R.Entry()
+    diff = P.compare_full([{"heading": "", "level": 0, "lines": []}],
+                          [{"heading": "", "level": 0, "lines": [f"line {i} " + "x" * 190 for i in range(24)]}])
+    for i in range(40):
+        entry.page_changes.append((f"p{i}", Message("title.rules"), f"{BASE}/p{i}", "rules", diff))
+        entry.issue_pages.add(f"p{i}")
+    body = R.render_issue(entry, "2026-10-20", "06:17")
+    assert len(body) < 65536
+    assert body.rstrip().endswith(zh("issue.cut", link="rules-watch/CHANGES.zh.md"))
+    assert sum(1 for x in body.splitlines() if x.startswith("```")) % 2 == 0
+
+
+def test_gene_list_down_still_announces_the_board_change(tmp_path):
+    do_run(tmp_path, 1, 1)
+    out = tmp_path / "out"
+    old_beta = (out / "contract" / "panels" / "TX__beta.genes.txt").read_bytes()
+    res = do_run(tmp_path, 2, 2, extra={f"{BASE}/panels/TX__beta.genes.txt": 500})
+    assert dict(res["errors"]) == {"genes:TX__beta.genes.txt": "HTTP 500"}
+    en = res["entry_en"]
+    assert "New board TX:gamma:test" in en and "cell bounds [500, 2000] -> [500, 1500]" in en
+    assert "gene panel changed: 3 -> 4 genes, ? added, ? removed" in en           # no list yet: counts unknown
+    assert "TX__beta.genes.txt (HTTP 500)" in en
+    panels = out / "contract" / "panels"
+    assert (panels / "TX__beta.genes.txt").read_bytes() == old_beta               # previous copy kept
+    assert not (panels / "TX__alpha.genes.txt").exists()                          # board gone: list removed
+    assert (panels / "TX__gamma.genes.txt").exists()
+    # the list comes back: the gene-level detail is reported then
+    res2 = do_run(tmp_path, 2, 3)
+    assert res2["errors"] == []
+    assert "gene panel changed: 3 -> 4 genes, 1 added, 0 removed, the order of the kept genes changed" in res2["entry_en"]
+    assert "does not match index.json" not in res2["entry_en"]
+
+
+def test_new_site_link_is_reported(tmp_path):
+    do_run(tmp_path, 1, 1)
+    links = json.loads((tmp_path / "out" / "site-links.json").read_text())["links"]
+    assert links == ["/challenge", "/challenge/rules"]                             # other hosts, fragments dropped
+    res = do_run(tmp_path, 1, 2, page="page_v2.html")
+    en = res["entry_en"]
+    assert ("New link on the challenge site: https://example.test/challenge/final-phase?tab=1 (not in the watch "
+            "list yet") in en
+    assert zh("head.site") in res["entry_zh"]
+    res2 = do_run(tmp_path, 1, 3, page="page_v1.html")
+    assert "Link no longer on the watched pages: https://example.test/challenge/final-phase?tab=1" in res2["entry_en"]
+
+
+def test_empty_shell_page_is_an_error_not_a_baseline(tmp_path):
+    res = do_run(tmp_path, 1, 1, page="page_shell.html")
+    assert dict(res["errors"])["page:rules"].startswith("page text too short")
+    assert not (tmp_path / "out" / "pages" / "rules.json").exists()
+
+
+def test_full_text_switch(tmp_path):
+    do_run(tmp_path, 1, 1)
+    assert not (tmp_path / "out" / "pages" / "rules.txt").exists()
+    res = do_run(tmp_path, 1, 2, full_text=True)
+    txt = tmp_path / "out" / "pages" / "rules.txt"
+    assert txt.exists() and res["changed"]
+    assert json.loads((tmp_path / "out" / "status.json").read_text())["full_text_in_repo"] is True
+    assert page_sha(text_to_sections(txt.read_text(encoding="utf-8"))) == json.loads(
+        (tmp_path / "out" / "pages" / "rules.json").read_text())["sha256"]
+    # with the text in the repository, a lost cache still gives line detail
+    res2 = do_run(tmp_path, 1, 3, full_text=True, page="page_v2.html", state="fresh_state")
+    assert not res2["rebaselined"] and "three official" in res2["entry_en"]
+    do_run(tmp_path, 1, 4, full_text=False, page="page_v2.html", state="fresh_state")
+    assert not txt.exists()
+
+
+def test_only_runs_the_named_sources(tmp_path):
+    do_run(tmp_path, 1, 1)
+    r = routes(2)
+    res = R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(r), now=day(2), config=config(),
+                only=["phase"], log=lambda *a: None)
+    assert res["headline"] == "phase"
+    status = json.loads((tmp_path / "out" / "status.json").read_text())["sources"]
+    assert set(status) == {"contract", "phase", "scorer", "page:rules", "genes:TX__alpha.genes.txt",
+                           "genes:TX__beta.genes.txt"}
+
+
+# -- messages --
+
+def test_catalogue_has_both_languages_with_the_same_placeholders():
+    cat = catalogue()
+    for key, v in cat.items():
+        assert set(v) == {"en", "zh"}, key
+        assert placeholders(v["en"]) == placeholders(v["zh"]), key
+        assert v["en"].isascii(), key
+    watch = R.load_watchlist()
+    for page in watch["pages"]:
+        assert f"title.{page['id']}" in cat, page["id"]
+        assert f"hint.{page['hint']}" in cat, page["hint"]
+    assert len({p["id"] for p in watch["pages"]}) == len(watch["pages"])
+    assert Joined([]).render("zh") == zh("word.none") and CJK.search(zh("word.none"))
+    assert Joined(["a", "b"]).render("zh") == "a" + zh("word.sep") + "b"
+    with pytest.raises(KeyError):
+        Message("no.such.key")
+
+
+def test_watchlist_urls_are_public_https():
+    watch = R.load_watchlist()
+    urls = [p["url"] for p in watch["pages"]] + [watch["contract"]["index_url"], watch["phase"]["url"]]
+    for u in urls:
+        assert re.match(r"^https://(kg\.)?virtualembryo\.ai/challenge", u), u
+    assert watch["delay_seconds"] >= 1 and "github.com/xxx12e/vec-community-kit" in watch["user_agent"]
+
+
+# -- fetcher --
+
+class _Resp:
+    def __init__(self, body=b"ok", status=200, headers=None):
+        self._b, self.status, self.headers = body, status, headers or {}
+
+    def read(self, n=-1):
+        return self._b
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def test_token_goes_to_the_github_api_only(monkeypatch):
+    monkeypatch.setenv("GITHUB_TOKEN", "t0ken-for-test")
+    f = F.Fetcher("ua", delay=0)
+    assert f._headers_for("https://api.github.com/repos/a/b")["Authorization"] == "Bearer t0ken-for-test"
+    for u in ("https://virtualembryo.ai/challenge/rules", "https://kg.virtualembryo.ai/challenge/phase",
+              "https://raw.githubusercontent.com/a/b/c/pyproject.toml", "https://api.github.com.evil.test/x"):
+        assert "Authorization" not in f._headers_for(u), u
+    assert "Authorization" not in f._headers_for("http://api.github.com/repos/a/b")      # never over plain http
+    assert f._headers_for("https://virtualembryo.ai/")["User-Agent"] == "ua"
+
+
+def test_token_is_dropped_on_a_redirect_to_another_host(monkeypatch):
+    monkeypatch.setenv("GITHUB_TOKEN", "t0ken-for-test")
+    f = F.Fetcher("ua", delay=0)
+    assert any(isinstance(h, F.TokenSafeRedirectHandler) for h in f._opener.handlers)
+    assert not any(type(h) is urllib.request.HTTPRedirectHandler for h in f._opener.handlers)
+    url = "https://api.github.com/repos/a/b"
+    req = urllib.request.Request(url, headers=f._headers_for(url))
+    assert req.get_header("Authorization") == "Bearer t0ken-for-test"
+    handler = F.TokenSafeRedirectHandler()
+    for target in ("https://evil.test/x", "https://api.github.com.evil.test/x", "http://api.github.com/x",
+                   "https://codeload.github.com/a/b"):
+        new = handler.redirect_request(req, None, 302, "Found", {}, target)
+        assert new.full_url == target and new.get_header("Authorization") is None, target
+        assert new.get_header("User-agent") == "ua"
+    same = handler.redirect_request(req, None, 301, "Moved", {}, "https://api.github.com/repositories/1")
+    assert same.get_header("Authorization") == "Bearer t0ken-for-test"
+
+
+def test_fetcher_turns_failures_into_stable_errors(monkeypatch):
+    calls = []
+
+    def boom(req, timeout):
+        calls.append(req.full_url)
+        if "timeout" in req.full_url:
+            raise urllib.error.URLError(socket.timeout("timed out"))
+        if "dns" in req.full_url:
+            raise urllib.error.URLError(socket.gaierror(-2, "Name or service not known"))
+        if "challenge" in req.full_url:
+            return _Resp(b"<html><title>Just a moment...</title></html>", 200, {"cf-mitigated": "challenge"})
+        raise urllib.error.HTTPError(req.full_url, 503, "Service Unavailable", {}, None)
+
+    monkeypatch.setattr(F.Fetcher, "_open", lambda self, req: boom(req, self.timeout))
+    f = F.Fetcher("ua", delay=0, retries=1, retry_wait=0)
+    assert f.fetch("https://x.test/timeout").error == "timeout"
+    assert f.fetch("https://x.test/dns").error == "DNS lookup failed"
+    assert f.fetch("https://x.test/challenge").error == "blocked by a bot challenge"
+    r = f.fetch("https://x.test/down")
+    assert (r.error, r.status, r.ok) == ("HTTP 503", 503, False)
+    assert calls.count("https://x.test/down") == 2                                 # one retry
+    assert calls.count("https://x.test/challenge") == 1                            # a challenge is not retried
+
+
+def test_fetcher_respects_robots_txt(monkeypatch):
+    def fake(req, timeout):
+        if req.full_url.endswith("/robots.txt"):
+            return _Resp(b"User-agent: *\nDisallow: /private\n")
+        return _Resp(b"page")
+
+    monkeypatch.setattr(F.Fetcher, "_open", lambda self, req: fake(req, self.timeout))
+    f = F.Fetcher("ua", delay=0, robots_hosts=["site.test"])
+    assert f.fetch("https://site.test/private/x").error == "disallowed by robots.txt"
+    assert f.fetch("https://site.test/public").body == b"page"
+    assert f.fetch("https://other.test/private/x").ok                              # not a robots-checked host
+
+
+# -- CLI --
+
+def test_cli_diff_on_saved_pages(tmp_path, capsys):
+    a, b = FIX / "page_v1.html", FIX / "page_v2.html"
+    assert cli.main(["diff", str(a), str(b)]) == 1
+    out = capsys.readouterr().out
+    assert 'Changed: "2. Submissions"' in out and "```diff" in out
+    assert cli.main(["diff", str(a), str(a)]) == 0
+    assert "No difference." in capsys.readouterr().out
+    assert cli.main(["diff", str(FIX / "phase_v1.json"), str(FIX / "phase_v2.json"), "--lang", "zh"]) == 1
+    assert zh("phase.phase_changed", old="p2", new="p3", label="P3 - Test phase") in capsys.readouterr().out
+
+
+def test_cli_diff_on_index_files_reads_neighbouring_gene_lists(tmp_path, capsys):
+    for v, files in ((1, {"TX__alpha.genes.txt": "alpha.genes.txt", "TX__beta.genes.txt": "beta_v1.genes.txt"}),
+                     (2, {"TX__beta.genes.txt": "beta_v2.genes.txt", "TX__gamma.genes.txt": "gamma.genes.txt"})):
+        d = tmp_path / f"v{v}"
+        d.mkdir()
+        (d / "index.json").write_bytes(fx(f"index_v{v}.json"))
+        for dst, src in files.items():
+            (d / dst).write_bytes(fx(src))
+    assert cli.main(["diff", str(tmp_path / "v1" / "index.json"), str(tmp_path / "v2" / "index.json")]) == 1
+    assert "1 added, 0 removed, the order of the kept genes changed" in capsys.readouterr().out
+
+
+def test_cli_diff_on_two_output_directories(tmp_path, capsys):
+    do_run(tmp_path, 1, 1, state="s1")
+    import shutil
+    shutil.copytree(tmp_path / "out", tmp_path / "old_out")
+    do_run(tmp_path, 2, 2, state="s1")
+    assert cli.main(["diff", str(tmp_path / "old_out"), str(tmp_path / "out")]) == 1
+    out = capsys.readouterr().out
+    assert "New board TX:gamma:test" in out and "Phase p2 -> p3" in out and "New tag v0.2.0" in out
+    assert 'Changed (by hash, no line detail): "2. Submissions"' in out
+
+
+def test_cli_diff_bad_json_exits_2_without_a_traceback(tmp_path, capsys):
+    bad, good = tmp_path / "bad.json", tmp_path / "good.json"
+    bad.write_text('{"a": 1', encoding="utf-8")
+    good.write_text('{"a": 2}', encoding="utf-8")
+    assert cli.main(["diff", str(bad), str(good)]) == 2
+    err = capsys.readouterr().err
+    assert err.startswith("not JSON: ") and "bad.json" in err and "Traceback" not in err
+    # a corrupted file inside an --out directory
+    do_run(tmp_path, 1, 1, state="s1")
+    import shutil
+    shutil.copytree(tmp_path / "out", tmp_path / "old_out")
+    (tmp_path / "out" / "contract" / "phase.json").write_text("<html>", encoding="utf-8")
+    assert cli.main(["diff", str(tmp_path / "old_out"), str(tmp_path / "out")]) == 2
+    assert "not JSON" in capsys.readouterr().err
+    (tmp_path / "out" / "contract" / "phase.json").write_bytes((tmp_path / "old_out" / "contract" / "phase.json")
+                                                                .read_bytes())
+    (tmp_path / "out" / "scorer" / "scorer.json").write_text("[1, 2]", encoding="utf-8")
+    assert cli.main(["diff", str(tmp_path / "old_out"), str(tmp_path / "out")]) == 2
+    assert "not a scorer snapshot" in capsys.readouterr().err
+    assert cli.main(["diff", str(tmp_path / "nowhere.json"), str(good)]) == 2
+
+
+def test_modules_define_each_top_level_name_once():
+    import ast
+
+    for p in sorted((ROOT / "vec_rules_watch").glob("*.py")):
+        names = [n.name for n in ast.parse(p.read_text(encoding="utf-8")).body
+                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
+        assert sorted({n for n in names if names.count(n) > 1}) == [], p.name
+
+
+def test_cli_run_writes_actions_outputs(tmp_path, monkeypatch, capsys):
+    stub = StubFetcher(routes(1))
+    monkeypatch.setattr(R, "make_fetcher", lambda cfg, delay=None: stub)
+    monkeypatch.setattr(R, "load_watchlist", lambda path=None: config())
+    monkeypatch.delenv("RULES_WATCH_FULL_TEXT", raising=False)
+    gh_out, summary, issue = tmp_path / "gh_out.txt", tmp_path / "summary.md", tmp_path / "issue.md"
+    args = ["run", "--state", str(tmp_path / "st"), "--out", str(tmp_path / "out"), "--github-output", str(gh_out),
+            "--summary", str(summary), "--issue-file", str(issue)]
+    assert cli.main(args) == 0
+    text = gh_out.read_text()
+    assert "changed=true" in text and "high_signal=false" in text and "headline=baseline" in text
+    assert "First run" in summary.read_text(encoding="utf-8")
+    assert not issue.exists()
+    stub.routes = routes(2)
+    stub.routes[f"{BASE}/rules"] = 503
+    assert cli.main(args) == 0                                                     # a page down is not a failure
+    assert issue.exists() and "Phase p2 -> p3" in issue.read_text(encoding="utf-8")
+    assert "high_signal=true" in gh_out.read_text() and "errors=1" in gh_out.read_text()
+    assert cli.main(args + ["--strict"]) == 3
+    assert not issue.exists()                                                      # nothing new: no issue
+
+
+# -- the scheduled workflow --
+
+def test_workflow_file():
+    wf = (ROOT / ".github" / "workflows" / "rules-watch.yml").read_text(encoding="utf-8")
+    assert wf.isascii() and "\r\n" not in wf and "\t" not in wf
+    assert re.search(r"schedule:\s*\n\s*- cron: \"\d+ \d+ \* \* \*\"", wf)
+    assert "workflow_dispatch:" in wf
+    assert re.search(r"permissions:\s*\n\s*contents: write", wf)
+    assert "actions/cache/restore@v4" in wf and "actions/cache/save@v4" in wf
+    assert "python -m vec_rules_watch run --state" in wf
+    assert "git add rules-watch" in wf
+    assert "RULES_WATCH_FULL_TEXT" in wf
