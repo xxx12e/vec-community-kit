@@ -238,14 +238,27 @@ python -m vec_submit_check --board T2:heart:val_interp out/heart_interp_copy_las
 python -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --json out/t1_check.json
 ```
 
-`[PASS]` / `[FAIL]` plus every error and warning, then the file's sha256, size, value range and coordinate radius:
+`[PASS]` / `[FAIL]` plus every error and warning, then one field per line: cell and gene counts, the file's
+sha256, its size and the size cap, the storage of `.X`, its value range and share of non-zero entries, and (T2/T3)
+the coordinate radius. On the real heart file (values that come from the data replaced by `...`):
 
 ```
 [PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500
   PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  n_obs: 5000
+  n_vars: 500
   sha256: <64 hex characters: keep it with the file you upload>
-  size_mb: 10.3  X_format: dense[float32]  X_min: 0.0  X_max: ...  spatial_3D_rms_radius: ...
+  size_mb: 10.3
+  max_file_mb: 1200.0
+  X_format: dense[float32]
+  X_min: ...
+  X_max: ...
+  X_nonzero_frac: ...
+  spatial_3D_rms_radius: ...
 ```
+
+For the T1 file the report shows `X_format: csr_matrix` (sparse) and `size_mb: 159.1`, and it has no
+`spatial_3D_rms_radius` line (T1 has no coordinates).
 
 On the real files each check took about a second and under 0.5 GB of memory; `vec-community-check` (section 3)
 gives the same report. A heart file checked against the embryo board fails with `n_vars=500 but board expects 498`

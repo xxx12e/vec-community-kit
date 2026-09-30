@@ -196,14 +196,25 @@ python -m vec_submit_check --board T2:heart:val_interp out/heart_interp_copy_las
 python -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --json out/t1_check.json
 ```
 
-输出 `[PASS]` / `[FAIL]` 以及每条错误和警告，然后是文件的 sha256、大小、取值范围和坐标半径：
+输出 `[PASS]` / `[FAIL]` 以及每条错误和警告，然后每行一个字段：细胞数和基因数、文件的 sha256、文件大小和大小上限、`.X` 的存储
+格式、取值范围和非零元素占比，以及（T2/T3）坐标半径。真实心脏文件上的输出（来自数据的数值用 `...` 代替）：
 
 ```
 [PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500
   PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  n_obs: 5000
+  n_vars: 500
   sha256: <64 hex characters: keep it with the file you upload>
-  size_mb: 10.3  X_format: dense[float32]  X_min: 0.0  X_max: ...  spatial_3D_rms_radius: ...
+  size_mb: 10.3
+  max_file_mb: 1200.0
+  X_format: dense[float32]
+  X_min: ...
+  X_max: ...
+  X_nonzero_frac: ...
+  spatial_3D_rms_radius: ...
 ```
+
+T1 文件的报告里是 `X_format: csr_matrix`（稀疏）和 `size_mb: 159.1`，没有 `spatial_3D_rms_radius` 这一行（T1 没有坐标）。
 
 在真实文件上每次检查约 1 秒、内存低于 0.5 GB；`vec-community-check`（第 3 节）给出同样的报告。把心脏文件拿去对全胚胎榜检查
 会失败，报 `n_vars=500 but board expects 498` 并列出多出来的两个基因。
