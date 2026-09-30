@@ -9,7 +9,8 @@ contract (`panels/index.json` and the gene lists), the phase endpoint and the or
 * `pages/*.json`: per-section headings and hashes of each page (no page text).
 * `status.json`: which sources could be fetched.
 
-Subscribe: Watch > Custom > Issues (label `rules-watch`), or the feed
+Subscribe: Watch > Custom > Issues (label `rules-watch`: the contract, the phase, scorer releases, the rules / terms /
+FAQ / timeline / prizes pages, and a watch that cannot fetch for 2 days), or the feed of every change
 https://github.com/xxx12e/vec-community-kit/commits/main/rules-watch/CHANGES.md.atom . The organisers' pages are the
 authoritative text.
 
