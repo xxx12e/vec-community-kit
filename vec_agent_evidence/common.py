@@ -35,6 +35,8 @@ PERMISSION_MODE = "bypassPermissions"
 # Tools a newer CLI may list in the init event even under --tools (harmless, recorded, never abort on them).
 INIT_TOOL_EXTRAS_OK = {"EndConversation", "StructuredOutput"}
 
+# The validation boards the kit was written for; lock.task_boards() adds any board index.json assigns to a task
+# (the test boards from 2026-10-20), so a refreshed index.json is all a new board needs.
 TASK_BOARDS = {
     "T1": ["T1:val"],
     "T2": ["T2:heart:val_interp", "T2:heart:val_extrap", "T2:embryo:val_interp"],

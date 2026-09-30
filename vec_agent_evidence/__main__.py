@@ -37,7 +37,8 @@ from . import codex as codex_mod, evidence, launch as launch_mod, lock as lock_m
 
 def _add_lock_args(sp):
     sp.add_argument("--task", choices=["T1", "T2", "T3"], required=True)
-    sp.add_argument("--boards", help="comma-separated board keys of the task (default: all boards of the task)")
+    sp.add_argument("--boards", help="comma-separated board keys of the task (default: its validation boards; any board "
+                    "that index.json assigns to the task is accepted, e.g. the test boards from 2026-10-20)")
     sp.add_argument("--prompt", required=True, help="initial prompt template (placeholders {{...}} are rendered)")
     sp.add_argument("--settings", default=str(C.DEFAULT_SETTINGS_TEMPLATE), help="settings template with hooks + deny rules")
     sp.add_argument("--appendix", default=None, help="optional --append-system-prompt-file template")

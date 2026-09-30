@@ -201,6 +201,28 @@ def record_env(run: Path, cfg: dict) -> None:
     C.write_text(env_dir / "claude_exe.sha256", f"{cfg['claude_exe_sha256']}  {cfg['claude_exe']}\n")
 
 
+# ------------------------------------------------------------------------------------------ boards
+def task_boards(task: str, index: dict) -> list:
+    """Boards of `task`: the validation boards the kit was written for, plus every board that index.json assigns to
+    the task ("task" field). The test boards published from 2026-10-20 therefore need only a refreshed index.json."""
+    known = [b for b in C.TASK_BOARDS[task] if b in index]
+    extra = sorted(k for k, v in index.items() if isinstance(v, dict) and v.get("task") == task and k not in known)
+    return known + extra
+
+
+def resolve_boards(task: str, boards, index: dict) -> list:
+    """The boards of this run: `boards` if given (each must belong to `task` in index.json), else the task's
+    validation boards present in index.json."""
+    valid = task_boards(task, index)
+    chosen = [b.strip() for b in (boards or [b for b in C.TASK_BOARDS[task] if b in index]) if b.strip()]
+    bad = [b for b in chosen if b not in valid]
+    if bad:
+        raise SystemExit(f"boards {bad} do not belong to task {task} in index.json; valid: {valid}")
+    if not chosen:
+        raise SystemExit(f"no board of task {task} in index.json; pass --boards (valid: {valid})")
+    return chosen
+
+
 # ------------------------------------------------------------------------------------------ lock
 def lock(task: str, boards, prompt, model: str, hours: float, data_root, runs_root=None, settings=None,
          appendix=None, max_turns: int = 400, effort=None, tools=None, disallowed_tools=None, seed: int = 0,
@@ -210,10 +232,6 @@ def lock(task: str, boards, prompt, model: str, hours: float, data_root, runs_ro
     """Create and freeze a run directory. Returns (run_dir, cfg). Nothing is launched."""
     if task not in C.TASK_BOARDS:
         raise SystemExit(f"task must be one of {sorted(C.TASK_BOARDS)}")
-    boards = [b.strip() for b in (boards or C.TASK_BOARDS[task]) if b.strip()]
-    bad = [b for b in boards if b not in C.TASK_BOARDS[task]]
-    if bad:
-        raise SystemExit(f"boards {bad} do not belong to task {task}; valid: {C.TASK_BOARDS[task]}")
     prompt = Path(prompt)
     settings = Path(settings) if settings else C.DEFAULT_SETTINGS_TEMPLATE
     appendix = Path(appendix) if appendix else None
@@ -225,6 +243,7 @@ def lock(task: str, boards, prompt, model: str, hours: float, data_root, runs_ro
         raise SystemExit(f"data root not found: {data_root}")
     panels_dir = data_root / "panels" if (data_root / "panels" / "index.json").exists() else vcheck.panels_dir()
     index = vcheck.load_index(panels_dir)
+    boards = resolve_boards(task, boards, index)
     runs_root = Path(runs_root).resolve() if runs_root else C.DEFAULT_RUNS_ROOT
     runs_root.mkdir(parents=True, exist_ok=True)
 

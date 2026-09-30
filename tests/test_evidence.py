@@ -120,6 +120,25 @@ def test_lock_rejects_bad_inputs(tiny_data_root, runs_root, tmp_path):
     assert not list(runs_root.glob("*_T3_*")) or all(not (r / "config.lock.json").exists() for r in runs_root.glob("*_T3_*"))
 
 
+def test_lock_accepts_a_board_that_only_index_json_knows(tiny_data_root, runs_root, tmp_path):
+    """From 2026-10-20 the test boards appear in the organisers' index.json; a refreshed index.json must be enough
+    for the lock (and the validator it uses) to accept them."""
+    import shutil
+    root = tmp_path / "data_with_test_board"
+    shutil.copytree(tiny_data_root, root)
+    idx = json.loads((root / "panels" / "index.json").read_text(encoding="utf-8"))
+    idx["T3:test_fake"] = dict(idx["T3:gata4"], key="T3:test_fake", split="test", target_ko="fake")
+    (root / "panels" / "index.json").write_text(json.dumps(idx, indent=1), encoding="utf-8")
+    assert lock_mod.task_boards("T3", idx) == ["T3:gata4", "T3:test_fake"]
+    run, cfg = lock_mod.lock("T3", ["T3:test_fake"], EXAMPLE_PROMPT, "m-1", 1, root, runs_root=runs_root,
+                             projects_dir=tmp_path / "projects", claude_exe=sys.executable)
+    assert cfg["boards"] == ["T3:test_fake"] and b"T3:test_fake" in (run / "initial_prompt.md").read_bytes()
+    with pytest.raises(SystemExit, match="do not belong to task T1"):
+        lock_mod.lock("T1", ["T3:test_fake"], EXAMPLE_PROMPT, "m-1", 1, root, runs_root=runs_root)
+    # without a board argument the default stays the task's validation boards
+    assert lock_mod.resolve_boards("T3", None, idx) == ["T3:gata4"]
+
+
 def test_dry_run_end_to_end_and_package(tiny_data_root, runs_root, tmp_path):
     projects = tmp_path / "projects"
     run, cfg = do_lock(tiny_data_root, runs_root, projects)
