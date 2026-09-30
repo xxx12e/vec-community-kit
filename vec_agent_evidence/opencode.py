@@ -1115,6 +1115,13 @@ def package_opencode(stream, prompt, out, workspace=None, lock=None, export=None
                 kind = "harness"
                 rel = "lock/" + rel
             put(rel, p.read_bytes(), kind, p)
+        # a config file that exists now but was not locked (e.g. written into the workspace during the run)
+        locked_cfg = {row.get("source") for row in (lock_info.get("config_files") or {}).values()}
+        for label, p in configs:
+            if str(p) not in locked_cfg:
+                warnings.append(f"config file {label} is not in the lock (it appeared after the lock); its current "
+                                "copy is in harness/config_not_locked/")
+                put("config_not_locked/" + label, p.read_bytes(), "harness", p)
     else:
         for label, p in configs:
             put("config/" + label, p.read_bytes(), "harness", p)

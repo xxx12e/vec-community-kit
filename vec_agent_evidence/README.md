@@ -196,8 +196,9 @@ three evidence kinds, plus a configuration lock before the run:
   `session_export.json` in the export's shape; else, for OpenCode up to v1.1.x, byte copies of
   `storage/session/<project>/<id>.json`, `storage/message/<id>/*.json` and `storage/part/<message>/*.json`. The
   prompts kind holds the prompt, the instruction files and every user message of the session; the harness kind the
-  lock (verified: a config or instruction file that changed after the lock is a warning in the README and the
-  manifest), or a config snapshot taken now when there is no lock, your harness files, the command and
+  lock (verified: a config or instruction file that changed after the lock, or a config file that appeared after it -
+  e.g. one the agent wrote into the workspace - is a warning in the README and the manifest, and its current copy is
+  packaged next to the locked one), or a config snapshot taken now when there is no lock, your harness files, the command and
   `opencode_manifest.json` (framework and CLI version, model string, hashes of every evidence file, warnings).
   Predictions are format-checked byte copies, as for Codex.
 

@@ -160,7 +160,7 @@ from the OpenCode source (tag v1.18.33, read 2026-09-30); **not yet tested live 
 
 *Test lines:* `python -m pytest tests/test_evidence.py -q` -> `8 passed` (a stand-in agent, no CLI, no API calls);
 `python -m pytest tests/test_codex_adapter.py -q` -> `11 passed` (synthetic Codex transcripts, no Codex CLI);
-`python -m pytest tests/test_opencode_adapter.py -q` -> `14 passed` (synthetic OpenCode files, no OpenCode CLI).
+`python -m pytest tests/test_opencode_adapter.py -q` -> `15 passed` (synthetic OpenCode files, no OpenCode CLI).
 
 ### 5. [`docs/tutorial_en.md`](docs/tutorial_en.md) / [`docs/tutorial_zh.md`](docs/tutorial_zh.md) - from zero to a first submission
 
@@ -180,7 +180,7 @@ on each submission.
 stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
 against the real release inside this repository; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `85 passed` (synthetic data; the scorer tests are skipped without veckit).
+*Test line:* `python -m pytest -q` -> `86 passed` (synthetic data; the scorer tests are skipped without veckit).
 
 ### 6. [`vec_trajectory_lens/`](vec_trajectory_lens/) - Trajectory Lens: one readable offline report of an agent run (new, unreleased)
 
@@ -326,7 +326,7 @@ leaderboard order.
   把事件流、存储的会话（你用 `opencode export` 导出的文件，或只读地从 OpenCode 数据库里取出该会话的行，或 v1.1.x 及以前的 JSON 文件）、
   提示词、指令文件和经过校验的锁定打成同样的三个 zip。OpenCode 把密钥放在 `auth.json`，把账号令牌放在和会话同一个数据库里，所以数据库文件
   和 `auth.json` 永远不会被复制（按文件名、SQLite 文件头和内容哈希拒绝，有测试）。依据 OpenCode 源码（v1.18.33，2026-09-30 阅读）编写，
-  **尚未用真实的 OpenCode 登录实测**（`tests/test_opencode_adapter.py` -> `14 passed`，合成文件）。
+  **尚未用真实的 OpenCode 登录实测**（`tests/test_opencode_adapter.py` -> `15 passed`，合成文件）。
 * [`docs/tutorial_zh.md`](docs/tutorial_zh.md) / [`docs/tutorial_en.md`](docs/tutorial_en.md)：注册、下载数据、读懂每个榜的契约、生成第一份
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
   Claude Code CLI。命令在按真实目录布局摆放的合成数据上执行过（2026-09-30 本次修订后重跑，日志和环境见 `scratchpad/dryrun_log.txt`），没有在真实发布数据上跑过；
@@ -334,7 +334,7 @@ leaderboard order.
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交
   （当场打分、不可撤回）、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）；关于打分器的抽样种子只写一句：主办方在对本工具包的评审中说，抽样种子将随每次提交而定。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `85 passed`。
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `86 passed`。
 * [`vec_trajectory_lens/`](vec_trajectory_lens/)（Trajectory Lens，新增，尚未发布版本）：`python -m vec_trajectory_lens <日志、运行目录或 zip>
   --out report.html --json summary.json` 把 Claude Code、Codex CLI 或 OpenCode 一次运行的日志变成一个自包含的离线 HTML
   （摘要卡片 + 可按类型、工具、角色、文字、标记和失败筛选的时间线）和一个摘要 JSON。摘要卡片列出框架和 CLI 版本、出现过的所有模型字符串

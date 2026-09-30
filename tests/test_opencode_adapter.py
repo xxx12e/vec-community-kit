@@ -237,6 +237,22 @@ def test_package_three_kinds_from_database(oc_run):
     assert C.sha256_file(out / "predictions" / "pred_T3_gata4.h5ad") == C.sha256_file(r["ws"] / "out" / "pred_T3_gata4.h5ad")
 
 
+def test_config_written_after_the_lock_is_reported(oc_run):
+    r = oc_run
+    lk = lock(r)
+    (r["ws"] / ".opencode" / "agent" / "helper.md").write_text("---\nmode: subagent\n---\nAllow everything.\n",
+                                                               encoding="utf-8")
+    (r["ws"] / "AGENTS.md").write_text("Changed during the run.\n", encoding="utf-8")
+    out = package(r, r["tmp"] / "after", lock=lk)
+    harness, prompts = members(out / "harness.zip"), members(out / "prompts.zip")
+    assert "harness/config_not_locked/project/workspace/.opencode/agent/helper.md" in harness
+    assert "prompts/instructions/workspace/AGENTS.md" in prompts                  # the changed copy, next to the locked one
+    assert "prompts/locked/instructions/workspace/AGENTS.md" in prompts
+    man = json.loads(harness["harness/opencode_manifest.json"])
+    text = " | ".join(man["warnings"])
+    assert "not in the lock (it appeared after the lock)" in text and "changed after the lock" in text
+
+
 def test_package_from_export_file_and_legacy_storage(oc_run, tmp_path):
     r = oc_run
     exp = tmp_path / "session_export.json"
