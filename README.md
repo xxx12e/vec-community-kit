@@ -138,8 +138,19 @@ by name, and a renamed copy of `$CODEX_HOME/auth.json` by its bytes. It is **unt
 (tested on synthetic transcripts only) and works after the fact: no lock, launcher or hooks. See
 [`vec_agent_evidence/README.md`](vec_agent_evidence/README.md).
 
+*OpenCode (new, unreleased):* `python -m vec_agent_evidence opencode-lock` snapshots the prompt, every OpenCode
+config and permission file, the instruction files, the `OPENCODE_*` environment and the CLI version before the run
+and prints the exact `opencode run --format json` command; `opencode-package` packages the finished run - the event
+stream, the stored session (your `opencode export` file, or that session's rows read read-only from OpenCode's
+database, or the JSON files of OpenCode up to v1.1.x), prompts, instruction files, the verified lock - into the same
+three zips. OpenCode keeps provider keys in `auth.json` and account tokens in the same database as the sessions, so
+the database file and `auth.json` are never copied (refused by name, by SQLite header and by bytes; tested). Written
+from the OpenCode source (tag v1.18.33, read 2026-09-30); **not yet tested live with a real OpenCode login**. See
+[`vec_agent_evidence/README.md`](vec_agent_evidence/README.md#opencode-runs-opencode-lock-and-opencode-package-checked-against-the-source-untested-live).
+
 *Test lines:* `python -m pytest tests/test_evidence.py -q` -> `8 passed` (a stand-in agent, no CLI, no API calls);
-`python -m pytest tests/test_codex_adapter.py -q` -> `11 passed` (synthetic Codex transcripts, no Codex CLI).
+`python -m pytest tests/test_codex_adapter.py -q` -> `11 passed` (synthetic Codex transcripts, no Codex CLI);
+`python -m pytest tests/test_opencode_adapter.py -q` -> `14 passed` (synthetic OpenCode files, no OpenCode CLI).
 
 ### 5. [`docs/tutorial_en.md`](docs/tutorial_en.md) / [`docs/tutorial_zh.md`](docs/tutorial_zh.md) - from zero to a first submission
 
@@ -272,7 +283,12 @@ leaderboard order.
   sha256），给 600 MB 团队总额省出空间；凭据文件永远不会被收集：`auth.json`、`.env`、`*.pem` 等按文件名拒绝，改了名的
   `$CODEX_HOME/auth.json` 副本按内容哈希拒绝。
   它**没有在真实的 Codex 运行上测试过**（只用合成的会话记录测试，`tests/test_codex_adapter.py` -> `11 passed`），而且是事后
-  打包：没有锁定、启动器和 hook。
+  打包：没有锁定、启动器和 hook。**OpenCode（新增，尚未发布版本）**：运行前 `opencode-lock` 给提示词、所有 OpenCode 配置和权限文件、
+  指令文件、`OPENCODE_*` 环境变量和 CLI 版本做快照，并打印要执行的 `opencode run --format json` 命令；运行后 `opencode-package`
+  把事件流、存储的会话（你用 `opencode export` 导出的文件，或只读地从 OpenCode 数据库里取出该会话的行，或 v1.1.x 及以前的 JSON 文件）、
+  提示词、指令文件和经过校验的锁定打成同样的三个 zip。OpenCode 把密钥放在 `auth.json`，把账号令牌放在和会话同一个数据库里，所以数据库文件
+  和 `auth.json` 永远不会被复制（按文件名、SQLite 文件头和内容哈希拒绝，有测试）。依据 OpenCode 源码（v1.18.33，2026-09-30 阅读）编写，
+  **尚未用真实的 OpenCode 登录实测**（`tests/test_opencode_adapter.py` -> `14 passed`，合成文件）。
 * [`docs/tutorial_zh.md`](docs/tutorial_zh.md) / [`docs/tutorial_en.md`](docs/tutorial_en.md)：注册、下载数据、读懂每个榜的契约、生成第一份
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
   Claude Code CLI。命令在按真实目录布局摆放的合成数据上执行过（2026-09-30 本次修订后重跑，日志和环境见 `scratchpad/dryrun_log.txt`），没有在真实发布数据上跑过；

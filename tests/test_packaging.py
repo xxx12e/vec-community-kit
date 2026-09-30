@@ -91,7 +91,8 @@ def test_wheel_installs_and_finds_its_panels(tmp_path):
     for n in ("vec_submit_check/panels/index.json", "vec_submit_check/panels/T1__val.genes.txt",
               "vec_submit_check/panels/T3__gata4.genes.txt", "vec_community_baselines/make_baseline.py",
               "vec_local_score/local_score.py", "vec_agent_evidence/hooks/guard.py",
-              "vec_agent_evidence/example_prompt.md", "vec_agent_evidence/example_settings.json"):
+              "vec_agent_evidence/example_prompt.md", "vec_agent_evidence/example_settings.json",
+              "vec_agent_evidence/example_opencode.json", "vec_agent_evidence/opencode.py"):
         assert n in names, n
     assert not any(n.startswith(("vec_baselines/", "tests/", "data/", "scratchpad/")) for n in names)
     entry_points = [n for n in names if n.endswith(".dist-info/entry_points.txt")]

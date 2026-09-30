@@ -4,7 +4,9 @@
 Targets the Claude Code CLI (`claude -p --output-format stream-json`); adapt launch.build_command for another CLI.
 The hooks are regex hooks (reject recognised network commands and restricted file operations; audit log), not a sandbox.
 For a run of the Codex CLI (`codex exec --json`) there is a minimal, after-the-fact packager: codex-package (see
-codex.py; untested against a live Codex run).
+codex.py; untested against a live Codex run). For OpenCode (`opencode run --format json`) there is opencode-lock
+before the run and opencode-package after it (see opencode.py; checked against the OpenCode source, untested against
+a live OpenCode run).
 
 Sub-commands
   lock      freeze a run directory (config.lock.json, prompt, settings, hooks, snapshot, workspace) and stop
@@ -13,6 +15,10 @@ Sub-commands
   package   build the upload package (predictions + trajectory.zip / prompts.zip / harness.zip) for a run after postrun
   codex-package  MINIMAL: package a finished `codex exec --json` run (stream, rollout, prompt, AGENTS.md, harness
                  files, predictions) as the same three evidence kinds; untested against a live Codex run
+  opencode-lock  BEFORE an OpenCode run: snapshot prompt, config / permission files, instruction files, OPENCODE_*
+                 environment and CLI version; print the exact `opencode run --format json` command
+  opencode-package  AFTER it: stream + stored session (export file or database rows read read-only; never the
+                 database file or auth.json) + prompts + config snapshot + lock as the same three evidence kinds
 
 Examples
   python -m vec_agent_evidence lock --task T3 --prompt my_prompt.md --model <model-id> --data-root ./data --hours 8
@@ -22,6 +28,10 @@ Examples
   python -m vec_agent_evidence package --run-dir runs/<run_id>
   python -m vec_agent_evidence codex-package --stream codex_stream.jsonl --prompt prompt.md --workspace ws \
       --prediction T3:gata4=ws/out/pred.h5ad --out runs/_upload_codex/run1
+  python -m vec_agent_evidence opencode-lock --prompt prompt.md --workspace ws --model <provider>/<model> \
+      --out runs/_opencode_lock/run1
+  python -m vec_agent_evidence opencode-package --stream opencode_stream.jsonl --prompt prompt.md --workspace ws \
+      --lock runs/_opencode_lock/run1 --prediction T3:gata4=ws/out/pred.h5ad --out runs/_upload_opencode/run1
 """
 from __future__ import annotations
 
@@ -33,6 +43,7 @@ from pathlib import Path
 
 from . import common as C
 from . import codex as codex_mod, evidence, launch as launch_mod, lock as lock_mod, package as package_mod
+from . import opencode as opencode_mod
 
 
 def _add_lock_args(sp):
@@ -83,6 +94,10 @@ def parse_args(argv=None):
                          "against the 600 MB per-team cap")
     codex_mod.add_args(sub.add_parser("codex-package", help="MINIMAL: package a finished `codex exec --json` run "
                                       "(untested against a live Codex run)"))
+    opencode_mod.add_lock_args(sub.add_parser("opencode-lock", help="before an OpenCode run: snapshot config, "
+                                              "permissions, prompt and instructions; print the exact command"))
+    opencode_mod.add_package_args(sub.add_parser("opencode-package", help="after an OpenCode run: package stream, "
+                                                 "stored session, prompts and config (untested against a live run)"))
     return p.parse_args(argv)
 
 
@@ -139,6 +154,10 @@ def main(argv=None) -> int:
         return cmd_postrun(args)
     if args.cmd == "codex-package":
         return codex_mod.run_from_args(args)
+    if args.cmd == "opencode-lock":
+        return opencode_mod.run_lock_from_args(args)
+    if args.cmd == "opencode-package":
+        return opencode_mod.run_package_from_args(args)
     if args.cmd == "package":
         return package_mod.main(["--run-dir", args.run_dir] + (["--out-root", args.out_root] if args.out_root else [])
                                 + (["--allow-abort-unknown"] if args.allow_abort_unknown else [])

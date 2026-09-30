@@ -59,4 +59,4 @@ include-package-data = false
 "vec_submit_check.panels" = ["index.json", "*.genes.txt"]
 "vec_community_baselines" = ["README.md"]
 "vec_local_score" = ["README.md"]
-"vec_agent_evidence" = ["README.md", "example_prompt.md", "example_settings.json"]
+"vec_agent_evidence" = ["README.md", "example_prompt.md", "example_settings.json", "example_opencode.json"]
