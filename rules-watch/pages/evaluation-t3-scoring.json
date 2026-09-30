@@ -2,6 +2,26 @@
   "full_text_in_repo": false,
   "id": "evaluation-t3-scoring",
   "last_changed": "2026-09-30",
+  "links": [
+    "/challenge",
+    "/challenge/account",
+    "/challenge/account/submissions",
+    "/challenge/baselines",
+    "/challenge/community",
+    "/challenge/data",
+    "/challenge/evaluation",
+    "/challenge/evaluation?section=scoring&task=3",
+    "/challenge/faq",
+    "/challenge/leaderboard",
+    "/challenge/panels/index.json",
+    "/challenge/prizes",
+    "/challenge/publish",
+    "/challenge/resources",
+    "/challenge/rules",
+    "/challenge/tasks",
+    "/challenge/terms",
+    "/challenge/timeline"
+  ],
   "sections": [
     {
       "chars": 103,
