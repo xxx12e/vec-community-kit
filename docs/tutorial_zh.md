@@ -69,15 +69,19 @@ data/
 git clone <本仓库> vec-community-kit
 cd vec-community-kit
 python -m venv .venv && .venv\Scripts\activate        # Windows；其他系统用 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[test]"                               # 工具包本身 + anndata、numpy、scipy、pandas、h5py + pytest
 python -m pytest -q                                    # 合成数据测试，不需要比赛数据
 ```
+
+`pip install -e .` 还会安装五个命令，与下文用到的 `python -m` 写法完全相同（`vec-community-check`、`vec-community-baseline`、
+`vec-community-score`、`vec-community-split`、`vec-community-evidence`，见顶层 README）。`pip install -r requirements.txt` 只装依赖，
+像本教程这样在克隆目录里用 `python -m` 运行时也够用。
 
 按章节列出前置条件（全程 Python 3.10 及以上）：
 
 | 你想做 | 章节 | 需要 |
 |---|---|---|
-| 读懂契约、生成基线文件、校验、上传 | 4、5、6、8 | `pip install -r requirements.txt`（anndata、numpy、scipy、pandas、h5py；测试用 pytest）。不需要别的。 |
+| 读懂契约、生成基线文件、校验、上传 | 4、5、6、8 | `pip install -e ".[test]"` 或 `pip install -r requirements.txt`（anndata、numpy、scipy、pandas、h5py；测试用 pytest）。不需要别的。 |
 | 在伪切分上本地打分 | 7 | 另需主办方的打分器 **veckit** 及其依赖（numpy、scipy、anndata、scikit-learn）。从主办方处获取：`pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"`，或把 https://github.com/aristoteleo/veckit 克隆到任意目录并用 `VECKIT_PATH` 指向它（Windows：`set VECKIT_PATH=C:\path\to\veckit`；其他系统：`export VECKIT_PATH=/path/to/veckit`）。检查：`python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"`。本工具包在 veckit 0.1.1 上测试过。 |
 | 真正运行 Agent 赛道骨架 | 9 | 另需安装并登录 Claude Code CLI（`claude --version` 能打印版本；无头命令 `claude -p "say ok" --max-turns 1` 能返回结果）。干跑 `python -m pytest tests/test_evidence.py -q` 既不需要 CLI 也不需要 API key。 |
 

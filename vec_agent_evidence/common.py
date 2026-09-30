@@ -18,7 +18,10 @@ from pathlib import Path
 PKG_DIR = Path(__file__).resolve().parent
 KIT_ROOT = PKG_DIR.parent
 PY = Path(sys.executable)
-DEFAULT_RUNS_ROOT = KIT_ROOT / "runs"
+# A clone (or an editable install) keeps its runs next to the code; an installed copy lives in site-packages, so
+# its runs go under the current directory instead.
+SOURCE_CHECKOUT = (KIT_ROOT / "pyproject.toml").is_file()
+DEFAULT_RUNS_ROOT = (KIT_ROOT if SOURCE_CHECKOUT else Path.cwd()) / "runs"
 DEFAULT_PROJECTS_DIR = Path.home() / ".claude" / "projects"
 DEFAULT_SETTINGS_TEMPLATE = PKG_DIR / "example_settings.json"
 DEFAULT_PROMPT_TEMPLATE = PKG_DIR / "example_prompt.md"

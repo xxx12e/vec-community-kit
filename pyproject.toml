@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vec-community-kit"
+version = "0.2.0"
+description = "Community tooling for the Virtual Embryo Challenge (NeurIPS 2026): board-contract validator, baseline generators and submission writer, local scoring wrapper around the organisers' scorer veckit, Agent-track evidence skeleton"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "vec-community-kit contributors" }]
+# Keep in step with requirements.txt (tests/test_packaging.py checks that the two lists agree).
+dependencies = [
+    "anndata>=0.10",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "pandas>=2.0",
+    "h5py>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+# The organisers' scorer, pinned to the commit the local scoring wrapper was tested against (needs git).
+score = ["veckit @ git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"]
+
+[project.urls]
+Homepage = "https://github.com/xxx12e/vec-community-kit"
+Challenge = "https://virtualembryo.ai/challenge"
+
+# Command names carry a "vec-community-" prefix so they cannot collide with the organisers' tools or with other
+# community packages; `python -m <package>` keeps working exactly as before.
+[project.scripts]
+vec-community-check = "vec_submit_check.checker:main"
+vec-community-baseline = "vec_community_baselines.make_baseline:main"
+vec-community-score = "vec_local_score.local_score:main"
+vec-community-split = "vec_local_score.make_pseudo_split:main"
+vec-community-evidence = "vec_agent_evidence.__main__:main"
+
+[tool.setuptools]
+packages = [
+    "vec_submit_check",
+    "vec_submit_check.panels",
+    "vec_community_baselines",
+    "vec_local_score",
+    "vec_agent_evidence",
+    "vec_agent_evidence.hooks",
+]
+include-package-data = false
+
+# The board contracts live in data/panels/ in the repository (the tutorials and the evidence skeleton point there);
+# an installed copy of the kit carries them inside the validator package as vec_submit_check/panels/.
+[tool.setuptools.package-dir]
+"vec_submit_check.panels" = "data/panels"
+
+[tool.setuptools.package-data]
+"vec_submit_check" = ["README.md"]
+"vec_submit_check.panels" = ["index.json", "*.genes.txt"]
+"vec_community_baselines" = ["README.md"]
+"vec_local_score" = ["README.md"]
+"vec_agent_evidence" = ["README.md", "example_prompt.md", "example_settings.json"]

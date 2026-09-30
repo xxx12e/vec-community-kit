@@ -15,3 +15,6 @@ third_party/
 
 # scratch scripts (never committed)
 scratchpad/
+build/
+dist/
+*.egg-info/

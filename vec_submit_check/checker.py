@@ -33,8 +33,9 @@ Usage:
 
 Exit code 0 = passes, 1 = fails, 2 = usage error.
 
-Panel location: the directory named by the VEC_PANELS_DIR environment variable, else <kit>/data/panels, else
-./data/panels relative to the current directory.
+Panel location: the directory named by the VEC_PANELS_DIR environment variable, else <kit>/data/panels (a clone or
+an editable install), else the copy installed with the package (pip install), else ./data/panels relative to the
+current directory.
 """
 from __future__ import annotations
 
@@ -49,6 +50,9 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PANELS = ROOT / "data" / "panels"
+# An installed (non-editable) copy of the kit carries the panel files inside this package (pyproject.toml maps
+# data/panels/ to vec_submit_check/panels/).
+PACKAGED_PANELS = Path(__file__).resolve().parent / "panels"
 # Cap on one prediction file ("single .h5ad, max 1200 MB"), measured in MB = 1e6 bytes (the stricter reading).
 MAX_FILE_MB = 1200.0
 # .X max above this looks like raw counts rather than log-normalised expression (warning only).
@@ -59,14 +63,17 @@ PAGE_MIN_CELLS = 1000
 
 
 def panels_dir(panels=None) -> Path:
-    """Resolve the directory holding index.json and the *.genes.txt files."""
+    """Resolve the directory holding index.json and the *.genes.txt files: `panels`, else $VEC_PANELS_DIR, else
+    <kit>/data/panels (a clone or an editable install), else the copy installed with the package, else
+    ./data/panels."""
     if panels is not None:
         return Path(panels)
     env = os.environ.get("VEC_PANELS_DIR")
     if env:
         return Path(env)
-    if (DEFAULT_PANELS / "index.json").exists():
-        return DEFAULT_PANELS
+    for cand in (DEFAULT_PANELS, PACKAGED_PANELS):
+        if (cand / "index.json").exists():
+            return cand
     local = Path.cwd() / "data" / "panels"
     if (local / "index.json").exists():
         return local

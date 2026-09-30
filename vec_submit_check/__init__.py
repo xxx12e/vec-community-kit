@@ -12,6 +12,6 @@ passed and nothing more (not normalisation, provenance or eligibility).
 from .checker import (COUNTS_MAX_WARN, MAX_FILE_MB, PAGE_MIN_CELLS, check, format_report, known_boards, load_index,
                       load_panel, panel_for_board, panel_sha256, panels_dir, sha256_file)
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = ["check", "format_report", "known_boards", "load_index", "load_panel", "panel_for_board", "panel_sha256",
            "panels_dir", "sha256_file", "MAX_FILE_MB", "COUNTS_MAX_WARN", "PAGE_MIN_CELLS", "__version__"]

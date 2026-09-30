@@ -84,15 +84,20 @@ the method summary; an undisclosed external source is a violation regardless of 
 git clone <this repository> vec-community-kit
 cd vec-community-kit
 python -m venv .venv && .venv\Scripts\activate        # Windows; use source .venv/bin/activate elsewhere
-pip install -r requirements.txt
+pip install -e ".[test]"                               # the kit + anndata, numpy, scipy, pandas, h5py + pytest
 python -m pytest -q                                    # synthetic tests, no challenge data needed
 ```
+
+`pip install -e .` also installs five commands that are the same as the `python -m` forms used below
+(`vec-community-check`, `vec-community-baseline`, `vec-community-score`, `vec-community-split`,
+`vec-community-evidence`; see the top-level README). `pip install -r requirements.txt` installs only the
+dependencies, which is enough when you run everything from the clone with `python -m`, as this tutorial does.
 
 Prerequisites by section (Python 3.10 or newer throughout):
 
 | you want to | sections | you need |
 |---|---|---|
-| understand the contracts, build baseline files, validate, upload | 4, 5, 6, 8 | `pip install -r requirements.txt` (anndata, numpy, scipy, pandas, h5py; pytest for the tests). Nothing else. |
+| understand the contracts, build baseline files, validate, upload | 4, 5, 6, 8 | `pip install -e ".[test]"` or `pip install -r requirements.txt` (anndata, numpy, scipy, pandas, h5py; pytest for the tests). Nothing else. |
 | score locally on a pseudo split | 7 | additionally the organisers' scorer **veckit** and its dependencies (numpy, scipy, anndata, scikit-learn). Obtain it from the organisers: `pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"`, or `git clone https://github.com/aristoteleo/veckit` anywhere and point `VECKIT_PATH` at the clone (`set VECKIT_PATH=C:\path\to\veckit` on Windows, `export VECKIT_PATH=/path/to/veckit` elsewhere). Check: `python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"`. The kit was tested against veckit 0.1.1. |
 | run the Agent-track skeleton for real | 9 | additionally the Claude Code CLI installed and logged in (`claude --version` prints a version; a headless `claude -p "say ok" --max-turns 1` returns a result). The dry run `python -m pytest tests/test_evidence.py -q` needs neither the CLI nor an API key. |
 

@@ -107,11 +107,36 @@ against the real release inside this repository; the cell-count bound is stated 
 
 *Test line:* `python -m pytest -q` -> `41 passed` (synthetic data; the scorer tests are skipped without veckit).
 
+## Install
+
+```
+git clone https://github.com/xxx12e/vec-community-kit && cd vec-community-kit
+pip install -e ".[test]"          # the kit, its dependencies and pytest (editable: the Agent skeleton records the git commit)
+python -m pytest -q               # synthetic data only
+```
+
+`pip install -e .` (or `pip install .`, or `pip install "git+https://github.com/xxx12e/vec-community-kit"`) installs the
+four packages - `vec_submit_check`, `vec_community_baselines`, `vec_local_score`, `vec_agent_evidence` - and five
+commands, each the same as its `python -m` form:
+
+| command | same as |
+|---|---|
+| `vec-community-check` | `python -m vec_submit_check` |
+| `vec-community-baseline` | `python -m vec_community_baselines.make_baseline` |
+| `vec-community-score` | `python -m vec_local_score` |
+| `vec-community-split` | `python -m vec_local_score.make_pseudo_split` |
+| `vec-community-evidence` | `python -m vec_agent_evidence` |
+
+The command names carry a `vec-community-` prefix so they cannot collide with the organisers' tools or other community
+packages. An installed copy carries the board contracts inside the validator package (`vec_submit_check/panels/`), so
+it works from any directory; `VEC_PANELS_DIR` still overrides them. Extras: `.[test]` adds pytest, `.[score]` adds the
+organisers' scorer veckit pinned to the tested commit (needs git). `pip install -r requirements.txt` still works for
+people who run the tools from a clone without installing it; the two dependency lists are kept identical (a test
+checks it).
+
 ## Quick start
 
 ```
-pip install -r requirements.txt
-python -m pytest -q
 
 # a valid baseline file for one board (T3:gata4 allows 1000-7449 cells), then validate it
 python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4 --wt data/raw/T2_heart/E8.75.h5ad --out out/t3.h5ad --n-cells 5000
@@ -129,7 +154,7 @@ python -m vec_agent_evidence run --task T3 --prompt vec_agent_evidence/example_p
 python -m vec_agent_evidence package --run-dir runs/<run_id>
 ```
 
-Requirements: Python 3.10+, anndata, numpy, scipy, pandas, h5py (see `requirements.txt`); veckit additionally
+Requirements: Python 3.10+, anndata, numpy, scipy, pandas, h5py (`pyproject.toml` / `requirements.txt`); veckit additionally
 needs scikit-learn; the Agent skeleton additionally needs the Claude Code CLI. Windows and POSIX. Source files are
 ASCII-only; the docs are in English and Chinese. `data/panels/` holds copies of the public board contracts.
 
@@ -181,4 +206,7 @@ leaderboard order.
   细胞数范围写在命令旁边。
   [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `41 passed`。
 
-安装：`pip install -r requirements.txt`，然后 `python -m pytest -q`（合成数据测试，不需要比赛数据；没有 veckit 时打分器测试被跳过）。
+安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
+五个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
+然后 `python -m pytest -q`（合成数据测试，不需要比赛数据；没有 veckit 时打分器测试被跳过）。安装后的副本把榜契约放在
+`vec_submit_check/panels/` 里，在任何目录下都能用。

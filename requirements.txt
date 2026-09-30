@@ -1,11 +1,15 @@
-# Core (validator, baselines, evidence skeleton)
+# Core (validator, baselines, local scoring wrapper, evidence skeleton). The same list as [project] dependencies in
+# pyproject.toml (tests/test_packaging.py checks that they agree):
+#   pip install -r requirements.txt   dependencies only; run the tools from a clone with `python -m <package>`
+#   pip install -e .                   the same dependencies plus the kit itself and the vec-community-* commands
 anndata>=0.10
 numpy>=1.24
 scipy>=1.10
 pandas>=2.0
 h5py>=3.8
-# Tests
+# Tests (also: pip install -e ".[test]")
 pytest>=7.0
-# Local scoring: the organisers' scorer is NOT vendored. Install it separately, e.g.
-#   pip install git+https://github.com/aristoteleo/veckit.git
+# Local scoring: the organisers' scorer is NOT vendored. Install it separately, pinned to the tested commit:
+#   pip install -e ".[score]"
+#   or: pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"
 # (it needs scikit-learn) or set VECKIT_PATH to a clone directory.

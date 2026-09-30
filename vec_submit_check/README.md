@@ -5,15 +5,16 @@ published contract. It needs anndata, numpy and scipy only: no scorer, no target
 failing rule is printed in plain words; `--json` writes the full report for scripts.
 
 ```
-pip install -r requirements.txt
+pip install -e .                  # or: pip install -r requirements.txt (then run it from the clone)
 python -m vec_submit_check --board T2:heart:val_interp pred.h5ad
 python -m vec_submit_check --board T1:val pred.h5ad --json report.json
 python -m vec_submit_check --board T3:gata4 big.h5ad --ignore-max-cells
 ```
 
 Boards: `T1:val`, `T2:embryo:val_interp`, `T2:heart:val_interp`, `T2:heart:val_extrap`, `T3:gata4`. Exit code 0 =
-passes, 1 = fails, 2 = usage error. Panel files: `data/panels/` in the kit, or the directory named by
-`VEC_PANELS_DIR`, or `./data/panels`.
+passes, 1 = fails, 2 = usage error. Installed with pip, the same check is the `vec-community-check` command. Panel
+files: the directory named by `VEC_PANELS_DIR`, else `data/panels/` in the kit (a clone or an editable install),
+else the copy installed with the package (`vec_submit_check/panels/`), else `./data/panels`.
 
 ## Sources, and which rules are the portal's
 
