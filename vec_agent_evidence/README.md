@@ -215,6 +215,9 @@ feed one run's artefacts into another's workspace, never edit a submission.
   after-the-fact `codex-package` (above; untested against a live Codex run). Another agent CLI needs
   `launch.build_command` adapted and its trajectory located by `evidence.collect_transcript`.
 * Thinking blocks may be stored without their text by the CLI; the trajectory proves the tool calls and messages.
+* Read-only marks (the workspace's `tools/`, the run directory after postrun) are file permissions: they do not
+  stop a process running as root, as in many cloud containers. Run the agent as an ordinary user if that matters;
+  the guard hook and the recorded hashes apply either way.
 * The bundle documents; it does not attest. Regex hooks, hashes and a read-only directory record and detect some
   changes; by themselves they cannot prove that nobody intervened, that no restriction was bypassed, or that the
   records were not regenerated. Keep the run directory and the CLI's own project directory as they are, and expect

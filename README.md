@@ -15,6 +15,22 @@ The organisers publish the board contracts (`panels/index.json` + gene lists), t
 veckit, a local validator/scorer in the starter kit (`score_h5ad.py`) and the portal's own format check. What each
 part here adds beyond those is stated below; official sources are cited with the date they were read.
 
+## Since 2026.10.0: one pass over the real release (2026-09-30)
+
+At the organisers' request the tutorials' commands were run, in order and as written, on the real release (a fresh
+copy of the kit on a cloud Linux runner, Python 3.10; trimmed log without scores or expression values:
+`scratchpad/realrun_log_2026-10-01.txt`). What it changed:
+
+* `veckit_info()` said `matches_tested: False` for the tested veckit commit when it was installed on Linux: the
+  recorded hashes came from a Windows checkout with CRLF line endings. Files are now hashed with LF line endings.
+* Two evidence tests failed when run as root (as in many cloud containers), because they asked `os.access`; they
+  now check the permission bits. The packaging tests now also run on Python 3.10 (they read `pyproject.toml` with
+  `tomli` there).
+* The tutorials now give the released files' sizes, cell and gene counts and storage, say that no E7.75
+  single-cell file is released and that the T3 knockout records `obs["genotype"]` (not `obs["condition"]`), show
+  the local scorer's reference cap on the heart stages (`--max-cells`), add one pseudo-split example per board, and
+  state run times and memory per step.
+
 ## What changed in 2026.10.0 (2026-09-30, after the organisers' review)
 
 From this release on the kit's versions are calendar-based (year.month.patch; the previous release was 0.1.0), so
@@ -138,7 +154,7 @@ by name, and a renamed copy of `$CODEX_HOME/auth.json` by its bytes. It is **unt
 (tested on synthetic transcripts only) and works after the fact: no lock, launcher or hooks. See
 [`vec_agent_evidence/README.md`](vec_agent_evidence/README.md).
 
-*Test lines:* `python -m pytest tests/test_evidence.py -q` -> `8 passed` (a stand-in agent, no CLI, no API calls);
+*Test lines:* `python -m pytest tests/test_evidence.py -q` -> `9 passed` (a stand-in agent, no CLI, no API calls);
 `python -m pytest tests/test_codex_adapter.py -q` -> `11 passed` (synthetic Codex transcripts, no Codex CLI).
 
 ### 5. [`docs/tutorial_en.md`](docs/tutorial_en.md) / [`docs/tutorial_zh.md`](docs/tutorial_zh.md) - from zero to a first submission
@@ -155,11 +171,13 @@ nomination and evidence - citing the official timeline and rules pages as read o
 subsample seed it says only that the organisers, in their review of this kit, said the subsample seed will depend
 on each submission.
 
-*Adds:* the complete walkthrough for both tracks in one place; the commands were executed against synthetic
-stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
-against the real release inside this repository; the cell-count bound is stated next to each command.
+*Adds:* the complete walkthrough for both tracks in one place; the commands were executed, in order and as
+written, against the real release on 2026-09-30 (cloud Linux runner; versions, exit codes, counts, run times and
+memory in `scratchpad/realrun_log_2026-10-01.txt`, earlier synthetic runs in `scratchpad/dryrun_log.txt`); the
+upload and a live Agent-track run were not part of that pass; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `61 passed` (synthetic data; the scorer tests are skipped without veckit).
+*Test line:* `python -m pytest -q` -> `64 passed` (synthetic data; without veckit the scorer tests are skipped, and
+the wheel-build test needs setuptools 77 or newer).
 
 ## Install
 
@@ -265,7 +283,7 @@ leaderboard order.
   hook（拒绝能识别出的网络命令和受限文件操作），不是网络沙箱；审计日志和哈希用于运行后核验。比主办方多出来的：把锁定 -> 运行 -> 证据 ->
   上传包变成一条机械路径，锁定哈希变了、证据里有凭据形状的字符串、预测文件字节被改过都拒绝打包。产出的是可审计的证据包（配置快照、
   完整性校验、尽力而为的守卫 hook、审计日志），不能独立证明合规；它也不知道你们队之前传了多少（`package --team-uploaded-mb` 帮你盯住
-  600 MB 总额）。测试行：`python -m pytest tests/test_evidence.py -q` -> `8 passed`。**Codex CLI（最小适配器，2026-09-30 新增）**：
+  600 MB 总额）。测试行：`python -m pytest tests/test_evidence.py -q` -> `9 passed`。**Codex CLI（最小适配器，2026-09-30 新增）**：
   `python -m vec_agent_evidence codex-package` 把一次已结束的 `codex exec --json` 运行（JSONL 事件流、按 thread id 找到的会话 rollout、
   提示词、`AGENTS.md` 指令文件、你的 harness 文件和预测文件）打成同样的 trajectory / prompts / harness 三个 zip，同样做凭据扫描和
   大小检查。rollout 与事件流大量重复，`--rollout dedup` 只保留事件流里没有的记录，`--rollout omit` 不放入（两种情况都记录完整文件的
@@ -275,12 +293,17 @@ leaderboard order.
   打包：没有锁定、启动器和 hook。
 * [`docs/tutorial_zh.md`](docs/tutorial_zh.md) / [`docs/tutorial_en.md`](docs/tutorial_en.md)：注册、下载数据、读懂每个榜的契约、生成第一份
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
-  Claude Code CLI。命令在按真实目录布局摆放的合成数据上执行过（2026-09-30 本次修订后重跑，日志和环境见 `scratchpad/dryrun_log.txt`），没有在真实发布数据上跑过；
-  细胞数范围写在命令旁边。
+  Claude Code CLI。命令已于 2026-09-30 按顺序、原样在真实发布数据上执行过（云端 Linux 机器；版本、退出码、细胞数、运行时间和内存见
+  `scratchpad/realrun_log_2026-10-01.txt`，更早的合成数据执行见 `scratchpad/dryrun_log.txt`），上传和一次真实的 Agent 赛道运行不在
+  那次执行范围内；细胞数范围写在命令旁边。那次执行带来的修正：veckit 在 Linux 上安装时 `matches_tested` 误报 False（记录的哈希来自
+  CRLF 换行的 Windows 检出，现在按 LF 计算）；以 root 身份运行时两个证据测试失败（现在检查权限位）；教程补上发布文件的大小、细胞数
+  与基因数、E7.75 单细胞文件未发布、T3 敲除文件用 `obs["genotype"]`、心脏阶段上本地打分的参考阶段上限（`--max-cells`）、每个榜
+  一个伪切分例子以及各步骤的运行时间和内存。
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交
   （当场打分、不可撤回）、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）；关于打分器的抽样种子只写一句：主办方在对本工具包的评审中说，抽样种子将随每次提交而定。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `61 passed`。
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `64 passed`
+  （没有 veckit 时跳过打分器测试；wheel 构建测试需要 setuptools 77 或更新版本）。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
 五个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
