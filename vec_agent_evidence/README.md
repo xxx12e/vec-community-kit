@@ -161,6 +161,91 @@ credential file by name (`auth.json*`, `.env`, `.env.*`, `*credential*.json`, `.
 or that has the same bytes as a credential file in `$CODEX_HOME` (a renamed copy). The finished evidence set is
 checked the same way once more, and the credential-shaped content scan below applies on top.
 
+## OpenCode runs: `opencode-lock` and `opencode-package` (checked against the source, untested live)
+
+OpenCode is the third most declared agent framework on the portal. `opencode.py` gives an OpenCode team the same
+three evidence kinds, plus a configuration lock before the run:
+
+* **Supported version and what was checked.** Everything was read from the public OpenCode source,
+  github.com/anomalyco/opencode (the repository formerly at sst/opencode), tag **v1.18.33**, commit
+  `51ef4be1d3c122f18fefb510dca8d778571f4f18`, on 2026-09-30: the `run` and `export` commands, the session storage,
+  the auth and MCP-auth files, the config and permission loading, the instruction files. The session layout of
+  OpenCode up to v1.1.x (JSON files) was read from tags v1.1.40 and v1.2.0. **It is not yet tested live with a real
+  OpenCode login**: no OpenCode binary was installed and no model was called; the tests
+  (`tests/test_opencode_adapter.py`, synthetic files laid out as the source describes) show that the adapter handles
+  that layout, not that your OpenCode version writes exactly that. Please report a run it misreads.
+* **Before the run: `opencode-lock`.** Snapshots the prompt, every config and permission file OpenCode would read
+  (the global config directory, `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, `opencode.json(c)` and `.opencode/`
+  directories from the workspace up to the repository root, `~/.opencode`), the instruction files (`AGENTS.md`,
+  `CLAUDE.md`, `CONTEXT.md` in the workspace tree and its parents, the global `AGENTS.md`), the relevant `OPENCODE_*`
+  environment variables and the CLI path / sha256 / `--version`, and writes `opencode.lock.json` +
+  `opencode.lock.sha256` and `command.txt` with the exact headless command. It warns in plain words when `share` is
+  not `"disabled"`, `webfetch` / `websearch` / `external_directory` are not denied, there is no permission block,
+  `--auto` is used, an MCP server is remote, an instruction file comes from a URL, or `~/.claude/CLAUDE.md` would be
+  pulled in. It refuses (writing nothing) when a config file holds a credential-shaped string: put keys in
+  `{env:VAR}` references instead. It does not launch OpenCode, keep a wall clock or hook tool calls; OpenCode's own
+  permission rules are the enforcement layer.
+* **The run.** `opencode run --format json` prints one JSON event per line (`step_start`, `step_finish` with tokens
+  and cost, `text`, `reasoning`, `tool_use`, `error`), each with the session id. The prompt goes in on stdin. In
+  `opencode run` a permission that resolves to "ask" is rejected automatically unless `--auto` is passed, so a run
+  never waits for a human. The stream carries no user message and no model string; those are in the stored session.
+* **After the run: `opencode-package`.** The trajectory is the stream (byte copy), the stderr log if you kept it,
+  and the stored session, found by the session id of the stream, in this order: the file you made with
+  `opencode export <sessionID> > session_export.json` and passed with `--export` (best: OpenCode's own export); else
+  the rows of that session and its child sessions (subagents) from OpenCode's database, opened read-only, written as
+  `session_export.json` in the export's shape; else, for OpenCode up to v1.1.x, byte copies of
+  `storage/session/<project>/<id>.json`, `storage/message/<id>/*.json` and `storage/part/<message>/*.json`. The
+  prompts kind holds the prompt, the instruction files and every user message of the session; the harness kind the
+  lock (verified: a config or instruction file that changed after the lock, or a config file that appeared after it -
+  e.g. one the agent wrote into the workspace - is a warning in the README and the manifest, and its current copy is
+  packaged next to the locked one), or a config snapshot taken now when there is no lock, your harness files, the command and
+  `opencode_manifest.json` (framework and CLI version, model string, hashes of every evidence file, warnings).
+  Predictions are format-checked byte copies, as for Codex.
+
+Where OpenCode keeps things (from the source): data in `$XDG_DATA_HOME/opencode`, by default
+`~/.local/share/opencode` on every platform (`opencode db path` prints the database path); config in
+`$XDG_CONFIG_HOME/opencode`, by default `~/.config/opencode`. Since v1.2.0 sessions live in the SQLite database
+`opencode.db` (tables `session`, `message`, `part`, `todo`); up to v1.1.x they were JSON files under `storage/`.
+
+**Credential files are never collected.** OpenCode keeps provider keys and OAuth tokens in `<data>/auth.json`,
+MCP OAuth tokens in `<data>/mcp-auth.json`, and account tokens in the `account`, `control_account` and `credential`
+tables of the same database that holds the sessions. So the database file is never copied: only the session,
+message, part and todo rows of the run's session are selected, read-only (after OpenCode has exited, with no `-wal`
+file next to the database, it is opened immutable, so SQLite creates no `-wal` / `-shm` side files either). Any input that is a credential file by name
+(`auth.json`, `mcp-auth.json`, `*.db`, `*.db-wal`, `*.sqlite`, `.env`, `*.pem`, ...), by the name of a link's target,
+by the SQLite header (a renamed database), or by the bytes of a credential file in the data directory (a renamed
+`auth.json`) is refused before anything is written, and the finished set is checked the same way again. The
+`OPENCODE_AUTH_CONTENT` variable is recorded as set / not set, never its value. On top, the content scan refuses an
+OpenCode auth entry (`"type"` oauth / api / wellknown followed by `"refresh"` / `"key"`) and every pattern listed
+under "Secret scan".
+
+`example_opencode.json` is a starting config for an unattended run: `"share": "disabled"`, no self-update, and a
+permission block that allows the file tools and `bash` but denies web tools, subagents, skills, and recognised
+network and process-kill commands (the same families as `hooks/guard.py`; OpenCode applies the last matching rule,
+so `"*": "allow"` comes first). Like the guard, a pattern list over command text is not a sandbox. It also denies
+`external_directory`: if your data lives outside the workspace, link it into the workspace or add an allow rule for
+its path, e.g. `"external_directory": {"*": "deny", "/abs/path/to/data/*": "allow"}`.
+
+```
+python -m vec_agent_evidence opencode-lock --prompt prompt.md --workspace <ws> --model <provider>/<model> \
+    --out runs/_opencode_lock/run1          # prints the command; also in runs/_opencode_lock/run1/command.txt
+
+OPENCODE_DISABLE_AUTOUPDATE=1 OPENCODE_DISABLE_CLAUDE_CODE=1 OPENCODE_DISABLE_LSP_DOWNLOAD=1 \
+    opencode run --format json --model <provider>/<model> --dir <ws> --title <lock id> \
+    < runs/_opencode_lock/run1/initial_prompt.md > opencode_stream.jsonl 2> opencode_stderr.log
+opencode export <sessionID from the stream> > session_export.json       # optional, preferred
+
+python -m vec_agent_evidence opencode-package --stream opencode_stream.jsonl --stderr opencode_stderr.log \
+    --prompt runs/_opencode_lock/run1/initial_prompt.md --workspace <ws> --lock runs/_opencode_lock/run1 \
+    --export session_export.json --prediction T3:gata4=<ws>/out/pred.h5ad --out runs/_upload_opencode/run1
+```
+
+Not checked or not covered: the exact text OpenCode sends to the model (system prompts, tool definitions) is not in
+any file this adapter reads; permissions are summarised per file, while OpenCode merges them (later files and
+`OPENCODE_PERMISSION` win), so read the snapshot itself; npm plugins are only named, not snapshotted; OpenCode's own
+logs (`<data>/log/`) and file snapshots are not collected; a session shared before the lock (`share` not disabled)
+cannot be unshared by this tool.
+
 ## The hooks
 
 `hooks/guard.py` (PreToolUse; exit 2 + JSON reason denies the call) rejects recognised network commands and
@@ -180,13 +265,15 @@ post-run verification of what actually happened.
 
 ## Secret scan
 
-Evidence must never carry credentials. `evidence.secret_scan`, `package` and `codex-package` scan every text-like
-evidence file for credential-shaped byte patterns (an Anthropic key prefix followed by key characters; an
+Evidence must never carry credentials. `evidence.secret_scan`, `package`, `codex-package`, `opencode-lock` and
+`opencode-package` scan every text-like evidence file for credential-shaped byte patterns (an Anthropic key prefix
+followed by key characters; an
 OpenAI-style `sk-` key not preceded by a base64 / base64url character (`A-Z a-z 0-9 + / - _`), so that an `sk-`
 occurring by chance inside a long encoded blob in a transcript - about once per 14 MB of random base64url - does not
 refuse a long run, while a key after a space, quote, `=`, `:` or an escaped newline is still caught; OAuth token
-fields as JSON keys, camelCase or snake_case, plain or JSON-escaped inside a transcript) and refuse to package on a
-hit. Pass any literal gateway key you used to `secret_scan(run, extra_values=[...])`
+fields as JSON keys, camelCase or snake_case, plain or JSON-escaped inside a transcript; an entry of OpenCode's
+`auth.json`, i.e. a `"type"` of oauth / api / wellknown followed by a `"refresh"` or `"key"` field, plain or
+JSON-escaped once) and refuse to package on a hit. Pass any literal gateway key you used to `secret_scan(run, extra_values=[...])`
 to scan for its value as well. The patterns are assembled from fragments so the kit's own source never trips the scan.
 
 ## Sizes
@@ -212,8 +299,10 @@ feed one run's artefacts into another's workspace, never edit a submission.
   the agent's Python interpreter is the hard block.
 * The full lock -> launch -> postrun -> package path is implemented for the Claude Code CLI only (`claude -p
   --output-format stream-json`, headless, hooks via a settings file). For the Codex CLI there is the minimal,
-  after-the-fact `codex-package` (above; untested against a live Codex run). Another agent CLI needs
-  `launch.build_command` adapted and its trajectory located by `evidence.collect_transcript`.
+  after-the-fact `codex-package` (above; untested against a live Codex run). For OpenCode there is `opencode-lock`
+  before the run and `opencode-package` after it (above; checked against the OpenCode source, not yet tested live with
+  a real OpenCode login); neither launches the agent. Another agent CLI needs `launch.build_command` adapted and its
+  trajectory located by `evidence.collect_transcript`.
 * Thinking blocks may be stored without their text by the CLI; the trajectory proves the tool calls and messages.
 * Read-only marks (the workspace's `tools/`, the run directory after postrun) are file permissions: they do not
   stop a process running as root, as in many cloud containers. Run the agent as an ordinary user if that matters;

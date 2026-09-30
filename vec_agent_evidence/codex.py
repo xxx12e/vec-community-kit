@@ -118,6 +118,22 @@ def _short(text, n=300) -> str:
     return text if len(text) <= n else text[:n] + "..."
 
 
+def turn_usage_total(usages) -> tuple:
+    """(token usage of the run, True when it is the last running total) from the usage objects of the stream's
+    turn.completed events. Codex puts the thread's running TOTAL into every turn.completed (codex-rs/exec/src/
+    event_processor_with_jsonl_output.rs: usage_from_last_total, checked on main and at rust-v0.45.0), so the values
+    only grow and the largest is the total; summing them would count earlier turns again. Values that do not grow
+    (per-turn usage) are summed instead, and the flag is False."""
+    usages = [u for u in usages if isinstance(u, dict)]
+    keys = {k for u in usages for k, v in u.items() if isinstance(v, (int, float)) and not isinstance(v, bool)}
+    grows = all((b.get(k) or 0) >= (a.get(k) or 0) for a, b in zip(usages, usages[1:]) for k in keys)
+    out = {}
+    for k in sorted(keys):
+        vals = [u[k] for u in usages if isinstance(u.get(k), (int, float)) and not isinstance(u.get(k), bool)]
+        out[k] = max(vals) if grows else sum(vals)
+    return out, grows
+
+
 def summarise_stream(path) -> dict:
     """Summary of a `codex exec --json` stream (either shape). Never raises on content; missing fields stay None."""
     events, n_lines, bad = read_jsonl(path)
@@ -132,6 +148,7 @@ def summarise_stream(path) -> dict:
            "turns_failed": 0, "usage": {}, "items_by_type": {}, "commands": 0, "commands_nonzero_exit": 0,
            "files_changed": [], "errors": [], "last_agent_message": None}
     usage: dict = {}
+    turn_usages = []
     for ev in events:
         t = event_type(ev)
         msg = ev.get("msg") if isinstance(ev.get("msg"), dict) else {}
@@ -146,11 +163,8 @@ def summarise_stream(path) -> dict:
             out["turns_started"] += 1
         elif t in ("turn.completed", "legacy:task_complete"):
             out["turns_completed"] += 1
-            u = ev.get("usage")
-            if isinstance(u, dict):
-                for k, v in u.items():
-                    if isinstance(v, (int, float)):
-                        usage[k] = usage.get(k, 0) + v
+            if isinstance(ev.get("usage"), dict):
+                turn_usages.append(ev["usage"])
         elif t == "turn.failed":
             out["turns_failed"] += 1
             out["errors"].append(_short((ev.get("error") or {}).get("message") if isinstance(ev.get("error"), dict)
@@ -184,6 +198,8 @@ def summarise_stream(path) -> dict:
                 out["last_agent_message"] = _short(item.get("text"), 500)
             elif it == "error":
                 out["errors"].append(_short(item.get("message")))
+    if turn_usages:                              # the running total of the last turn.completed (see turn_usage_total)
+        usage = turn_usage_total(turn_usages)[0]
     out["usage"] = usage
     out["errors"] = out["errors"][:20]
     return out

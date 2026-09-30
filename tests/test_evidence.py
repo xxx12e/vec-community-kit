@@ -280,12 +280,18 @@ def test_secret_scan_precision(tmp_path):
     leak = {"claudeAi" + "Oauth": {"access" + "Token": "x", "refresh" + "Token": "y"}, "k": "sk-" + "ant-api03-ABCDEFGHIJKLMNOP"}
     (run / "artifacts" / "leak.json").write_text(json.dumps(leak) + "\n", encoding="utf-8")
     (run / "artifacts" / "keyleak.txt").write_text("token=zai-test-1234567890abcdef\n", encoding="utf-8")
+    # the same fields JSON-escaped inside a transcript line (a tool result that printed a credentials file)
+    inner = json.dumps({"claudeAi" + "Oauth": {"access" + "Token": "x", "refresh" + "Token": "y"}})
+    (run / "artifacts" / "transcript.jsonl").write_text(json.dumps({"type": "user", "content": inner}) + "\n",
+                                                        encoding="utf-8")
     (run / "artifacts" / "model.h5ad").write_bytes(b"sk-" + b"ant-not-scanned-binary-suffix-0123456789")
     rep = evidence.secret_scan(run, extra_values=["zai-test-1234567890abcdef", ""])
     by_file = {h["file"]: h["patterns"] for h in rep["hits"]}
     assert "artifacts/scanner.py" not in by_file and "artifacts/model.h5ad" not in by_file
     assert set(by_file["artifacts/leak.json"]) == {"anthropic_api_key_shape", "oauth_access_token_field",
                                                   "oauth_refresh_token_field", "oauth_credentials_block"}
+    assert set(by_file["artifacts/transcript.jsonl"]) == {"oauth_access_token_field", "oauth_refresh_token_field",
+                                                         "oauth_credentials_block"}
     assert by_file["artifacts/keyleak.txt"] == ["extra_value_0"]
     assert rep["clean"] is False and "zai-test" not in json.dumps(rep["patterns"])
     # the kit's own source never trips the scan

@@ -1,15 +1,16 @@
 # vec-community-kit
 
-Community tooling for the **Virtual Embryo Challenge** (NeurIPS 2026, https://virtualembryo.ai/challenge). Five
+Community tooling for the **Virtual Embryo Challenge** (NeurIPS 2026, https://virtualembryo.ai/challenge). Six
 parts: a board-contract validator, baseline generators with a submission writer, a local scoring wrapper around
-the organisers' scorer veckit, an Agent-track evidence skeleton, and a bilingual step-by-step tutorial from
-registration to a first submission on every board. Everything is generic plumbing: the kit contains no modelling
+the organisers' scorer veckit, an Agent-track evidence skeleton, a bilingual step-by-step tutorial from
+registration to a first submission on every board, and Trajectory Lens, an offline report of an agent run's log. Everything is generic plumbing: the kit contains no modelling
 ideas. MIT licensed.
 
 Who it is for: first-time entrants of either track who want a validated first file on each public board before
 their first upload; teams who want to compare their own methods on a pseudo split built from released stages (a
 comparison on that split, not a prediction of the hidden-target ranking); Agent-track teams who need the
-configuration lock and the evidence package the rules describe.
+configuration lock and the evidence package the rules describe, and who want to read a run's log (or have it read
+by a reviewer) as one offline page.
 
 The organisers publish the board contracts (`panels/index.json` + gene lists), the baseline definitions, the scorer
 veckit, a local validator/scorer in the starter kit (`score_h5ad.py`) and the portal's own format check. What each
@@ -17,17 +18,30 @@ part here adds beyond those is stated below; official sources are cited with the
 
 **Rules and contract watch (new, 2026-09-30):** a daily GitHub Action checks the challenge pages, the board contract, the phase endpoint and the scorer, and writes [`rules-watch/CHANGES.md`](rules-watch/CHANGES.md) when something changes; how it works and how to subscribe: [`vec_rules_watch/README.md`](vec_rules_watch/README.md).
 
+**Trajectory Lens (new, 2026-09-30):** one offline HTML report and a summary JSON from the log of a Claude Code, Codex CLI or OpenCode run, with credential-shaped strings redacted; part 6 below and [`vec_trajectory_lens/README.md`](vec_trajectory_lens/README.md).
+
 ## What changed in 2026.10.1 (2026-09-30)
 
+* **One pass over the real release**: the tutorials' commands were run on the real data, and the two Linux fixes
+  that pass found are in this release (details below the list).
 * **New package `vec_rules_watch`**, the daily rules and contract watch above, with the command
   `vec-community-rules-watch`, the workflow `.github/workflows/rules-watch.yml` and its output folder `rules-watch/`.
-* **One pass over the real release**, and the two Linux fixes it found (below).
+* **New package `vec_trajectory_lens`** (Trajectory Lens, [`vec_trajectory_lens/`](vec_trajectory_lens/), part 6
+  below), with the command `vec-community-lens`: one self-contained, offline HTML report and a summary JSON from the
+  log of a Claude Code, Codex CLI or OpenCode run, with credential-shaped strings redacted.
+* **OpenCode** in the Agent-track evidence skeleton `vec_agent_evidence`: `opencode-lock` before the run,
+  `opencode-package` after it (part 4 below; checked against the OpenCode source, not yet tested live with a real
+  OpenCode login).
+* The secret scan also recognises an entry of OpenCode's `auth.json`, and now catches camelCase OAuth token fields
+  when they are JSON-escaped inside a transcript line too (the evidence README already said so; the pattern did not).
+* `codex-package`: the token usage in its stream summary was the sum of the `turn.completed` values, but Codex writes
+  the thread's running total there, so earlier turns were counted again; it is now the last total.
 
-At the organisers' request the tutorials' commands were run, in order and as written, on the real release (a fresh
-copy of the kit in a fresh venv on a shared cloud Linux runner, Python 3.10; trimmed log without scores or
-expression values: `scratchpad/realrun_log_2026-10-01.txt`). The final pass ran commit 74a2a18, which already
-had the fixes below but still carried the version number 2026.10.0; 2026.10.1 is the release with them. What it
-changed:
+**The pass over the real release.** At the organisers' request the tutorials' commands were run, in order and as
+written, on the real release (a fresh copy of the kit in a fresh venv on a shared cloud Linux runner, Python 3.10;
+trimmed log without scores or expression values: `scratchpad/realrun_log_2026-10-01.txt`). The final pass ran
+commit 74a2a18, which already had the fixes below but still carried the version number 2026.10.0; 2026.10.1 is the
+release with them. What it changed:
 
 * `veckit_info()` said `matches_tested: False` for the tested veckit commit when it was installed on Linux: the
   recorded hashes came from a Windows checkout with CRLF line endings. Files are now hashed with LF line endings.
@@ -60,7 +74,7 @@ they cannot be mistaken for the version numbers of the organisers' scorer veckit
   any board that `index.json` assigns to a task (the test boards), and `package --team-uploaded-mb` works as
   documented (it was rejected by the top-level CLI before).
 
-## The five parts
+## The six parts
 
 ### 1. [`vec_submit_check/`](vec_submit_check/) - local pre-upload checks
 
@@ -162,8 +176,19 @@ by name, and a renamed copy of `$CODEX_HOME/auth.json` by its bytes. It is **unt
 (tested on synthetic transcripts only) and works after the fact: no lock, launcher or hooks. See
 [`vec_agent_evidence/README.md`](vec_agent_evidence/README.md).
 
+*OpenCode (new in 2026.10.1):* `python -m vec_agent_evidence opencode-lock` snapshots the prompt, every OpenCode
+config and permission file, the instruction files, the `OPENCODE_*` environment and the CLI version before the run
+and prints the exact `opencode run --format json` command; `opencode-package` packages the finished run - the event
+stream, the stored session (your `opencode export` file, or that session's rows read read-only from OpenCode's
+database, or the JSON files of OpenCode up to v1.1.x), prompts, instruction files, the verified lock - into the same
+three zips. OpenCode keeps provider keys in `auth.json` and account tokens in the same database as the sessions, so
+the database file and `auth.json` are never copied (refused by name, by SQLite header and by bytes; tested). Written
+from the OpenCode source (tag v1.18.33, read 2026-09-30); **not yet tested live with a real OpenCode login**. See
+[`vec_agent_evidence/README.md`](vec_agent_evidence/README.md#opencode-runs-opencode-lock-and-opencode-package-checked-against-the-source-untested-live).
+
 *Test lines:* `python -m pytest tests/test_evidence.py -q` -> `9 passed` (a stand-in agent, no CLI, no API calls);
-`python -m pytest tests/test_codex_adapter.py -q` -> `11 passed` (synthetic Codex transcripts, no Codex CLI).
+`python -m pytest tests/test_codex_adapter.py -q` -> `12 passed` (synthetic Codex transcripts, no Codex CLI);
+`python -m pytest tests/test_opencode_adapter.py -q` -> `15 passed` (synthetic OpenCode files, no OpenCode CLI).
 
 ### 5. [`docs/tutorial_en.md`](docs/tutorial_en.md) / [`docs/tutorial_zh.md`](docs/tutorial_zh.md) - from zero to a first submission
 
@@ -184,8 +209,31 @@ written, against the real release on 2026-09-30 (cloud Linux runner; versions, e
 memory in `scratchpad/realrun_log_2026-10-01.txt`, earlier synthetic runs in `scratchpad/dryrun_log.txt`); the
 upload and a live Agent-track run were not part of that pass; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `103 passed` (synthetic data; without veckit the scorer tests are skipped, and
+*Test line:* `python -m pytest -q` -> `132 passed` (synthetic data; without veckit the scorer tests are skipped, and
 the wheel-build test needs setuptools 77 or newer).
+
+### 6. [`vec_trajectory_lens/`](vec_trajectory_lens/) - Trajectory Lens: one readable offline report of an agent run (new in 2026.10.1)
+
+`python -m vec_trajectory_lens <log, run directory or zip> --out report.html --json summary.json` turns the log of a
+Claude Code run (stream-json or session JSONL, subagents included), a Codex CLI run (exec `--json` stream or
+rollout) or an OpenCode run (`--format json` stream, `opencode export` document, database, legacy JSON storage) into
+one self-contained HTML file - a summary card and a timeline you can filter by kind, tool, actor, text, flagged and
+failed events - and a summary JSON. The card shows the framework and CLI version, every model string seen (flagged
+when there is more than one), turns, tool calls by tool, token totals (input / output / cache; each model response
+counted once), wall time, files written and edited, network-shaped commands (the evidence guard's own patterns) and
+the secret-scan result. Credential-shaped strings are redacted in every output, and each output is scanned again
+before it is written. The HTML loads nothing (no CDN, no font, no link out); an unzipped evidence package or the
+uploaded `trajectory.zip` can be read directly. PantheonOS: not yet (its line format is not documented). Chinese:
+[`docs/trajectory_lens_zh.md`](docs/trajectory_lens_zh.md).
+
+*Adds:* a way for a team to read its own run before choosing which completed run to submit, and for a reviewer to
+read any team's trajectory without that team's CLI. It reads logs: it does not prove autonomy, a locked
+configuration or rule compliance, and its network flags are regular expressions over command text. It is
+complementary to **VEC Evidence Check** (Alex Solonsky), which hashes and seals a run package offline; the lens makes
+the log inside readable. See [`vec_trajectory_lens/README.md`](vec_trajectory_lens/README.md).
+
+*Test line:* `python -m pytest tests/test_trajectory_lens.py -q` -> `13 passed` (synthetic logs for each parser, the
+schema round trip, redaction, network flags, an HTML with no external URL).
 
 ## Install
 
@@ -196,8 +244,8 @@ python -m pytest -q               # synthetic data only
 ```
 
 `pip install -e .` (or `pip install .`, or `pip install "git+https://github.com/xxx12e/vec-community-kit"`) installs the
-packages - `vec_submit_check`, `vec_community_baselines`, `vec_local_score`, `vec_agent_evidence` and (since the
-rules watch) `vec_rules_watch` - and these commands, each the same as its `python -m` form:
+six packages - `vec_submit_check`, `vec_community_baselines`, `vec_local_score`, `vec_agent_evidence`,
+`vec_rules_watch`, `vec_trajectory_lens` - and seven commands, each the same as its `python -m` form:
 
 | command | same as |
 |---|---|
@@ -207,6 +255,7 @@ rules watch) `vec_rules_watch` - and these commands, each the same as its `pytho
 | `vec-community-split` | `python -m vec_local_score.make_pseudo_split` |
 | `vec-community-evidence` | `python -m vec_agent_evidence` |
 | `vec-community-rules-watch` | `python -m vec_rules_watch` |
+| `vec-community-lens` | `python -m vec_trajectory_lens` |
 
 The command names carry a `vec-community-` prefix so they cannot collide with the organisers' tools or other community
 packages. The module names can: a future pip-installable `vec-submit-check` by another author that ships a
@@ -236,6 +285,9 @@ python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad 
 # Agent track: lock -> run -> collect evidence -> package (needs the Claude Code CLI installed and logged in)
 python -m vec_agent_evidence run --task T3 --prompt vec_agent_evidence/example_prompt.md --model <model-id> --data-root ./data --hours 8
 python -m vec_agent_evidence package --run-dir runs/<run_id>
+
+# read a run's log (any of the three CLIs) as one offline page + summary JSON
+python -m vec_trajectory_lens runs/<run_id> --out report.html --json summary.json
 ```
 
 Requirements: Python 3.10+, anndata, numpy, scipy, pandas, h5py (`pyproject.toml` / `requirements.txt`); veckit additionally
@@ -254,16 +306,21 @@ leaderboard order.
 
 ## 中文简介
 
-面向 **Virtual Embryo Challenge**（NeurIPS 2026，https://virtualembryo.ai/challenge）的社区工具包，五个部分：榜契约校验器、
-基线生成器与提交文件写入器、主办方打分器 veckit 的本地封装、Agent 赛道的证据骨架，以及一份"从零到第一次提交"的中英文教程。
+面向 **Virtual Embryo Challenge**（NeurIPS 2026，https://virtualembryo.ai/challenge）的社区工具包，六个部分：榜契约校验器、
+基线生成器与提交文件写入器、主办方打分器 veckit 的本地封装、Agent 赛道的证据骨架、一份"从零到第一次提交"的中英文教程，
+以及把 Agent 运行日志变成离线报告的 Trajectory Lens。
 全部是通用工具，不含任何建模思路。MIT 许可。面向两个赛道的首次参赛者、想在自己构造的伪切分上比较自己几种方法的队伍（只是该切分上的比较，
 不预测隐藏目标上的名次），以及需要配置锁定和证据包的 Agent 赛道队伍。
 
 **规则与契约监测（2026-09-30 新增）**：每日运行的 GitHub Action 检查比赛页面、榜契约、阶段接口和打分器，有变化就写入 [`rules-watch/CHANGES.zh.md`](rules-watch/CHANGES.zh.md)；说明和订阅方法见 [`vec_rules_watch/README.md`](vec_rules_watch/README.md)。
 
-版本 2026.10.1（2026-09-30）：新增规则监测包 `vec_rules_watch`、命令 `vec-community-rules-watch`、工作流
-`.github/workflows/rules-watch.yml` 和输出目录 `rules-watch/`；按顺序、原样在真实发布数据上执行了一遍教程命令，并修正了那次执行发现的
-两个 Linux 问题（见下面教程一项）。
+**Trajectory Lens（2026-09-30 新增）**：把 Claude Code、Codex CLI 或 OpenCode 一次运行的日志变成一个离线 HTML 报告和一个摘要 JSON，凭据形状的字符串被脱敏；说明见 [`docs/trajectory_lens_zh.md`](docs/trajectory_lens_zh.md)。
+
+版本 2026.10.1（2026-09-30）：按顺序、原样在真实发布数据上执行了一遍教程命令，并修正了那次执行发现的两个 Linux 问题（见下面教程一项）；
+新增规则监测包 `vec_rules_watch`（命令 `vec-community-rules-watch`、工作流 `.github/workflows/rules-watch.yml`、输出目录 `rules-watch/`）；
+新增 Trajectory Lens 包 `vec_trajectory_lens`（命令 `vec-community-lens`）；Agent 赛道证据骨架 `vec_agent_evidence` 支持 OpenCode
+（`opencode-lock` / `opencode-package`）；凭据扫描也识别 OpenCode `auth.json` 的条目，以及转义后出现在会话记录行里的 camelCase OAuth
+令牌字段；`codex-package` 的 token 合计改为取最后一个累计值（以前把前几轮重复计入）。
 
 * [`vec_submit_check/`](vec_submit_check/)：`python -m vec_submit_check --board <榜> pred.h5ad` 对照已公布的榜契约做本地上传前
   检查（基因面板与顺序、细胞数范围、数值有限/非负/可转 float32、坐标、文件大小）；每条规则标明是 portal（门户会拒）、stricter（常数矩阵）
@@ -304,8 +361,13 @@ leaderboard order.
   大小检查。rollout 与事件流大量重复，`--rollout dedup` 只保留事件流里没有的记录，`--rollout omit` 不放入（两种情况都记录完整文件的
   sha256），给 600 MB 团队总额省出空间；凭据文件永远不会被收集：`auth.json`、`.env`、`*.pem` 等按文件名拒绝，改了名的
   `$CODEX_HOME/auth.json` 副本按内容哈希拒绝。
-  它**没有在真实的 Codex 运行上测试过**（只用合成的会话记录测试，`tests/test_codex_adapter.py` -> `11 passed`），而且是事后
-  打包：没有锁定、启动器和 hook。
+  它**没有在真实的 Codex 运行上测试过**（只用合成的会话记录测试，`tests/test_codex_adapter.py` -> `12 passed`），而且是事后
+  打包：没有锁定、启动器和 hook。**OpenCode（2026.10.1 新增）**：运行前 `opencode-lock` 给提示词、所有 OpenCode 配置和权限文件、
+  指令文件、`OPENCODE_*` 环境变量和 CLI 版本做快照，并打印要执行的 `opencode run --format json` 命令；运行后 `opencode-package`
+  把事件流、存储的会话（你用 `opencode export` 导出的文件，或只读地从 OpenCode 数据库里取出该会话的行，或 v1.1.x 及以前的 JSON 文件）、
+  提示词、指令文件和经过校验的锁定打成同样的三个 zip。OpenCode 把密钥放在 `auth.json`，把账号令牌放在和会话同一个数据库里，所以数据库文件
+  和 `auth.json` 永远不会被复制（按文件名、SQLite 文件头和内容哈希拒绝，有测试）。依据 OpenCode 源码（v1.18.33，2026-09-30 阅读）编写，
+  **尚未用真实的 OpenCode 登录实测**（`tests/test_opencode_adapter.py` -> `15 passed`，合成文件）。
 * [`docs/tutorial_zh.md`](docs/tutorial_zh.md) / [`docs/tutorial_en.md`](docs/tutorial_en.md)：注册、下载数据、读懂每个榜的契约、生成第一份
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
   Claude Code CLI。命令已于 2026-09-30 按顺序、原样在真实发布数据上执行过（云端 Linux 机器；版本、退出码、细胞数、运行时间和内存见
@@ -317,11 +379,19 @@ leaderboard order.
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交
   （当场打分、不可撤回）、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）；关于打分器的抽样种子只写一句：主办方在对本工具包的评审中说，抽样种子将随每次提交而定。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `103 passed`
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `132 passed`
   （没有 veckit 时跳过打分器测试；wheel 构建测试需要 setuptools 77 或更新版本）。
+* [`vec_trajectory_lens/`](vec_trajectory_lens/)（Trajectory Lens，2026.10.1 新增）：`python -m vec_trajectory_lens <日志、运行目录或 zip>
+  --out report.html --json summary.json` 把 Claude Code、Codex CLI 或 OpenCode 一次运行的日志变成一个自包含的离线 HTML
+  （摘要卡片 + 可按类型、工具、角色、文字、标记和失败筛选的时间线）和一个摘要 JSON。摘要卡片列出框架和 CLI 版本、出现过的所有模型字符串
+  （多于一个时标出）、轮数、按工具统计的调用、token 合计、墙钟时间、写入和修改的文件、"看起来像联网"的命令（与证据守卫 hook 同一套正则）
+  以及凭据扫描结果；所有输出里凭据形状的字符串都被脱敏，写文件前再扫一遍。HTML 不加载任何外部资源。PantheonOS 暂不支持（其日志行格式没有公开文档）。
+  它只是读日志，不能证明自主运行、配置锁定或遵守规则。与已提交的 **VEC Evidence Check**（Alex Solonsky，离线哈希与封存证据包）互补。
+  中文说明：[`docs/trajectory_lens_zh.md`](docs/trajectory_lens_zh.md)。测试行：`python -m pytest tests/test_trajectory_lens.py -q` -> `13 passed`。
+
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
-五个命令以及规则监测的 `vec-community-rules-watch`，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
+/ `-rules-watch` / `-lens` 七个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
 然后 `python -m pytest -q`（合成数据测试，不需要比赛数据；没有 veckit 时打分器测试被跳过）。安装后的副本把榜契约放在
 `vec_submit_check/panels/` 里，在任何目录下都能用。命令名都带 `vec-community-` 前缀，不会与别的工具冲突；模块名可能冲突：
 将来若有别的作者发布可 pip 安装、并带 `vec_submit_check` 包的 `vec-submit-check`，装进同一环境会与本工具包的校验器互相覆盖

@@ -82,9 +82,11 @@ def _rx(*parts: str):
 # carry the neutral labels only.
 SECRET_PATTERNS = (
     ("anthropic_api_key_shape", _rx("sk-", "ant-", r"[A-Za-z0-9_\-]{8,}")),
-    ("oauth_access_token_field", _rx('"', "access", "Token", r'"\s*:')),
-    ("oauth_refresh_token_field", _rx('"', "refresh", "Token", r'"\s*:')),
-    ("oauth_credentials_block", _rx('"?', "claudeAi", "Oauth", r'"?\s*:')),
+    # camelCase OAuth token fields (Claude Code's credentials file and similar), plain or JSON-escaped inside a
+    # transcript line (a tool result that printed such a file is stored with a backslash before each quote)
+    ("oauth_access_token_field", _rx(r'\\?"', "access", "Token", r'\\?"\s*:')),
+    ("oauth_refresh_token_field", _rx(r'\\?"', "refresh", "Token", r'\\?"\s*:')),
+    ("oauth_credentials_block", _rx(r'\\?"?', "claudeAi", "Oauth", r'\\?"?\s*:')),
     # OpenAI-style keys (Codex CLI and other agents): "sk-" + optional project prefix + key characters, not an
     # Anthropic key (above), and not preceded by any base64 / base64url character (A-Z a-z 0-9 + / - _): so
     # "task-..." / "disk-..." identifiers do not match, and neither does an "sk-" that happens to occur in the middle
@@ -95,6 +97,11 @@ SECRET_PATTERNS = (
                                  r"(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}")),
     # snake_case token fields of an auth file (e.g. the Codex CLI's), plain or JSON-escaped inside a transcript
     ("auth_token_field", _rx(r'\\?"', "(?:id|access|refresh)", "_token", r'\\?"\s*:')),
+    # an entry of OpenCode's auth.json: per provider an object whose "type" field (oauth / api / wellknown) is followed
+    # by its "refresh" or "key" field; plain, pretty-printed or JSON-escaped inside a transcript (the key value itself
+    # need not look like a key, so the entry's shape is what is matched)
+    ("opencode_auth_entry", _rx(r'\\?"', "ty", r'pe\\?"(?:\s|\\[nrt])*:(?:\s|\\[nrt])*\\?"', "(?:oauth|api|wellknown)",
+                                r'\\?"(?:\s|\\[nrt])*,(?:\s|\\[nrt])*\\?"', "(?:refresh|key)", r'\\?"(?:\s|\\[nrt])*:')),
 )
 SECRET_SCAN_SUFFIXES = (".json", ".jsonl", ".md", ".txt", ".log", ".py", ".sha256", ".env", ".yaml", ".yml", ".toml", ".cfg")
 

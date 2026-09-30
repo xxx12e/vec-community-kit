@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vec-community-kit"
 version = "2026.10.1"
-description = "Community tooling for the Virtual Embryo Challenge (NeurIPS 2026): board-contract validator, baseline generators and submission writer, local scoring wrapper around the organisers' scorer veckit, Agent-track evidence skeleton, daily rules and contract watch"
+description = "Community tooling for the Virtual Embryo Challenge (NeurIPS 2026): board-contract validator, baseline generators and submission writer, local scoring wrapper around the organisers' scorer veckit, Agent-track evidence skeleton (Claude Code, Codex, OpenCode), daily rules and contract watch, Trajectory Lens (offline report of an agent run's log)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -38,6 +38,7 @@ vec-community-score = "vec_local_score.local_score:main"
 vec-community-split = "vec_local_score.make_pseudo_split:main"
 vec-community-evidence = "vec_agent_evidence.__main__:main"
 vec-community-rules-watch = "vec_rules_watch.__main__:main"
+vec-community-lens = "vec_trajectory_lens.__main__:main"
 
 [tool.setuptools]
 packages = [
@@ -48,6 +49,8 @@ packages = [
     "vec_agent_evidence",
     "vec_agent_evidence.hooks",
     "vec_rules_watch",
+    "vec_trajectory_lens",
+    "vec_trajectory_lens.parsers",
 ]
 include-package-data = false
 
@@ -61,5 +64,6 @@ include-package-data = false
 "vec_submit_check.panels" = ["index.json", "*.genes.txt"]
 "vec_community_baselines" = ["README.md"]
 "vec_local_score" = ["README.md"]
-"vec_agent_evidence" = ["README.md", "example_prompt.md", "example_settings.json"]
+"vec_agent_evidence" = ["README.md", "example_prompt.md", "example_settings.json", "example_opencode.json"]
 "vec_rules_watch" = ["README.md", "messages.json", "watchlist.json"]
+"vec_trajectory_lens" = ["README.md"]

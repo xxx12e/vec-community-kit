@@ -43,7 +43,7 @@ def test_versions_and_packages_agree():
     packages = proj["tool"]["setuptools"]["packages"]
     top = sorted({p.split(".")[0] for p in packages})
     assert top == ["vec_agent_evidence", "vec_community_baselines", "vec_local_score", "vec_rules_watch",
-                   "vec_submit_check"]
+                   "vec_submit_check", "vec_trajectory_lens"]
     assert "vec_baselines" not in " ".join(packages)
     for name in top:
         assert importlib.import_module(name).__version__ == version, name
@@ -53,7 +53,8 @@ def test_versions_and_packages_agree():
 def test_console_scripts_resolve():
     scripts = pyproject()["project"]["scripts"]
     assert set(scripts) == {"vec-community-check", "vec-community-baseline", "vec-community-score",
-                            "vec-community-split", "vec-community-evidence", "vec-community-rules-watch"}
+                            "vec-community-split", "vec-community-evidence", "vec-community-rules-watch",
+                            "vec-community-lens"}
     for target in scripts.values():
         mod, func = target.split(":")
         assert callable(getattr(importlib.import_module(mod), func)), target
@@ -82,7 +83,7 @@ def test_wheel_installs_and_finds_its_panels(tmp_path):
     src = tmp_path / "src"                           # build from a copy: setuptools writes build/ and *.egg-info
     ignore = shutil.ignore_patterns("__pycache__", "*.pyc")
     for d in ("vec_submit_check", "vec_community_baselines", "vec_local_score", "vec_agent_evidence", "vec_rules_watch",
-              "data/panels"):
+              "vec_trajectory_lens", "data/panels"):
         shutil.copytree(ROOT / d, src / d, ignore=ignore)
     for f in ("pyproject.toml", "README.md", "LICENSE"):
         shutil.copy2(ROOT / f, src / f)
@@ -97,7 +98,9 @@ def test_wheel_installs_and_finds_its_panels(tmp_path):
               "vec_submit_check/panels/T3__gata4.genes.txt", "vec_community_baselines/make_baseline.py",
               "vec_local_score/local_score.py", "vec_agent_evidence/hooks/guard.py",
               "vec_agent_evidence/example_prompt.md", "vec_agent_evidence/example_settings.json",
-              "vec_rules_watch/messages.json", "vec_rules_watch/watchlist.json", "vec_rules_watch/runner.py"):
+              "vec_rules_watch/messages.json", "vec_rules_watch/watchlist.json", "vec_rules_watch/runner.py",
+              "vec_agent_evidence/example_opencode.json", "vec_agent_evidence/opencode.py",
+              "vec_trajectory_lens/README.md", "vec_trajectory_lens/parsers/claude.py"):
         assert n in names, n
     assert not any(n.startswith(("vec_baselines/", "tests/", "data/", "scratchpad/", "rules-watch/")) for n in names)
     entry_points = [n for n in names if n.endswith(".dist-info/entry_points.txt")]
