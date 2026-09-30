@@ -8,13 +8,11 @@ weights published on the evaluation pages (floor = 50, ceiling = 100).
 **The default output is the multi-seed band.** One call scores your prediction under subsample seeds 0 1 2 3 4
 and prints the task score as mean, sd and band (min..max over the seeds), with a per-metric table of means;
 `--single-seed [--seed N]` gives the old one-seed table (faster, for quick checks), `--seeds ...` other seeds,
-`--verbose` every per-seed table as well. Why: from 20 October 2026 the organisers' scorer draws its subsample with
-a seed that depends on each submission (the organisers, in their review of this kit, September 2026). A published
-score is then one draw from a band of this kind - the same file uploaded twice can score differently - and a single
-local seed hides how wide that band is. The local band measures the subsampling noise of the protocol on your
-pseudo split, not on the hidden target; use it to decide whether a difference between two of your methods is real
-(outside the band) or noise (inside it). Each input file is read once and reused for every seed; seed `s` of the
-band is exactly the `--single-seed --seed s` result.
+`--verbose` every per-seed table as well. Why: the organisers, in their review of this kit (September 2026), said
+the subsample seed will depend on each submission, and a single local seed hides how much the score moves with the
+subsample. The local band measures the subsampling noise of the protocol on your pseudo split, not on the hidden
+target; to decide whether a difference between two of your methods is real, use the paired mode below. Each input
+file is read once and reused for every seed; seed `s` of the band is exactly the `--single-seed --seed s` result.
 
 **Comparing two predictions: the paired mode (`--pred A --pred B`).** Both files are scored under the same seeds,
 and in each seed against one shared draw - the same reference and target subsamples, target halves, cell-type
@@ -159,7 +157,7 @@ neighborhood_mmd       0.4421    0.0457     0.4500     0.2188   0.507  0.015  12
 TASK SCORE (0-100; floor=50, ceiling=100): mean 53.11  sd 3.54  band 48.86..56.96 (min..max over 5 seeds)  [4.5s]
 pseudo_pred.h5ad on E8.75.h5ad: 53.11 +- 3.54 (sd), band 48.86..56.96 (min..max over seeds [0, 1, 2, 3, 4])
 * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
-note: from 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each submission: ...
+note: the organisers, in their review of this kit, said the subsample seed will depend on each submission ...
 veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
 ```
 

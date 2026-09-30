@@ -249,10 +249,9 @@ python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad 
 
 The first scoring command prints the **band** - the default output since 2026-09-30: the task score over subsample
 seeds 0-4 as mean, sd and min..max, with a per-metric table of means. The second (`--single-seed`, optionally
-`--seed N`) prints one seed's full per-metric table. The band is the default because from 20 October 2026 the
-organisers' scorer draws its subsample with a seed that depends on each submission (the organisers, in their review
-of this kit): one published score is one draw from a band of this kind, and the same file uploaded twice can score
-differently.
+`--seed N`) prints one seed's full per-metric table. The band is the default because the organisers, in their
+review of this kit, said the subsample seed will depend on each submission; a single local seed hides how much the
+score moves with the subsample.
 
 For T1 hold out E9.5_RNA and predict it from E8.5_RNA: build the prediction from `--last data/raw/T1/E8.5_RNA.h5ad`
 and score with `--task T1 --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad`. For T3 hold
@@ -285,6 +284,10 @@ a result. Two bands can overlap while the paired difference keeps its sign: on t
 stand-in B (the `copy_last` file with its coordinates grown to the target's size) has the band 52.49..61.32 against
 A's 48.86..56.96, and B - A is +3.63..+4.38 on all five seeds. Either way it is a comparison on this pseudo split,
 not a prediction of the order on the hidden target.
+
+From 20 October the validation stages are released with their answers (section 11), so a real held-out stage can
+be the `--target` instead of a training stage - for example the released T2 heart E10.5 with `--reference` E9.5,
+the prediction built from the earlier stages only. It is still the kit's local protocol, not the organisers' score.
 
 `python -m vec_local_score.make_pseudo_split` is optional: it exports one fixed split as files for inspection or for
 calling the veckit CLI directly. Its outputs are not inputs to `vec_local_score` (the wrapper refuses them, because
@@ -422,11 +425,8 @@ section; re-read them on 20 October.
    free, and a rejected (invalid) upload does not consume a scored attempt, but a valid, weak file uses up half of
    the phase's quota on that board. Validate every file locally first (section 6), choose your two files per board
    before the first upload, and keep each uploaded file with its sha256.
-3. **The scorer's subsample seed depends on each submission** from 20 October (the organisers, in their review of
-   this kit; not yet on the public pages on 2026-09-30). An official score is one draw from a band: the same file
-   uploaded twice can score differently. `python -m vec_local_score` prints that band by default (section 7); read
-   a difference between two candidate files against it. The rules (section 10) allow returned scores to choose among
-   predictions, not to compute them.
+3. **The scorer's subsample seed.** The organisers, in their review of this kit, said the subsample seed will
+   depend on each submission.
 4. **Test inputs are released without labels, and the test boards get their own contracts.** The kit's copies in
    `data/panels/` are the validation boards as of 2026-09-30. When the test boards appear, download the new
    `panels/index.json` and gene lists into `data/panels/` (or point `VEC_PANELS_DIR` at them); `vec_submit_check`,
@@ -446,7 +446,3 @@ section; re-read them on 20 October.
    written by the agent - a file a person edited is not an Agent entry (rules, Agent Team section and section 14).
    Keep every run directory untouched until the organisers' checks from 4 December; build the upload with
    `python -m vec_agent_evidence package` (Claude Code runs) or `codex-package` (Codex runs, section 9).
-7. **A better local check.** With the validation answers in hand you can score a prediction locally against a real
-   held-out stage instead of a pseudo split of training stages - for example `--target` the released T2 heart E10.5
-   with `--reference` E9.5, predicted from the earlier stages only. It is still the kit's local protocol (its own
-   subsample and split-half ceiling), not the organisers' score.

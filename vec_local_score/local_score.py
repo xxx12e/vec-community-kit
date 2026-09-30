@@ -35,11 +35,10 @@ Conventions this wrapper adds on top of veckit (veckit itself only returns raw m
 
 DEFAULT OUTPUT = THE MULTI-SEED BAND. One call scores the prediction under several subsample seeds (default
 0 1 2 3 4) and prints mean, sd and the band (min..max over the seeds) of the task score, with a per-metric table
-of means. From 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each submission
-(organisers, review of this kit, 2026-09), so one published score is one draw from such a band; a single-seed
-number hides that. --single-seed [--seed N] restores the old one-seed table (faster; for quick checks). The
-JSON of the band carries task_score_mean (and task_score_sd / _min / _max, band, task_scores); task_score is the
-key of the single-seed JSON only.
+of means. The organisers, in their review of this kit (2026-09), said the subsample seed will depend on each
+submission; a single-seed number hides how much the score moves with the subsample. --single-seed [--seed N]
+restores the old one-seed table (faster; for quick checks). The JSON of the band carries task_score_mean (and
+task_score_sd / _min / _max, band, task_scores); task_score is the key of the single-seed JSON only.
 
 PAIRED COMPARISON (--pred A --pred B). Both predictions are scored under the same seeds, and in each seed against
 the same draw - reference and target subsamples, target halves, probe, floor and ceiling - so the per-seed
@@ -334,9 +333,9 @@ def format_table(res: dict) -> str:
 
 # ---- the multi-seed band (default output) ------------------------------------------------------------
 DEFAULT_SEEDS = (0, 1, 2, 3, 4)
-SEED_NOTE = ("from 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each submission: "
-             "one published score is one draw from a band like this one (this band measures subsampling noise on "
-             "YOUR pseudo split, not on the hidden target)")
+SEED_NOTE = ("the organisers, in their review of this kit, said the subsample seed will depend on each submission; "
+             "this band shows how much the score moves with the subsample seed on YOUR pseudo split, not on the "
+             "hidden target")
 
 
 def summarise(task: str, pred, target, reference, seeds=DEFAULT_SEEDS, setting: str = "heart", frac: float = 0.1,
@@ -597,8 +596,9 @@ def main(argv=None, prog: str = "python -m vec_local_score") -> int:
         print(format_paired(res))
     elif single:
         print(format_table(res))
-        print("single seed: from 2026-10-20 the organisers' scorer draws its subsample with a seed that depends on each "
-              "submission, so one score is one draw from a band; drop --single-seed / --seed to see the band (default)")
+        print("single seed: the organisers, in their review of this kit, said the subsample seed will depend on each "
+              "submission; drop --single-seed / --seed to see how much the score moves with the seed "
+              "(the band, default)")
     else:
         if args.verbose:
             for r in res["per_seed"]:

@@ -139,8 +139,8 @@ def test_seed_summary_and_json(t1_files, tmp_path, capsys):
     assert np.isfinite(sub["task_score_mean"]) and sub["per_seed"][0]["cells"]["reference"] == 320
     files = ["--task", "T1", "--pred", str(t1_files / "pred_copy_last.h5ad"), "--target", str(t1_files / "target.h5ad"),
              "--reference", str(t1_files / "reference.h5ad"), "--frac", "1.0"]
-    # the DEFAULT output of one call is the multi-seed band (organisers' suggestion: from 2026-10-20 the scorer's
-    # subsample seed depends on each submission)
+    # the DEFAULT output of one call is the multi-seed band (the organisers, in their review of this kit, said the
+    # subsample seed will depend on each submission)
     out = tmp_path / "band.json"
     rc = ls_main(files + ["--json", str(out)])
     band = json.loads(out.read_text(encoding="utf-8"))
@@ -148,7 +148,7 @@ def test_seed_summary_and_json(t1_files, tmp_path, capsys):
     assert band["task_score_mean"] == pytest.approx(50.0, abs=0.01) and len(band["per_seed"]) == 5
     assert band["task_score_min"] <= band["task_score_mean"] <= band["task_score_max"] and band["seed_note"] == SEED_NOTE
     text = capsys.readouterr().out
-    assert "TASK SCORE" in text and "band" in text and "+-" in text and "depends on each submission" in text
+    assert "TASK SCORE" in text and "band" in text and "+-" in text and "depend on each submission" in text
     # --single-seed (or --seed alone) gives the old one-seed table
     out = tmp_path / "ls.json"
     rc = ls_main(files + ["--single-seed", "--json", str(out)])

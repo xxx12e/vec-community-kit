@@ -24,9 +24,10 @@ they cannot be mistaken for the version numbers of the organisers' scorer veckit
 * **`pyproject.toml`**: `pip install -e ".[test]"` installs the four packages and five `vec-community-*` commands.
 * **`max_cells` is authoritative**: `--ignore-max-cells` (validator) and `--allow-over-max` (writer) are gone; the
   evaluation pages were corrected on 2026-09-22.
-* **Local scoring prints the multi-seed band by default** (`--single-seed` for the old table): from 2026-10-20 the
-  scorer's subsample seed depends on each submission. The `--json` key of the default output is therefore
-  **`task_score_mean`** (with `_sd`, `_min`, `_max`, `band`); `task_score` is the key of the `--single-seed` JSON only.
+* **Local scoring prints the multi-seed band by default** (`--single-seed` for the old table): the organisers, in
+  their review of this kit, said the subsample seed will depend on each submission. The `--json` key of the default
+  output is therefore **`task_score_mean`** (with `_sd`, `_min`, `_max`, `band`); `task_score` is the key of the
+  `--single-seed` JSON only.
 * **Paired comparison** (`--pred A --pred B`): both files scored on the same seeds and the same draw per seed, with
   B - A per seed and its mean, sd and min..max.
 * **Codex CLI**: a minimal, after-the-fact evidence packager (`codex-package`), untested against a live Codex run.
@@ -90,13 +91,12 @@ is not vendored: `pip install` it (`pip install -e ".[score]"`) or set `VECKIT_P
 
 **The default output of one call is the multi-seed band** (since 2026-09-30): the task score over subsample seeds
 0-4 as mean, sd and band (min..max), with per-metric means; `--single-seed [--seed N]` gives the old one-seed table.
-From 20 October 2026 the organisers' scorer draws its subsample with a seed that depends on each submission (the
-organisers, in their review of this kit), so a published score is one draw from a band of this kind and the same
-file uploaded twice can score differently. The local band measures that subsampling noise on your pseudo split
-(not on the hidden target). To compare two of your methods, pass both: `--pred A --pred B` scores them on the same
-seeds and, in each seed, against the same subsample, floor and ceiling, and reports B - A per seed with its mean, sd
-and min..max - a difference whose min..max straddles 0 is not a result. The `--json` of the band carries
-`task_score_mean` (the old default's `task_score` is now the single-seed key).
+The organisers, in their review of this kit, said the subsample seed will depend on each submission; the local
+band shows how much the score moves with the subsample seed on your pseudo split (not on the hidden target). To
+compare two of your methods, pass both: `--pred A --pred B` scores them on the same seeds and, in each seed,
+against the same subsample, floor and ceiling, and reports B - A per seed with its mean, sd and min..max - a
+difference whose min..max straddles 0 is not a result. The `--json` of the band carries `task_score_mean` (the old
+default's `task_score` is now the single-seed key).
 
 *Adds:* veckit alone scores one file against one target file and prints raw metrics; the wrapper adds the
 protocol around it (subsample, split-half ceiling, floor row, veckit's `skill()`, the published task weights) and
@@ -145,9 +145,11 @@ only `requirements.txt`, which need veckit, and which need the Claude Code CLI. 
 explains what each metric measures.
 
 Section 11 (new, 2026-09-30) lists what changes at the final phase from 2026-10-20 - validation answers released as
-training material, two official submissions per board for the whole phase, the per-submission scorer seed, test
-inputs without labels and new board contracts, final rankings on the hidden test sets, nomination and evidence -
-citing the official timeline and rules pages as read on 2026-09-30.
+training material, two official submissions per board for the whole phase (each scored when made, not
+withdrawable), test inputs without labels and new board contracts, final rankings on the hidden test sets,
+nomination and evidence - citing the official timeline and rules pages as read on 2026-09-30; on the scorer's
+subsample seed it says only that the organisers, in their review of this kit, said the subsample seed will depend
+on each submission.
 
 *Adds:* the complete walkthrough for both tracks in one place; the commands were executed against synthetic
 stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
@@ -240,8 +242,8 @@ leaderboard order.
 * [`vec_local_score/`](vec_local_score/)：遵循 veckit 打分器截至 0.1.1 版的流程（10% 抽样、对半天花板、地板行、skill 尺度）在你用
   **原始发布阶段**构造的伪切分上打分，调用主办方的 veckit（不内置，`pip install` 或设置 `VECKIT_PATH`）。**一次调用的默认输出就是多种子区间**（2026-09-30 起）：
   种子 0-4 下任务分的均值、标准差和区间（最小..最大），外加各指标均值；`--single-seed [--seed N]` 恢复旧的单种子表。主办方在对本工具包
-  的评审中说明，从 2026-10-20 起打分器的抽样种子随每次提交而变，所以公布的分数只是这类区间里的一次抽取，同一文件传两次分数也可能不同；
-  本地区间衡量的是你所选伪切分上的抽样噪声（不是隐藏目标上的），落在区间之内的差异不算结果。比主办方多出来的：
+  的评审中说，抽样种子将随每次提交而定；本地区间显示的是在你所选伪切分上（不是隐藏目标上）分数随抽样种子
+  变动多少。比主办方多出来的：
   veckit 本身只对一个目标文件打出原始指标，封装补上了抽样、对半天花板、地板行、veckit 自己的 `skill()` 和公布的任务权重，以及多种子
   区间（均值 +- 标准差、最小..最大）。比较自己的两种方法用配对模式 `--pred A --pred B`：同一组种子、每个种子同一次抽样、同一个地板和
   天花板，输出逐种子的 B - A 及其均值、标准差和最小..最大（跨过 0 的差异不算结果）。区间输出的 `--json` 键是 `task_score_mean`
@@ -266,9 +268,9 @@ leaderboard order.
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
   Claude Code CLI。命令在按真实目录布局摆放的合成数据上执行过（2026-09-30 本次修订后重跑，日志和环境见 `scratchpad/dryrun_log.txt`），没有在真实发布数据上跑过；
   细胞数范围写在命令旁边。
-  第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交、
-  打分器种子随每次提交而变、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
-  的读取日期（2026-09-30）。
+  第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交
+  （当场打分、不可撤回）、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
+  的读取日期（2026-09-30）；关于打分器的抽样种子只写一句：主办方在对本工具包的评审中说，抽样种子将随每次提交而定。
   [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `61 passed`。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
