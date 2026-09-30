@@ -161,8 +161,8 @@ the database file and `auth.json` are never copied (refused by name, by SQLite h
 from the OpenCode source (tag v1.18.33, read 2026-09-30); **not yet tested live with a real OpenCode login**. See
 [`vec_agent_evidence/README.md`](vec_agent_evidence/README.md#opencode-runs-opencode-lock-and-opencode-package-checked-against-the-source-untested-live).
 
-*Test lines:* `python -m pytest tests/test_evidence.py -q` -> `8 passed` (a stand-in agent, no CLI, no API calls);
-`python -m pytest tests/test_codex_adapter.py -q` -> `11 passed` (synthetic Codex transcripts, no Codex CLI);
+*Test lines:* `python -m pytest tests/test_evidence.py -q` -> `9 passed` (a stand-in agent, no CLI, no API calls);
+`python -m pytest tests/test_codex_adapter.py -q` -> `12 passed` (synthetic Codex transcripts, no Codex CLI);
 `python -m pytest tests/test_opencode_adapter.py -q` -> `15 passed` (synthetic OpenCode files, no OpenCode CLI).
 
 ### 5. [`docs/tutorial_en.md`](docs/tutorial_en.md) / [`docs/tutorial_zh.md`](docs/tutorial_zh.md) - from zero to a first submission
@@ -183,7 +183,7 @@ on each submission.
 stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
 against the real release inside this repository; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `86 passed` (synthetic data; the scorer tests are skipped without veckit).
+*Test line:* `python -m pytest -q` -> `90 passed` (synthetic data; the scorer tests are skipped without veckit).
 
 ### 6. [`vec_trajectory_lens/`](vec_trajectory_lens/) - Trajectory Lens: one readable offline report of an agent run (new, unreleased)
 
@@ -205,7 +205,7 @@ configuration or rule compliance, and its network flags are regular expressions 
 complementary to **VEC Evidence Check** (Alex Solonsky), which hashes and seals a run package offline; the lens makes
 the log inside readable. See [`vec_trajectory_lens/README.md`](vec_trajectory_lens/README.md).
 
-*Test line:* `python -m pytest tests/test_trajectory_lens.py -q` -> `10 passed` (synthetic logs for each parser, the
+*Test line:* `python -m pytest tests/test_trajectory_lens.py -q` -> `13 passed` (synthetic logs for each parser, the
 schema round trip, redaction, network flags, an HTML with no external URL).
 
 ## Install
@@ -317,13 +317,13 @@ leaderboard order.
   hook（拒绝能识别出的网络命令和受限文件操作），不是网络沙箱；审计日志和哈希用于运行后核验。比主办方多出来的：把锁定 -> 运行 -> 证据 ->
   上传包变成一条机械路径，锁定哈希变了、证据里有凭据形状的字符串、预测文件字节被改过都拒绝打包。产出的是可审计的证据包（配置快照、
   完整性校验、尽力而为的守卫 hook、审计日志），不能独立证明合规；它也不知道你们队之前传了多少（`package --team-uploaded-mb` 帮你盯住
-  600 MB 总额）。测试行：`python -m pytest tests/test_evidence.py -q` -> `8 passed`。**Codex CLI（最小适配器，2026-09-30 新增）**：
+  600 MB 总额）。测试行：`python -m pytest tests/test_evidence.py -q` -> `9 passed`。**Codex CLI（最小适配器，2026-09-30 新增）**：
   `python -m vec_agent_evidence codex-package` 把一次已结束的 `codex exec --json` 运行（JSONL 事件流、按 thread id 找到的会话 rollout、
   提示词、`AGENTS.md` 指令文件、你的 harness 文件和预测文件）打成同样的 trajectory / prompts / harness 三个 zip，同样做凭据扫描和
   大小检查。rollout 与事件流大量重复，`--rollout dedup` 只保留事件流里没有的记录，`--rollout omit` 不放入（两种情况都记录完整文件的
   sha256），给 600 MB 团队总额省出空间；凭据文件永远不会被收集：`auth.json`、`.env`、`*.pem` 等按文件名拒绝，改了名的
   `$CODEX_HOME/auth.json` 副本按内容哈希拒绝。
-  它**没有在真实的 Codex 运行上测试过**（只用合成的会话记录测试，`tests/test_codex_adapter.py` -> `11 passed`），而且是事后
+  它**没有在真实的 Codex 运行上测试过**（只用合成的会话记录测试，`tests/test_codex_adapter.py` -> `12 passed`），而且是事后
   打包：没有锁定、启动器和 hook。**OpenCode（新增，尚未发布版本）**：运行前 `opencode-lock` 给提示词、所有 OpenCode 配置和权限文件、
   指令文件、`OPENCODE_*` 环境变量和 CLI 版本做快照，并打印要执行的 `opencode run --format json` 命令；运行后 `opencode-package`
   把事件流、存储的会话（你用 `opencode export` 导出的文件，或只读地从 OpenCode 数据库里取出该会话的行，或 v1.1.x 及以前的 JSON 文件）、
@@ -337,14 +337,14 @@ leaderboard order.
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交
   （当场打分、不可撤回）、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）；关于打分器的抽样种子只写一句：主办方在对本工具包的评审中说，抽样种子将随每次提交而定。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `86 passed`。
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `90 passed`。
 * [`vec_trajectory_lens/`](vec_trajectory_lens/)（Trajectory Lens，新增，尚未发布版本）：`python -m vec_trajectory_lens <日志、运行目录或 zip>
   --out report.html --json summary.json` 把 Claude Code、Codex CLI 或 OpenCode 一次运行的日志变成一个自包含的离线 HTML
   （摘要卡片 + 可按类型、工具、角色、文字、标记和失败筛选的时间线）和一个摘要 JSON。摘要卡片列出框架和 CLI 版本、出现过的所有模型字符串
   （多于一个时标出）、轮数、按工具统计的调用、token 合计、墙钟时间、写入和修改的文件、"看起来像联网"的命令（与证据守卫 hook 同一套正则）
   以及凭据扫描结果；所有输出里凭据形状的字符串都被脱敏，写文件前再扫一遍。HTML 不加载任何外部资源。PantheonOS 暂不支持（其日志行格式没有公开文档）。
   它只是读日志，不能证明自主运行、配置锁定或遵守规则。与已提交的 **VEC Evidence Check**（Alex Solonsky，离线哈希与封存证据包）互补。
-  中文说明：[`docs/trajectory_lens_zh.md`](docs/trajectory_lens_zh.md)。测试行：`python -m pytest tests/test_trajectory_lens.py -q` -> `10 passed`。
+  中文说明：[`docs/trajectory_lens_zh.md`](docs/trajectory_lens_zh.md)。测试行：`python -m pytest tests/test_trajectory_lens.py -q` -> `13 passed`。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence` / `-lens`
 六个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；

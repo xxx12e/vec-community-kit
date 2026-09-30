@@ -14,11 +14,15 @@ python -m vec_trajectory_lens <日志文件 | 运行目录或证据包目录 | .
 * **Claude Code**：`claude -p --output-format stream-json --verbose` 的输出；CLI 写在 `~/.claude/projects/` 下的会话 JSONL
   （同名目录下的 `subagents/*.jsonl` 会一起读入）；本工具包的运行目录。字段名对照过本工具包自己的启动器和 CLI 写出的会话文件
   （只看结构，没有复制任何内容），测试用合成日志。
-* **Codex CLI**：`codex exec --json` 的输出（新旧两种事件格式）、会话 rollout、解压后的 `codex-package` 包。复用
-  `vec_agent_evidence/codex.py` 的解析；只在合成日志上测试过，没有真实运行。
+* **Codex CLI**：`codex exec --json` 的输出（新旧两种事件格式）、会话 rollout（轮数取自其中的 `task_complete` 记录，
+  工具失败取自每条工具输出里的退出码）、解压后的 `codex-package` 包。复用 `vec_agent_evidence/codex.py` 的解析；只在合成日志上
+  测试过，没有真实运行。`turn.completed` 里的 token 是整个会话的累计值，所以取最后一个，不相加。
 * **OpenCode**：`opencode run --format json` 的输出、`opencode export <sessionID>` 导出的 JSON、OpenCode 的数据库
   （只读，只查会话相关的表）、v1.1.x 及以前的 JSON 存储。复用 `vec_agent_evidence/opencode.py`（依据 OpenCode 源码 v1.18.33）；
-  只在合成文件上测试过。
+  只在合成文件上测试过。给数据目录时先读数据库：v1.2.0 把旧的 `storage/` 复制进数据库但没有删除，所以只有在没有数据库、
+  或数据库里没有 `--session` 指定的会话时才读 `storage/`；有多个数据库（如 `opencode-<channel>.db`）时，读含有该会话
+  （不给 `--session` 时为最近更新的会话）的那个，并在报告里写明文件名。OpenCode 退出后（旁边没有 `-wal` 文件）以不可变方式
+  打开，不会生成任何旁路文件。
 * **PantheonOS**：暂不支持。它的文档说明了会话存放位置（`.pantheon/memory/<id>_<name>.jsonl`，每行一个 JSON 对象），
   但没有说明每行的字段，写解析器只能靠猜。
 
@@ -31,7 +35,9 @@ python -m vec_trajectory_lens <日志文件 | 运行目录或证据包目录 | .
 若仍有凭据形状的字符串，则什么都不写，退出码为 3。报告脱敏了不代表原始日志干净：原始日志仍含凭据时不要原样上传。
 
 局限：它只是读日志，**不能证明**运行是自主的、配置锁定过、无人干预或遵守了规则；联网标记只是命令文本上的正则，
-看不到经过混淆或间接的联网；凭据扫描只找"形状像凭据"的字符串和你传入的值。
+看不到经过混淆或间接的联网；凭据扫描只找"形状像凭据"的字符串和你传入的值。"写入和修改过的文件"只统计文件类工具的调用
+（Write / Edit、file_change / apply_patch、OpenCode 的 write / edit / patch）；用 shell 命令写出的文件（预测文件通常就是这样写的）
+不在列表里，列表为空不代表智能体什么都没写。
 
 相关工作：已提交的 **VEC Evidence Check**（Alex Solonsky）离线计算哈希并封存证据包；Trajectory Lens 不做哈希和封存，
 只负责把日志变得可读，两者互补。

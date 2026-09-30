@@ -27,13 +27,16 @@ def parse_args(argv=None):
     ap.add_argument("path", help="log file, run / package directory, or .zip")
     ap.add_argument("--out", default=None, help="HTML report to write (self-contained, offline)")
     ap.add_argument("--json", default=None, help="summary JSON to write")
-    ap.add_argument("--events", default=None, help="also write the unified events (redacted) as JSONL")
+    ap.add_argument("--events", default=None, help="also write the unified events (redacted, not shortened further) "
+                                                   "as JSONL")
     ap.add_argument("--framework", choices=["auto"] + sorted(P.PARSERS), default="auto")
     ap.add_argument("--session", default=None, help="session id, when the path holds several sessions "
-                                                    "(Claude Code project directory, OpenCode data directory or database)")
+                                                    "(Claude Code project directory, OpenCode data directory or "
+                                                    "database)")
     ap.add_argument("--no-subagents", action="store_true", help="Claude Code: do not add <session>/subagents/*.jsonl")
     ap.add_argument("--max-text", type=int, default=3000, help="characters of each event's text kept in the HTML "
-                                                               "(default 3000; the --events file keeps everything)")
+                                                               "(default 3000; the --events file is not shortened "
+                                                               "further)")
     ap.add_argument("--title", default=None)
     ap.add_argument("--redact-env", action="append", default=[], metavar="NAME",
                     help="also redact the literal value of this environment variable (repeatable), e.g. a gateway key")
