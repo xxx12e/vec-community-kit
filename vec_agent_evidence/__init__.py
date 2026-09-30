@@ -8,4 +8,4 @@ support post-run verification. The current implementation targets the Claude Cod
 
     python -m vec_agent_evidence lock|run|postrun|package ...
 """
-__version__ = "2026.10.0"
+__version__ = "2026.10.1"

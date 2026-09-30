@@ -17,6 +17,12 @@ part here adds beyond those is stated below; official sources are cited with the
 
 **Rules and contract watch (new, 2026-09-30):** a daily GitHub Action checks the challenge pages, the board contract, the phase endpoint and the scorer, and writes [`rules-watch/CHANGES.md`](rules-watch/CHANGES.md) when something changes; how it works and how to subscribe: [`vec_rules_watch/README.md`](vec_rules_watch/README.md).
 
+## What changed in 2026.10.1 (2026-09-30)
+
+* **New package `vec_rules_watch`**, the daily rules and contract watch above, with the command
+  `vec-community-rules-watch`, the workflow `.github/workflows/rules-watch.yml` and its output folder `rules-watch/`.
+  The validator, the baselines, local scoring and the evidence skeleton are unchanged from 2026.10.0.
+
 ## What changed in 2026.10.0 (2026-09-30, after the organisers' review)
 
 From this release on the kit's versions are calendar-based (year.month.patch; the previous release was 0.1.0), so
@@ -161,7 +167,7 @@ on each submission.
 stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
 against the real release inside this repository; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `92 passed` (synthetic data; the scorer tests are skipped without veckit).
+*Test line:* `python -m pytest -q` -> `99 passed` (synthetic data; the scorer tests are skipped without veckit).
 
 ## Install
 
@@ -237,6 +243,9 @@ leaderboard order.
 
 **规则与契约监测（2026-09-30 新增）**：每日运行的 GitHub Action 检查比赛页面、榜契约、阶段接口和打分器，有变化就写入 [`rules-watch/CHANGES.zh.md`](rules-watch/CHANGES.zh.md)；说明和订阅方法见 [`vec_rules_watch/README.md`](vec_rules_watch/README.md)。
 
+版本 2026.10.1（2026-09-30）：新增规则监测包 `vec_rules_watch`、命令 `vec-community-rules-watch`、工作流
+`.github/workflows/rules-watch.yml` 和输出目录 `rules-watch/`；其余部分与 2026.10.0 相同。
+
 * [`vec_submit_check/`](vec_submit_check/)：`python -m vec_submit_check --board <榜> pred.h5ad` 对照已公布的榜契约做本地上传前
   检查（基因面板与顺序、细胞数范围、数值有限/非负/可转 float32、坐标、文件大小）；每条规则标明是 portal（门户会拒）、stricter（常数矩阵）
   还是 advisory（疑似原始计数、带标签）。细胞数必须落在 `index.json` 的 `[min_cells, max_cells]` 内，不再有豁免开关：评测页曾写
@@ -285,7 +294,7 @@ leaderboard order.
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交
   （当场打分、不可撤回）、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）；关于打分器的抽样种子只写一句：主办方在对本工具包的评审中说，抽样种子将随每次提交而定。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `92 passed`。
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `99 passed`。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
 五个命令以及规则监测的 `vec-community-rules-watch`，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；

@@ -16,4 +16,4 @@ By default the public output holds per-section hashes, headings and short excerp
 lines, not the organisers' full page text; the full text for the next day's diff lives in the --state directory
 (the Actions cache). See README.md for what is and is not checked.
 """
-__version__ = "2026.10.0"
+__version__ = "2026.10.1"

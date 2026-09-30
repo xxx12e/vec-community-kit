@@ -15,4 +15,4 @@ official baselines package. No alias is kept, so the two install side by side.
 """
 from . import io, methods  # noqa: F401
 
-__version__ = "2026.10.0"
+__version__ = "2026.10.1"
