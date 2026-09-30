@@ -186,6 +186,13 @@ def test_lock_warnings_and_refusals(oc_run):
     del env["OPENCODE_DISABLE_CLAUDE_CODE"]
     lk = oc.lock_opencode(r["prompt"], r["ws"], r["tmp"] / "l3", "anthropic/m", cfg_dir=r["cfg"], ddir=r["data"], env=env)
     assert any("~/.claude/CLAUDE.md" in w for w in json.loads((lk / "opencode.lock.json").read_text())["warnings"])
+    # a renamed copy of auth.json among the config files: refused by its bytes, nothing written
+    leak = r["ws"] / ".opencode" / "command" / "notes.md"
+    leak.write_bytes((r["data"] / "auth.json").read_bytes())
+    with pytest.raises(SystemExit, match="same bytes as a credential file"):
+        lock(r, out=r["tmp"] / "l_leak")
+    assert not (r["tmp"] / "l_leak").exists()
+    leak.unlink()
     # a provider key written into a config file: refused, nothing written
     (r["ws"] / "opencode.jsonc").write_text(json.dumps({"provider": {"anthropic": {"options": {
         "apiKey": "sk-" + "ant-" + "api03-" + "K" * 30}}}}), encoding="utf-8")
