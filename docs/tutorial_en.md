@@ -11,8 +11,8 @@ copy of the kit on a cloud Linux runner (32 cores, Python 3.10.13), installed as
 downloaded from the Data page linked into the layout of section 2. The trimmed log, with the Python and package
 versions, exit codes, cell and gene counts, run times and memory, is `scratchpad/realrun_log_2026-10-01.txt`
 (scores and expression values are left out of it); `scratchpad/tutorial_realrun.py` is the script that ran them.
-Not part of that pass: the upload (section 8) and a live Agent-track run (section 9; its tests and the lock step
-were run). Earlier runs on small synthetic stages laid out the same way are in `scratchpad/dryrun_log.txt`.
+Not part of that pass: the upload (section 8), a live Agent-track run (section 9; its tests and the lock step
+were run) and the E10.5 example at the end of section 7 (it needs the validation stages released on 2026-10-20). Earlier runs on small synthetic stages laid out the same way are in `scratchpad/dryrun_log.txt`.
 
 ## 0. The challenge in one page
 
