@@ -82,9 +82,11 @@ def _rx(*parts: str):
 # carry the neutral labels only.
 SECRET_PATTERNS = (
     ("anthropic_api_key_shape", _rx("sk-", "ant-", r"[A-Za-z0-9_\-]{8,}")),
-    ("oauth_access_token_field", _rx('"', "access", "Token", r'"\s*:')),
-    ("oauth_refresh_token_field", _rx('"', "refresh", "Token", r'"\s*:')),
-    ("oauth_credentials_block", _rx('"?', "claudeAi", "Oauth", r'"?\s*:')),
+    # camelCase OAuth token fields (Claude Code's credentials file and similar), plain or JSON-escaped inside a
+    # transcript line (a tool result that printed such a file is stored with a backslash before each quote)
+    ("oauth_access_token_field", _rx(r'\\?"', "access", "Token", r'\\?"\s*:')),
+    ("oauth_refresh_token_field", _rx(r'\\?"', "refresh", "Token", r'\\?"\s*:')),
+    ("oauth_credentials_block", _rx(r'\\?"?', "claudeAi", "Oauth", r'\\?"?\s*:')),
     # OpenAI-style keys (Codex CLI and other agents): "sk-" + optional project prefix + key characters, not an
     # Anthropic key (above), and not preceded by any base64 / base64url character (A-Z a-z 0-9 + / - _): so
     # "task-..." / "disk-..." identifiers do not match, and neither does an "sk-" that happens to occur in the middle

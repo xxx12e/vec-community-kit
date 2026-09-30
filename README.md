@@ -23,7 +23,10 @@ part here adds beyond those is stated below; official sources are cited with the
   redacted.
 * **OpenCode** in the Agent-track evidence skeleton: `opencode-lock` before the run, `opencode-package` after it
   (part 4 below; checked against the OpenCode source, not yet tested live with a real OpenCode login).
-* The secret scan also recognises an entry of OpenCode's `auth.json`.
+* The secret scan also recognises an entry of OpenCode's `auth.json`, and now catches camelCase OAuth token fields
+  when they are JSON-escaped inside a transcript line too (the evidence README already said so; the pattern did not).
+* `codex-package`: the token usage in its stream summary was the sum of the `turn.completed` values, but Codex writes
+  the thread's running total there, so earlier turns were counted again; it is now the last total.
 
 ## What changed in 2026.10.0 (2026-09-30, after the organisers' review)
 
