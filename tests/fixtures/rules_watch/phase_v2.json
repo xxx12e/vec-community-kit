@@ -1,0 +1,12 @@
+{
+ "phase": "p3",
+ "label": "P3 - Test phase",
+ "accepts_submissions": true,
+ "shows_scores": true,
+ "nominations_open": true,
+ "data_open": true,
+ "board": "test",
+ "daily_quota": 2,
+ "split": "test",
+ "note": "Two official submissions per board."
+}
