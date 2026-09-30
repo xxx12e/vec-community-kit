@@ -213,7 +213,7 @@ def test_tutorial_local_scoring_commands_end_to_end(tmp_path, heart_panel):
     out = tmp_path / "out"
     out.mkdir()
 
-    rc, so, se = run_cli(["vec_baselines.make_baseline", "--method", "copy_last", "--board", "T2:heart:val_interp",
+    rc, so, se = run_cli(["vec_community_baselines.make_baseline", "--method", "copy_last", "--board", "T2:heart:val_interp",
                           "--last", str(raw / "E8.25_late.h5ad"), "--out", str(out / "pseudo_pred.h5ad"), "--n-cells", "5000"], ROOT)
     assert rc == 0, se
     assert "[PASS]" in so and "requested but the source has only 2400 cells" in so

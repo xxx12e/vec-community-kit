@@ -60,7 +60,7 @@ def test_lock_creates_all_files_and_hashes(tiny_data_root, runs_root, tmp_path):
                 "env/pip_freeze.txt", "env/platform.txt", "env/git_head.txt", "env/claude_version.txt",
                 "env/claude_exe.sha256", "workspace/README_WORKSPACE.md", "workspace/DEADLINE.txt", "workspace/NOTES.md",
                 "workspace/tools/finalize_submission.py", "workspace/tools/vec_submit_check/checker.py",
-                "workspace/tools/vec_baselines/io.py", "workspace/tools/vec_local_score/local_score.py",
+                "workspace/tools/vec_community_baselines/io.py", "workspace/tools/vec_local_score/local_score.py",
                 "workspace/data/panels/index.json"):
         assert (run / rel).exists(), rel
     assert not (run / "system_prompt_appendix.md").exists()
@@ -90,7 +90,7 @@ def test_lock_creates_all_files_and_hashes(tiny_data_root, runs_root, tmp_path):
     # snapshot contents
     names = zipfile.ZipFile(run / "harness_snapshot.zip").namelist()
     for n in ("vec_agent_evidence/lock.py", "vec_agent_evidence/hooks/guard.py", "vec_submit_check/checker.py",
-              "vec_baselines/io.py", "vec_local_score/local_score.py", "templates_used/example_prompt.md",
+              "vec_community_baselines/io.py", "vec_local_score/local_score.py", "templates_used/example_prompt.md",
               "templates_used/example_settings.json"):
         assert n in names, n
     assert not any(n.endswith(".pyc") for n in names)

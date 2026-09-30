@@ -7,10 +7,10 @@ Inputs per method (all .h5ad, loaded and reordered to the board panel):
   pseudobulk_shift  --prev --last   [--celltype-key celltype]
 
 Examples (paths are illustrative; the released stages hold more cells than most boards allow, so pass a count):
-  python -m vec_baselines.make_baseline --method copy_last   --board T1:val  --last E9.5_RNA.h5ad --out pred.h5ad --n-cells 5000
-  python -m vec_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap --last E9.5.h5ad --out pred.h5ad --n-cells 5000
-  python -m vec_baselines.make_baseline --method wt_identity --board T3:gata4 --wt WT_E8.75.h5ad --out pred.h5ad --n-cells 5000
-  python -m vec_baselines.make_baseline --method pseudobulk_shift --board T2:heart:val_extrap --prev E8.75.h5ad --last E9.5.h5ad --out pred.h5ad --n-cells 5000
+  python -m vec_community_baselines.make_baseline --method copy_last   --board T1:val  --last E9.5_RNA.h5ad --out pred.h5ad --n-cells 5000
+  python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap --last E9.5.h5ad --out pred.h5ad --n-cells 5000
+  python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4 --wt WT_E8.75.h5ad --out pred.h5ad --n-cells 5000
+  python -m vec_community_baselines.make_baseline --method pseudobulk_shift --board T2:heart:val_extrap --prev E8.75.h5ad --last E9.5.h5ad --out pred.h5ad --n-cells 5000
 
 Cell count: --n-cells is REQUIRED - an integer inside the board's [min_cells, max_cells], or 'all' for every cell
 of the source stage ('all' errors, stating the bound, when the stage exceeds index.json's max_cells, unless
@@ -34,8 +34,8 @@ if __package__ in (None, ""):                       # run as a plain script: mak
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
 
-from vec_baselines import io as bio        # noqa: E402
-from vec_baselines import methods as bm    # noqa: E402
+from vec_community_baselines import io as bio        # noqa: E402
+from vec_community_baselines import methods as bm    # noqa: E402
 
 NEEDS = {"copy_last": ["last"], "wt_identity": ["wt"], "pseudobulk_shift": ["prev", "last"]}
 OUTPUT_STAGE = {"copy_last": "last", "wt_identity": "wt", "pseudobulk_shift": "last"}
@@ -53,7 +53,7 @@ def _jsonable(o):
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="python -m vec_baselines.make_baseline", description=__doc__,
+    p = argparse.ArgumentParser(prog="python -m vec_community_baselines.make_baseline", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--method", required=True, choices=sorted(NEEDS))
     p.add_argument("--board", required=True, help="index.json key, e.g. T1:val, T2:heart:val_extrap, T3:gata4")

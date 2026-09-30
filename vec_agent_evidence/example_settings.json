@@ -23,7 +23,7 @@
       "Edit(//{{DATA_DIR_POSIX}}/**)",
       "Edit(//{{KIT_ROOT_POSIX}}/vec_agent_evidence/**)",
       "Edit(//{{KIT_ROOT_POSIX}}/vec_submit_check/**)",
-      "Edit(//{{KIT_ROOT_POSIX}}/vec_baselines/**)",
+      "Edit(//{{KIT_ROOT_POSIX}}/vec_community_baselines/**)",
       "Edit(//{{KIT_ROOT_POSIX}}/vec_local_score/**)",
       "Bash(curl *)",
       "Bash(wget *)",

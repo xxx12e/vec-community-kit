@@ -123,15 +123,15 @@ python -m pytest -q                                    # 合成数据测试，�
 
 ```
 # T1:val：1000-5118 个细胞。E9.5_RNA 有 17,057 个细胞，`all` 会报错；5000 在范围内。
-python -m vec_baselines.make_baseline --method copy_last   --board T1:val               --last data/raw/T1/E9.5_RNA.h5ad          --out out/t1_copy_last.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method copy_last   --board T1:val               --last data/raw/T1/E9.5_RNA.h5ad          --out out/t1_copy_last.h5ad --n-cells 5000
 # T2:embryo:val_interp：583-5000 个细胞（5000 是上限）。
-python -m vec_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad       --out out/embryo_copy_last.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad       --out out/embryo_copy_last.h5ad --n-cells 5000
 # T2:heart:val_interp：1000-17616 个细胞。E8.25_late 约有 59,000 个细胞（index.json 的 ref_cells x 10），`all` 会报错。
-python -m vec_baselines.make_baseline --method copy_last   --board T2:heart:val_interp  --last data/raw/T2_heart/E8.25_late.h5ad  --out out/heart_interp_copy_last.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_interp  --last data/raw/T2_heart/E8.25_late.h5ad  --out out/heart_interp_copy_last.h5ad --n-cells 5000
 # T2:heart:val_extrap：1000-25179 个细胞。E9.5 约有 54,000 个细胞，`all` 会报错。
-python -m vec_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last data/raw/T2_heart/E9.5.h5ad        --out out/heart_extrap_copy_last.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last data/raw/T2_heart/E9.5.h5ad        --out out/heart_extrap_copy_last.h5ad --n-cells 5000
 # T3:gata4：1000-7449 个细胞。E8.75 约有 25,000 个细胞，`all` 会报错。
-python -m vec_baselines.make_baseline --method wt_identity --board T3:gata4             --wt   data/raw/T2_heart/E8.75.h5ad       --out out/t3_wt_identity.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4             --wt   data/raw/T2_heart/E8.75.h5ad       --out out/t3_wt_identity.h5ad --n-cells 5000
 ```
 
 说明：
@@ -149,7 +149,7 @@ python -m vec_baselines.make_baseline --method wt_identity --board T3:gata4     
 在 Python 里：
 
 ```python
-from vec_baselines import io as bio, methods as bm
+from vec_community_baselines import io as bio, methods as bm
 spec, panel = bio.panel_for_board("T3:gata4")
 wt = bio.load_stage("data/raw/T2_heart/E8.75.h5ad", panel)
 X, C, info = bm.wt_identity(wt)
@@ -196,7 +196,7 @@ veckit，遵循 veckit 打分器截至 0.1.1 版的流程：每个阶段抽样 1
 抽出来的文件会得 100 分，什么也说明不了）。例如在心脏插值榜上留出 E8.75，用 E8.25 构造的 `copy_last` 基线作为预测：
 
 ```
-python -m vec_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000
 python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --frac 0.1 --seed 0
 python -m vec_local_score.seed_summary --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --seeds 0 1 2 3 4
 ```

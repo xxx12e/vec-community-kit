@@ -76,7 +76,7 @@ def test_guard_denies_and_allows(tmp_path):
         ("Write", {"file_path": "NOTES.md", "content": "x"}),
         ("Edit", {"file_path": "out/candidates/c1/notes.md", "old_string": "a", "new_string": "b"}),
         ("Read", {"file_path": "data/raw/E9.5.h5ad"}),
-        ("Read", {"file_path": str(run_dir / "workspace" / "tools" / "vec_baselines" / "io.py")}),
+        ("Read", {"file_path": str(run_dir / "workspace" / "tools" / "vec_community_baselines" / "io.py")}),
     ]
     for tool, ti in allowed:
         rc, out, err = hook(GUARD, pre_payload(tool, ti, ws), run_dir)

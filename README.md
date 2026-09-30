@@ -35,7 +35,14 @@ portal's validator has the final say and a rejected upload does not consume a sc
 `PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility`, then
 sha256, size, value range and coordinate radius.
 
-### 2. [`vec_baselines/`](vec_baselines/) - baseline generators and submission writer
+### 2. [`vec_community_baselines/`](vec_community_baselines/) - baseline generators and submission writer
+
+**Renamed on 2026-09-30** from `vec_baselines`, at the organisers' request: `vec_baselines` is the name of their
+official baselines package, and the two must be installable side by side. No alias or shim is kept. Update imports
+to `from vec_community_baselines import io as bio, methods as bm` and commands to
+`python -m vec_community_baselines.make_baseline ...`; in an existing clone, delete any leftover `vec_baselines/`
+directory after pulling (git leaves the untracked `__pycache__/` behind, and Python would still import that
+directory as an empty namespace package).
 
 Implements the published baseline recipes - `copy_last` and `wt_identity` (the floor definitions on the
 reference-rows page) and `pseudobulk_shift` (a baseline, not a floor row) - as validated submission files, plus
@@ -44,7 +51,7 @@ reference-rows page) and `pseudobulk_shift` (a baseline, not a floor row) - as v
 published definitions; not numerically aligned with the organisers' reference rows.
 
 *Adds:* one command from a compatible released stage to a validated file on each supported board (coverage table,
-board x method x input x result, in [`vec_baselines/README.md`](vec_baselines/README.md)), with the cell count
+board x method x input x result, in [`vec_community_baselines/README.md`](vec_community_baselines/README.md)), with the cell count
 stated rather than guessed (the released stages exceed most boards' `max_cells` in `panels/index.json`, so `all`
 errors with the bound unless `--allow-over-max`); a writer your own model can use so that its output is validated
 before it leaves your machine. Validation is format only: it cannot tell log-normalised values from counts that
@@ -107,14 +114,14 @@ pip install -r requirements.txt
 python -m pytest -q
 
 # a valid baseline file for one board (T3:gata4 allows 1000-7449 cells), then validate it
-python -m vec_baselines.make_baseline --method wt_identity --board T3:gata4 --wt data/raw/T2_heart/E8.75.h5ad --out out/t3.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4 --wt data/raw/T2_heart/E8.75.h5ad --out out/t3.h5ad --n-cells 5000
 python -m vec_submit_check --board T3:gata4 out/t3.h5ad
 
 # local pseudo-validation with the organisers' scorer, pinned to the tested commit:
 #   pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"
 # hold out E8.75 (the pseudo target: it must not be used to build the prediction), predict it with a copy_last file
 # built from E8.25 only, score on the raw stages
-python -m vec_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000
 python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad
 
 # Agent track: lock -> run -> collect evidence -> package (needs the Claude Code CLI installed and logged in)
@@ -148,10 +155,12 @@ leaderboard order.
   的 `max_cells`，评测页却写"无上限"，默认报错，`--ignore-max-cells` 降为警告）还是 advisory（疑似原始计数、带标签）。比主办方多出来的：
   轻依赖（不装打分器、不需要目标数据）、第一条失败规则说人话、对门户校验查不出来的问题给警告（原始计数文件能过校验但会被打错分）。
   PASS 只表示本地格式检查通过，不代表归一化正确、数据来源合规或参赛资格。示例输出：`[PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500`。
-* [`vec_baselines/`](vec_baselines/)：`copy_last`、`wt_identity`（主办方的地板行）、`pseudobulk_shift`（基线，不是地板行）生成合格文件；
+* [`vec_community_baselines/`](vec_community_baselines/)（2026-09-30 应主办方要求由 `vec_baselines` 改名：`vec_baselines`
+  是主办方官方基线包的名字，两者要能同时安装；不保留别名。已有克隆在拉取后请删掉残留的 `vec_baselines/` 目录，其中未跟踪的
+  `__pycache__/` 会让 Python 仍把它当作空的命名空间包导入）：`copy_last`、`wt_identity`（主办方的地板行）、`pseudobulk_shift`（基线，不是地板行）生成合格文件；
   `write_submission` 是写入器（按基因名映射面板顺序、float32、负值截断、坐标、写后校验），细胞数**显式且必填**（范围内的整数或
   `"all"`）。按公布的基线定义重新实现，没有与主办方的参考行做数值对齐。比主办方多出来的：一条命令从兼容的发布阶段得到所支持各榜的已校验文件
-  （覆盖表见 `vec_baselines/README.md`），细胞数明说而不是猜；你自己的模型输出也能用它写。校验只管格式，分不清对数归一化和看起来像样的计数。
+  （覆盖表见 `vec_community_baselines/README.md`），细胞数明说而不是猜；你自己的模型输出也能用它写。校验只管格式，分不清对数归一化和看起来像样的计数。
   示例输出：`[PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 ...`。
 * [`vec_local_score/`](vec_local_score/)：遵循 veckit 打分器截至 0.1.1 版的流程（10% 抽样、对半天花板、地板行、skill 尺度）在你用
   **原始发布阶段**构造的伪切分上打分，调用主办方的 veckit（不内置，`pip install` 或设置 `VECKIT_PATH`）；含多种子汇总。比主办方多出来的：

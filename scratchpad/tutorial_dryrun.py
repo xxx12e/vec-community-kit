@@ -102,18 +102,18 @@ def main():
     # section 3
     rcs["pytest"] = run(f'"{PY}" -m pytest -q')[0]
     # section 5 (the tutorial's five baseline commands)
-    rcs["t1"] = run(f'"{PY}" -m vec_baselines.make_baseline --method copy_last   --board T1:val               --last data/raw/T1/E9.5_RNA.h5ad          --out out/t1_copy_last.h5ad --n-cells 5000')[0]
-    rcs["embryo"] = run(f'"{PY}" -m vec_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad       --out out/embryo_copy_last.h5ad --n-cells 5000')[0]
-    rcs["hi"] = run(f'"{PY}" -m vec_baselines.make_baseline --method copy_last   --board T2:heart:val_interp  --last data/raw/T2_heart/E8.25_late.h5ad  --out out/heart_interp_copy_last.h5ad --n-cells 5000')[0]
-    rcs["he"] = run(f'"{PY}" -m vec_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last data/raw/T2_heart/E9.5.h5ad        --out out/heart_extrap_copy_last.h5ad --n-cells 5000')[0]
-    rcs["t3"] = run(f'"{PY}" -m vec_baselines.make_baseline --method wt_identity --board T3:gata4             --wt   data/raw/T2_heart/E8.75.h5ad       --out out/t3_wt_identity.h5ad --n-cells 5000')[0]
-    rcs["py_api"] = run(f'"{PY}" -c "from vec_baselines import io as bio, methods as bm; spec, panel = bio.panel_for_board(\'T3:gata4\'); wt = bio.load_stage(\'data/raw/T2_heart/E8.75.h5ad\', panel); X, C, info = bm.wt_identity(wt); report = bio.write_submission(X, C, panel, \'out/t3_wt_identity_api.h5ad\', \'T3:gata4\', n_cells=2000); print(report[\'ok\'], report[\'info\'][\'n_obs\'])"')[0]
+    rcs["t1"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last   --board T1:val               --last data/raw/T1/E9.5_RNA.h5ad          --out out/t1_copy_last.h5ad --n-cells 5000')[0]
+    rcs["embryo"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad       --out out/embryo_copy_last.h5ad --n-cells 5000')[0]
+    rcs["hi"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_interp  --last data/raw/T2_heart/E8.25_late.h5ad  --out out/heart_interp_copy_last.h5ad --n-cells 5000')[0]
+    rcs["he"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last data/raw/T2_heart/E9.5.h5ad        --out out/heart_extrap_copy_last.h5ad --n-cells 5000')[0]
+    rcs["t3"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4             --wt   data/raw/T2_heart/E8.75.h5ad       --out out/t3_wt_identity.h5ad --n-cells 5000')[0]
+    rcs["py_api"] = run(f'"{PY}" -c "from vec_community_baselines import io as bio, methods as bm; spec, panel = bio.panel_for_board(\'T3:gata4\'); wt = bio.load_stage(\'data/raw/T2_heart/E8.75.h5ad\', panel); X, C, info = bm.wt_identity(wt); report = bio.write_submission(X, C, panel, \'out/t3_wt_identity_api.h5ad\', \'T3:gata4\', n_cells=2000); print(report[\'ok\'], report[\'info\'][\'n_obs\'])"')[0]
     # section 6
     rcs["check1"] = run(f'"{PY}" -m vec_submit_check --board T2:heart:val_interp out/heart_interp_copy_last.h5ad')[0]
     rcs["check2"] = run(f'"{PY}" -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --json out/t1_check.json')[0]
     # section 7
     rcs["avail"] = run(f'"{PY}" -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"')[0]
-    rcs["pseudo_pred"] = run(f'"{PY}" -m vec_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000')[0]
+    rcs["pseudo_pred"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000')[0]
     rcs["ls_t2"] = run(f'"{PY}" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --frac 0.1 --seed 0')[0]
     rcs["ss_t2"] = run(f'"{PY}" -m vec_local_score.seed_summary --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --seeds 0 1 2 3 4')[0]
     rcs["ls_t1"] = run(f'"{PY}" -m vec_local_score --task T1 --pred out/t1_copy_last.h5ad --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad')[0]

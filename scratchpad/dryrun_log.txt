@@ -1,3 +1,5 @@
+# NOTE 2026-09-30: this dated log predates the rename of vec_baselines to vec_community_baselines (organisers'
+# request); the commands below ran under the old name and would now be spelled `-m vec_community_baselines...`.
 # Tutorial dry run, 2026-09-06T01:04:47Z (UTC), Windows 11, Python 3.12.10
 anndata 0.13.3.post0 numpy 2.4.4 scipy 1.18.0 pandas 3.0.1 h5py 3.16.0 scikit-learn 1.9.0
 # kit commit: 4b58fb9 + the round-2 review edits (committed as the next commit); VECKIT_PATH=D:\量化竞赛\virtual-embryo\third_party\veckit

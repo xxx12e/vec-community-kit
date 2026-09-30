@@ -1,4 +1,8 @@
-# vec_baselines - baseline generators and submission writer
+# vec_community_baselines - baseline generators and submission writer
+
+This package was called `vec_baselines` until 2026-09-30. It was renamed at the organisers' request because
+`vec_baselines` is the name of their official baselines package; no alias is kept, so both can be installed in
+the same environment. Where the two differ, the organisers' package is the reference implementation.
 
 Re-implementations of three baselines the Virtual Embryo Challenge publishes as one-line definitions (the
 reference-rows page, read 2026-09-05), plus the I/O needed to turn them into contract-checked submission files
@@ -17,8 +21,8 @@ the same released stage, so it lands **near** that value, not exactly on it. It 
 it exercises download, panel order, cell bounds, coordinates, upload and (Agent track) evidence with a known
 reference point.
 
-The organisers' own baseline code was not public when this kit was written; these are reconstructions of the
-published text. Where the text leaves room (cells of `last` whose type has no cells in `prev`), the neutral
+The organisers' own baseline code was not public when this kit was first written (2026-09-05); these are
+reconstructions of the published text, not ports of the organisers' package. Where the text leaves room (cells of `last` whose type has no cells in `prev`), the neutral
 reading is used: they are copied unchanged and reported in `info["unmatched_types_in_last"]`.
 
 ## Coverage
@@ -50,7 +54,7 @@ when fewer than 80 % of cells are shifted), and any board of the test phase (con
 * `io.py` - `panel_for_board`, `load_stage` (subset + reorder to the panel), `looks_like_counts` / `log_normalize`,
   `parse_n_cells`, `select_rows`, `write_submission` (validated with `vec_submit_check` before it returns).
 * `methods.py` - the three baselines; each returns `(X float32 [n, G], coords float32 [n, 3] | None, info dict)`.
-* `make_baseline.py` - CLI (`python -m vec_baselines.make_baseline ...`).
+* `make_baseline.py` - CLI (`python -m vec_community_baselines.make_baseline ...`).
 
 ## The cell count is explicit and required
 
@@ -91,11 +95,11 @@ duplicate cells in a real upload).
 583-5000, T2:heart:val_extrap 1000-25179, T2:heart:val_interp 1000-17616, T3:gata4 1000-7449).
 
 ```
-python -m vec_baselines.make_baseline --method copy_last   --board T1:val               --last E9.5_RNA.h5ad --out pred.h5ad --n-cells 5000
-python -m vec_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last E9.5.h5ad     --out pred.h5ad --n-cells 5000
-python -m vec_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last E8.0.h5ad     --out pred.h5ad --n-cells 5000
-python -m vec_baselines.make_baseline --method wt_identity --board T3:gata4             --wt WT_E8.75.h5ad   --out pred.h5ad --n-cells 5000
-python -m vec_baselines.make_baseline --method pseudobulk_shift --board T1:val --prev E8.5_RNA.h5ad --last E9.5_RNA.h5ad --out pred.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method copy_last   --board T1:val               --last E9.5_RNA.h5ad --out pred.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last E9.5.h5ad     --out pred.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last E8.0.h5ad     --out pred.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4             --wt WT_E8.75.h5ad   --out pred.h5ad --n-cells 5000
+python -m vec_community_baselines.make_baseline --method pseudobulk_shift --board T1:val --prev E8.5_RNA.h5ad --last E9.5_RNA.h5ad --out pred.h5ad --n-cells 5000
 ```
 
 Options: `--n-cells N|all` (required), `--seed`, `--relax-cells` (tiny sample data; the file is then not

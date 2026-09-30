@@ -23,7 +23,7 @@ DEFAULT_PROJECTS_DIR = Path.home() / ".claude" / "projects"
 DEFAULT_SETTINGS_TEMPLATE = PKG_DIR / "example_settings.json"
 DEFAULT_PROMPT_TEMPLATE = PKG_DIR / "example_prompt.md"
 # Kit packages copied read-only into every workspace/tools/ (plus finalize_submission.py) and into the snapshot zip.
-TOOL_PACKAGES = ("vec_submit_check", "vec_baselines", "vec_local_score")
+TOOL_PACKAGES = ("vec_submit_check", "vec_community_baselines", "vec_local_score")
 
 # Frozen tool policy. --tools restricts the built-in tool set; --disallowedTools is belt and braces.
 DEFAULT_TOOLS = ["Bash", "Read", "Edit", "Write", "Glob", "Grep"]

@@ -17,7 +17,7 @@ Model `{{MODEL}}`, effort `{{EFFORT}}`, seed {{SEED}}, session `{{SESSION_ID}}`.
   README_WORKSPACE.md   this file (read-only)
   DEADLINE.txt          {{DEADLINE_UTC}} (read-only)
   data/                 -> {{DATA_DIR_POSIX}} (read-only): the released stages; panels/ = board contracts
-  tools/                read-only: vec_submit_check/, vec_baselines/, vec_local_score/, finalize_submission.py
+  tools/                read-only: vec_submit_check/, vec_community_baselines/, vec_local_score/, finalize_submission.py
   src/                  your code
   scratch/              temporary files (never uploaded as evidence)
   out/candidates/<k>/   one directory per candidate: pred.h5ad + notes
@@ -26,7 +26,7 @@ Model `{{MODEL}}`, effort `{{EFFORT}}`, seed {{SEED}}, session `{{SESSION_ID}}`.
 ```
 
 Python: `{{PYTHON_POSIX}}` (also `python` on PATH). PYTHONPATH already points at `tools/`, so
-`import vec_submit_check, vec_baselines, vec_local_score` works from anywhere in the workspace. veckit (the
+`import vec_submit_check, vec_community_baselines, vec_local_score` works from anywhere in the workspace. veckit (the
 organisers' scorer) is at `{{VECKIT_DIR_POSIX}}`. Package installation is impossible (offline).
 
 ## Boards in scope
@@ -51,7 +51,7 @@ not available in this run.
 | command | use |
 |---|---|
 | `python -m vec_submit_check --board <board> <file.h5ad>` | board-contract check; run before every finalize |
-| `python -m vec_baselines.make_baseline --method copy_last|wt_identity|pseudobulk_shift --board <board> ... --out <file> --n-cells <count>` | a valid baseline file (`--n-cells` is required: an integer inside the board's cell bounds, or `all` when the source fits) |
+| `python -m vec_community_baselines.make_baseline --method copy_last|wt_identity|pseudobulk_shift --board <board> ... --out <file> --n-cells <count>` | a valid baseline file (`--n-cells` is required: an integer inside the board's cell bounds, or `all` when the source fits) |
 | `python -m vec_local_score --task <T> [--setting heart|embryo] --pred <file> --target <held-out RAW stage> --reference <earlier RAW stage> | --wt <matched WT>` | the veckit scorer's protocol (10 % subsample, split-half ceiling, floor row, skill scale) on a pseudo split of released data (not a preview of the real score) |
 | `python -m vec_local_score.seed_summary ... --seeds 0 1 2` | mean +- sd over seeds |
 | `python tools/finalize_submission.py --board <board> --candidate <file> --candidate-id <k>` | THE ONLY way to write the submission; validates, hashes, atomic-replaces, appends MANIFEST.json |
@@ -72,7 +72,7 @@ not available in this run.
 ## Suggested order of work
 
 1. Read this file, inventory `data/`, and produce and FINALIZE a valid file for every board early (the floor row
-   from `vec_baselines` is enough), so that a wall-clock kill still leaves a submission.
+   from `vec_community_baselines` is enough), so that a wall-clock kill still leaves a submission.
 2. Improve it however you see fit within the rules; validate every candidate with `vec_submit_check`; finalize
    when a candidate is better by your own local evidence.
 3. Keep NOTES.md current: what was tried, what was kept, and why.

@@ -1,16 +1,19 @@
-"""vec_baselines on synthetic stages: the three baselines, row selection and the writer (explicit, required n_cells)."""
+"""vec_community_baselines on synthetic stages: the three baselines, row selection and the writer (explicit,
+required n_cells); the package no longer answers to its old name vec_baselines."""
 from __future__ import annotations
 
+import importlib.util
 import json
+from pathlib import Path
 
 import anndata as ad
 import numpy as np
 import pytest
 import scipy.sparse as sp
 
-from vec_baselines import io as bio
-from vec_baselines import methods as bm
-from vec_baselines.make_baseline import main as make_main
+from vec_community_baselines import io as bio
+from vec_community_baselines import methods as bm
+from vec_community_baselines.make_baseline import main as make_main
 from vec_submit_check import check
 
 from conftest import make_adata
@@ -295,3 +298,28 @@ def test_cli_copy_last_and_flags(tmp_path, heart_panel, capsys):
     # a non-integer --n-cells is a usage error
     with pytest.raises(SystemExit):
         make_main(["--method", "copy_last", "--board", "T2:heart:val_interp", "--last", str(stage), "--out", str(out), "--n-cells", "many"])
+
+
+def test_old_name_vec_baselines_is_gone():
+    """Renamed at the organisers' request (their official package is vec_baselines): no directory, module or shim of
+    that name may remain in the kit, and no kit file imports or runs it."""
+    root = Path(__file__).resolve().parents[1]
+    assert not (root / "vec_baselines").exists(), "leftover vec_baselines/ directory (delete it, incl. __pycache__)"
+    spec = importlib.util.find_spec("vec_baselines")       # the kit root is on sys.path here (pytest.ini)
+    # the organisers' own package may legitimately be installed; it just must not resolve inside this kit
+    locations = ([spec.origin] if spec and spec.origin else []) + list((spec and spec.submodule_search_locations) or [])
+    assert not any(Path(p).resolve().is_relative_to(root) for p in locations), locations
+    old = "vec" + "_baselines"
+    patterns = ("import " + old, "from " + old + " ", "from " + old + ".", "-m " + old)
+    offenders = []
+    for p in root.rglob("*"):
+        rel = p.relative_to(root).parts
+        if not p.is_file() or p.suffix not in (".py", ".md", ".json", ".txt", ".toml") or rel[0] in (
+                ".git", ".venv", "venv", "runs", "third_party", "out", "pseudo") or "__pycache__" in rel:
+            continue
+        if rel == ("scratchpad", "dryrun_log.txt") and "predates the rename" in p.read_text(encoding="utf-8")[:2000]:
+            continue                                        # a dated log that says it predates the rename
+        text = p.read_text(encoding="utf-8")
+        if any(x in text for x in patterns):
+            offenders.append("/".join(rel))
+    assert offenders == [], offenders
