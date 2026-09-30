@@ -4,6 +4,9 @@ This package was called `vec_baselines` until 2026-09-30. It was renamed at the 
 `vec_baselines` is the name of their official baselines package; no alias is kept, so both can be installed in
 the same environment. Where the two differ, the organisers' package is the reference implementation.
 
+Public path: https://github.com/xxx12e/vec-community-kit/tree/main/vec_community_baselines (the former path,
+`.../tree/main/vec_baselines`, is gone with the rename; update bookmarks and links that point there).
+
 Re-implementations of three baselines the Virtual Embryo Challenge publishes as one-line definitions (the
 reference-rows page, read 2026-09-05), plus the I/O needed to turn them into contract-checked submission files
 with an explicit cell count. They are reconstructions of the published text, not numerically aligned with the

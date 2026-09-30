@@ -67,7 +67,9 @@ official baselines package, and the two must be installable side by side. No ali
 to `from vec_community_baselines import io as bio, methods as bm` and commands to
 `python -m vec_community_baselines.make_baseline ...`; in an existing clone, delete any leftover `vec_baselines/`
 directory after pulling (git leaves the untracked `__pycache__/` behind, and Python would still import that
-directory as an empty namespace package).
+directory as an empty namespace package). The public path is now
+https://github.com/xxx12e/vec-community-kit/tree/main/vec_community_baselines (links to `.../tree/main/vec_baselines` no
+longer resolve).
 
 Implements the published baseline recipes - `copy_last` and `wt_identity` (the floor definitions on the
 reference-rows page) and `pseudobulk_shift` (a baseline, not a floor row) - as validated submission files, plus
@@ -240,7 +242,8 @@ leaderboard order.
   PASS 只表示本地格式检查通过，不代表归一化正确、数据来源合规或参赛资格。示例输出：`[PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500`。
 * [`vec_community_baselines/`](vec_community_baselines/)（2026-09-30 应主办方要求由 `vec_baselines` 改名：`vec_baselines`
   是主办方官方基线包的名字，两者要能同时安装；不保留别名。已有克隆在拉取后请删掉残留的 `vec_baselines/` 目录，其中未跟踪的
-  `__pycache__/` 会让 Python 仍把它当作空的命名空间包导入）：`copy_last`、`wt_identity`（主办方的地板行）、`pseudobulk_shift`（基线，不是地板行）生成合格文件；
+  `__pycache__/` 会让 Python 仍把它当作空的命名空间包导入；公开路径现在是
+  <https://github.com/xxx12e/vec-community-kit/tree/main/vec_community_baselines>，指向 `.../tree/main/vec_baselines` 的链接不再有效）：`copy_last`、`wt_identity`（主办方的地板行）、`pseudobulk_shift`（基线，不是地板行）生成合格文件；
   `write_submission` 是写入器（按基因名映射面板顺序、float32、负值截断、坐标、写后校验），细胞数**显式且必填**（范围内的整数或
   `"all"`）。按公布的基线定义重新实现，没有与主办方的参考行做数值对齐。比主办方多出来的：一条命令从兼容的发布阶段得到所支持各榜的已校验文件
   （覆盖表见 `vec_community_baselines/README.md`），细胞数明说而不是猜；你自己的模型输出也能用它写。校验只管格式，分不清对数归一化和看起来像样的计数。
