@@ -9,6 +9,7 @@ import json
 import re
 import socket
 import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -527,7 +528,26 @@ def test_token_goes_to_the_github_api_only(monkeypatch):
     for u in ("https://virtualembryo.ai/challenge/rules", "https://kg.virtualembryo.ai/challenge/phase",
               "https://raw.githubusercontent.com/a/b/c/pyproject.toml", "https://api.github.com.evil.test/x"):
         assert "Authorization" not in f._headers_for(u), u
+    assert "Authorization" not in f._headers_for("http://api.github.com/repos/a/b")      # never over plain http
     assert f._headers_for("https://virtualembryo.ai/")["User-Agent"] == "ua"
+
+
+def test_token_is_dropped_on_a_redirect_to_another_host(monkeypatch):
+    monkeypatch.setenv("GITHUB_TOKEN", "t0ken-for-test")
+    f = F.Fetcher("ua", delay=0)
+    assert any(isinstance(h, F.TokenSafeRedirectHandler) for h in f._opener.handlers)
+    assert not any(type(h) is urllib.request.HTTPRedirectHandler for h in f._opener.handlers)
+    url = "https://api.github.com/repos/a/b"
+    req = urllib.request.Request(url, headers=f._headers_for(url))
+    assert req.get_header("Authorization") == "Bearer t0ken-for-test"
+    handler = F.TokenSafeRedirectHandler()
+    for target in ("https://evil.test/x", "https://api.github.com.evil.test/x", "http://api.github.com/x",
+                   "https://codeload.github.com/a/b"):
+        new = handler.redirect_request(req, None, 302, "Found", {}, target)
+        assert new.full_url == target and new.get_header("Authorization") is None, target
+        assert new.get_header("User-agent") == "ua"
+    same = handler.redirect_request(req, None, 301, "Moved", {}, "https://api.github.com/repositories/1")
+    assert same.get_header("Authorization") == "Bearer t0ken-for-test"
 
 
 def test_fetcher_turns_failures_into_stable_errors(monkeypatch):
@@ -543,7 +563,7 @@ def test_fetcher_turns_failures_into_stable_errors(monkeypatch):
             return _Resp(b"<html><title>Just a moment...</title></html>", 200, {"cf-mitigated": "challenge"})
         raise urllib.error.HTTPError(req.full_url, 503, "Service Unavailable", {}, None)
 
-    monkeypatch.setattr(F.urllib.request, "urlopen", boom)
+    monkeypatch.setattr(F.Fetcher, "_open", lambda self, req: boom(req, self.timeout))
     f = F.Fetcher("ua", delay=0, retries=1, retry_wait=0)
     assert f.fetch("https://x.test/timeout").error == "timeout"
     assert f.fetch("https://x.test/dns").error == "DNS lookup failed"
@@ -560,7 +580,7 @@ def test_fetcher_respects_robots_txt(monkeypatch):
             return _Resp(b"User-agent: *\nDisallow: /private\n")
         return _Resp(b"page")
 
-    monkeypatch.setattr(F.urllib.request, "urlopen", fake)
+    monkeypatch.setattr(F.Fetcher, "_open", lambda self, req: fake(req, self.timeout))
     f = F.Fetcher("ua", delay=0, robots_hosts=["site.test"])
     assert f.fetch("https://site.test/private/x").error == "disallowed by robots.txt"
     assert f.fetch("https://site.test/public").body == b"page"

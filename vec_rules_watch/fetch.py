@@ -3,7 +3,9 @@ same host, a timeout, one retry on a timeout / 429 / 5xx, a size cap, and robots
 hosts. A failure never raises: it comes back as a FetchResult with a short, stable error string ("HTTP 503",
 "timeout", ...), so a page that is down for a day is recorded, not fatal.
 
-The GitHub token (GITHUB_TOKEN in the Action) is sent to api.github.com only, never to any other host.
+The GitHub token (GITHUB_TOKEN in the Action) is sent to api.github.com only, never to any other host: it is added
+only to requests for that host, and a redirect to any other host (or to plain http) drops it before the request is
+made (urllib's own redirect handler would copy it).
 """
 from __future__ import annotations
 
@@ -48,6 +50,22 @@ def _stable_error(exc) -> str:
     return "error: " + type(exc).__name__
 
 
+def token_allowed(url: str) -> bool:
+    parts = urlsplit(url)
+    return parts.scheme == "https" and (parts.hostname or "") in TOKEN_HOSTS
+
+
+class TokenSafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Follows redirects like urllib's default handler, but never carries the Authorization header to a host that
+    is not in TOKEN_HOSTS."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None and not token_allowed(new.full_url):
+            new.remove_header("Authorization")
+        return new
+
+
 def _looks_like_challenge(status: int, headers: dict, body: bytes) -> bool:
     if (headers.get("cf-mitigated") or "").lower() == "challenge":
         return True
@@ -70,12 +88,12 @@ class Fetcher:
         self._last: dict = {}
         self._robots: dict = {}
         self.requests = 0
+        self._opener = urllib.request.build_opener(TokenSafeRedirectHandler)
 
     def _headers_for(self, url: str) -> dict:
         h = {"User-Agent": self.user_agent, "Accept": "*/*"}
-        host = urlsplit(url).hostname or ""
         token = os.environ.get(self.token_env, "")
-        if host in TOKEN_HOSTS:
+        if token_allowed(url):
             h["Accept"] = "application/vnd.github+json"
             if token:
                 h["Authorization"] = f"Bearer {token}"
@@ -89,13 +107,16 @@ class Fetcher:
                 time.sleep(wait)
         self._last[host] = time.monotonic()
 
+    def _open(self, req):
+        return self._opener.open(req, timeout=self.timeout)
+
     def _raw_get(self, url: str) -> FetchResult:
         host = urlsplit(url).hostname or ""
         self._pause(host)
         self.requests += 1
         req = urllib.request.Request(url, headers=self._headers_for(url))
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with self._open(req) as resp:
                 body = resp.read(MAX_BYTES + 1)
                 headers = {k.lower(): v for k, v in resp.headers.items()}
                 if len(body) > MAX_BYTES:
