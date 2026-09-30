@@ -110,8 +110,10 @@ python -m pytest -q                                    # synthetic tests, no cha
 ```
 
 What to expect (real-release pass, Linux, Python 3.10.13, internet access for pip): the install took about 15 s
-there and resolved anndata 0.11.4, numpy 2.2.6, scipy 1.15.3, pandas 2.3.3, h5py 3.16.0 and pytest 9.1.1 (Python 3.10
-gets older releases of these than 3.12 does; both work). Without veckit the tests end with `54 passed, 10 skipped`
+there, also when repeated with an empty pip cache (it then downloaded about 75 MB of packages, about 10 MB more
+with veckit; a home connection will take longer than the runner's), and resolved anndata 0.11.4, numpy 2.2.6,
+scipy 1.15.3, pandas 2.3.3, h5py 3.16.0 and pytest 9.1.1 (Python 3.10 gets older releases of these than 3.12 does;
+both work). Without veckit the tests end with `54 passed, 10 skipped`
 (the local-scoring tests, plus the wheel build, which needs setuptools 77 or newer in the environment); with veckit
 installed, `63 passed, 1 skipped`. They also pass when run as root, as in many cloud containers.
 

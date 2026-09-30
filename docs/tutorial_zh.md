@@ -89,7 +89,8 @@ pip install -e ".[test]"                               # 工具包本身 + annda
 python -m pytest -q                                    # 合成数据测试，不需要比赛数据
 ```
 
-实际情况（真实数据执行，Linux，Python 3.10.13，pip 需要联网）：安装在那里用了约 15 秒，解析出 anndata 0.11.4、numpy 2.2.6、scipy 1.15.3、
+实际情况（真实数据执行，Linux，Python 3.10.13，pip 需要联网）：安装在那里用了约 15 秒，清空 pip 缓存后重装也是如此（这时下载了
+约 75 MB 的包，加上 veckit 再多约 10 MB；家用网络会比那台机器慢），解析出 anndata 0.11.4、numpy 2.2.6、scipy 1.15.3、
 pandas 2.3.3、h5py 3.16.0 和 pytest 9.1.1（Python 3.10 拿到的这些包比 3.12 旧一些，两者都能用）。没有 veckit 时测试结果是
 `54 passed, 10 skipped`（跳过的是本地打分测试，以及需要环境里 setuptools 77 或更新版本的 wheel 构建测试）；装上 veckit 后是
 `63 passed, 1 skipped`。以 root 身份运行（很多云容器就是这样）也能通过。

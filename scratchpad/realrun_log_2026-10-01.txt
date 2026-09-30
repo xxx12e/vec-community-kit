@@ -750,3 +750,34 @@ SUMMARY {
  "evidence_tests": 0,
  "evidence_lock": 0
 }
+
+# ---------------------------------------------------------------------------------------------------------------
+# Addendum, 2026-09-30T17:23:10Z .. 17:24:29Z (UTC): section 3 again with an EMPTY pip cache.
+# Why: the pass above ran about 20 minutes after the first pass had installed the same wheels, so its install time
+#   may have come from a warm pip cache (the trimmed log keeps only the "Successfully" lines). This repeat used a
+#   new, empty PIP_CACHE_DIR inside the work directory, a fresh copy of the kit (branch tutorial-real-release at
+#   ff08ceb, version 2026.10.1) and a fresh .venv; same runner, same settings (niceness 19, 4 threads). No data
+#   files were used. The work directory was removed afterwards.
+$ python3 -m venv .venv
+  -> rc=0  wall=2.2s
+$ python --version && pip --version
+  Python 3.10.13
+  pip 23.0.1
+  -> rc=0  wall=0.2s
+$ pip install -e ".[test]"
+  Successfully installed anndata-0.11.4 array-api-compat-1.15.0 exceptiongroup-1.3.1 h5py-3.16.0 iniconfig-2.3.0 natsort-8.4.0 numpy-2.2.6 packaging-26.3 pandas-2.3.3 pluggy-1.6.0 pygments-2.21.0 pytest-9.1.1 python-dateutil-2.9.0.post0 pytz-2026.4 scipy-1.15.3 six-1.17.0 tomli-2.4.1 typing-extensions-4.16.0 tzdata-2026.4 vec-community-kit-2026.10.1
+  19 "Downloading" lines, 0 "Using cached" lines; pip cache afterwards: 75 MB
+  -> rc=0  wall=13.7s
+$ pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"
+  Successfully installed cloudpickle-3.1.2 joblib-1.6.0 scikit-learn-1.7.2 threadpoolctl-3.7.0 veckit-0.1.1
+  4 "Downloading" lines, 0 "Using cached" lines; pip cache afterwards: 85 MB
+  -> rc=0  wall=5.5s
+$ python -m pytest -q -p no:cacheprovider      # (no .pytest_cache in the copy)
+  63 passed, 1 skipped
+  -> rc=0  wall=57.0s
+$ python -c "import vec_submit_check as m; print(m.__version__)"
+  2026.10.1
+$ python -c "from vec_local_score import veckit_info; print(veckit_info()['matches_tested'])"
+  True
+# Result: the install time of section 3 (about 15 s) holds with a cold cache on this runner; the download is about
+#   75 MB (85 MB with veckit), so a slower connection takes longer.
