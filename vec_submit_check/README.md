@@ -8,7 +8,6 @@ failing rule is printed in plain words; `--json` writes the full report for scri
 pip install -e .                  # or: pip install -r requirements.txt (then run it from the clone)
 python -m vec_submit_check --board T2:heart:val_interp pred.h5ad
 python -m vec_submit_check --board T1:val pred.h5ad --json report.json
-python -m vec_submit_check --board T3:gata4 big.h5ad --ignore-max-cells
 ```
 
 Boards: `T1:val`, `T2:embryo:val_interp`, `T2:heart:val_interp`, `T2:heart:val_extrap`, `T3:gata4`. Exit code 0 =
@@ -18,14 +17,20 @@ else the copy installed with the package (`vec_submit_check/panels/`), else `./d
 
 ## Sources, and which rules are the portal's
 
-Two official sources were read on 2026-09-05 and copies of the machine-readable one ship in `data/panels/`:
+Two official sources were first read on 2026-09-05 and re-read on 2026-09-30; copies of the machine-readable one
+ship in `data/panels/` (`index.json` unchanged between the two reads):
 
 * `https://virtualembryo.ai/challenge/panels/index.json` + one gene list per board (`min_cells`, `max_cells`,
   `n_genes`, `needs_coords`, panel file and its sha256);
 * the "Requirements for a valid file" section of `https://virtualembryo.ai/challenge/evaluation?section=submissions&task=1|2|3`.
 
-The two disagree on one point (the cell-count upper bound), so every rule below says where it comes from and what
-the checker does with it. **portal** = the portal's validator rejects on it (a file that fails here would fail
+Until 2026-09-22 the two disagreed on the cell-count upper bound: the evaluation pages said "no cap" above 1,000
+cells while `index.json` carried a `max_cells` per board, so earlier versions of this checker treated `max_cells` as
+a "stricter" rule with an `--ignore-max-cells` opt-out. The organisers corrected the pages on 2026-09-22 (uploads
+above `max_cells` had been rejected by the portal all along); they now say that both bounds "differ by board and
+are listed on the Data page and in index.json" and that an upload outside them "is rejected before scoring".
+`index.json` is authoritative, and the opt-out was removed in 0.2.0. Every rule below says where it comes from and
+what the checker does with it. **portal** = the portal's validator rejects on it (a file that fails here would fail
 there); **stricter** = the checker is stricter than the pages; **advisory** = a warning for something no validator
 catches.
 
@@ -36,8 +41,8 @@ catches.
 | `.X` dtype float32 | not a portal rule: "the scorer densifies and casts to float32 either way" | warning only when the dtype is not a float |
 | `obsm["spatial_3D"]` present with shape (n, >= 3), finite (T2/T3) | portal ("cells x 3 or more ... only the first three columns are read") | error; only the first three columns are inspected |
 | one `.h5ad` of at most 1200 MB | portal (rules page) | error, measured as 1e6-byte MB (the stricter reading) |
-| at least `min_cells` cells | portal; the pages say "at least 1,000 cells" for every board while `index.json` gives 583 on the embryo board | error below `index.json`'s `min_cells`; a warning between that and 1,000 |
-| at most `max_cells` cells | **conflict**: `index.json` carries `max_cells` per board; the pages say "no cap" above the minimum | stricter: error by default, warning with `--ignore-max-cells`; an upload above `max_cells` is untested |
+| at least `min_cells` cells | portal (`index.json`, the Data page and the pages' requirements section; 583 on the embryo board, 1,000 elsewhere) | error below `min_cells`; an advisory warning between 583 and 1,000, because the pages' "not constrained" paragraph still mentions a 1,000-cell minimum (read 2026-09-30) |
+| at most `max_cells` cells | portal (`index.json` and the Data page; the pages' requirements section since the 2026-09-22 correction) | error; no opt-out |
 | `.X` not constant | not a portal rule | stricter: error (a constant matrix cannot be a prediction) |
 | values look like raw counts (`.X` max > 30) | the pages: "a raw count matrix ... passes every check and is then scored as though it were on the log scale" | advisory warning; the checker cannot see a normalised-but-not-log file |
 | `obs["celltype"]` present | ignored by the scorer | advisory warning |

@@ -122,10 +122,10 @@ Rules of a valid file (`vec_submit_check` tests these locally, labelling each ru
 1. A single `.h5ad`, at most 1200 MB.
 2. `var_names` equal to the board's gene list, element by element, **in the same order**. The portal does not
    reorder for you.
-3. `n_obs` at least the board's minimum. The evaluation pages (read 2026-09-05) say "at least 1,000 cells ... no
-   cap", while the organisers' `panels/index.json` carries a `max_cells` per board (the table above); the checker
-   treats `max_cells` as an error unless `--ignore-max-cells`, because an upload above it is untested. The cell
-   count is a sample size, not a scored quantity; a few thousand cells is plenty (the scorer's own draws use at
+3. `n_obs` inside the board's `[min_cells, max_cells]` from `panels/index.json` (the table above; also on the Data
+   page). An upload outside them is rejected before scoring and does not spend a scored attempt. (Until the
+   organisers corrected them on 2026-09-22, the evaluation pages said "no cap" above 1,000 cells; `index.json` is
+   authoritative, and the checker has no opt-out.) The cell count is a sample size, not a scored quantity; a few thousand cells is plenty (the scorer's own draws use at
    most 2000 cells for some metrics and 1500 for others).
 4. `.X` finite, **non-negative on every board**, log-normalised like the released data; sparse or dense (the scorer
    densifies and casts to float32 itself). Validation cannot see a wrong scale: a raw-count file passes every
@@ -149,8 +149,8 @@ mean change between two stages.)
 
 `--n-cells` is **required**: an integer inside the board's cell bounds, or `all` for every cell of the input.
 The released stages hold more cells than four of the five boards' `max_cells`, so `all` would stop with an error
-that states the bound; pass a number (or `--allow-over-max`, see section 4 rule 3). The bound is written next to
-each command (from `data/panels/index.json`).
+that states the bound; pass a number (section 4 rule 3). The bound is written next to each command (from
+`data/panels/index.json`).
 
 ```
 # T1:val: 1000-5118 cells. E9.5_RNA has 17,057 cells, so `all` would error; 5000 fits.
@@ -352,8 +352,8 @@ artefacts into another's workspace, never edit a submission.
 - [ ] `python -m vec_submit_check --board <board> <file>` prints `[PASS]` (format only; the next three lines are
       yours to confirm).
 - [ ] The gene order equals the panel file (the checker says so; the portal will not reorder).
-- [ ] Cell count at least 1,000 and, unless you chose otherwise, at most `index.json`'s `max_cells` (you passed it
-      explicitly); no duplicated cells; no labels needed.
+- [ ] Cell count inside `index.json`'s `[min_cells, max_cells]` for that board (you passed it explicitly); no
+      duplicated cells; no labels needed.
 - [ ] `.X` log-normalised like the released data (no `raw counts` warning), finite, non-negative (every board).
 - [ ] T2/T3: `obsm["spatial_3D"]` present, (n, 3), finite.
 - [ ] File under 1200 MB.

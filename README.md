@@ -22,9 +22,12 @@ part here adds beyond those is stated below; official sources are cited with the
 `python -m vec_submit_check --board T2:heart:val_interp pred.h5ad` checks a file against the published board
 contract: gene panel and order, cell bounds, finite / non-negative / float32-castable values, coordinates
 (`(n, >=3)`, first three columns read), size cap; also generic numeric guards (`guards.py`). Each rule is labelled
-**portal** (the portal rejects on it), **stricter** (`max_cells` from `panels/index.json`, which the evaluation
-pages contradict with "no cap"; an error unless `--ignore-max-cells`) or **advisory** (raw-count-looking values,
+**portal** (the portal rejects on it), **stricter** (a constant matrix) or **advisory** (raw-count-looking values,
 labels present) in [`vec_submit_check/README.md`](vec_submit_check/README.md). Exit codes and a `--json` report.
+The cell count must lie inside `index.json`'s `[min_cells, max_cells]`, with no opt-out: the evaluation pages used
+to say "no cap" above 1,000 cells, which contradicted `index.json` and the portal (it rejected uploads above
+`max_cells`); the organisers corrected the pages on 2026-09-22, and the `--ignore-max-cells` escape hatch of earlier
+versions is gone.
 
 *Adds:* the contract check in a dependency-light tool (anndata, numpy, scipy; no scorer, no target data) with the
 first failing rule in plain words, and warnings for what the portal's validation does not catch (a raw-count file
@@ -53,7 +56,7 @@ published definitions; not numerically aligned with the organisers' reference ro
 *Adds:* one command from a compatible released stage to a validated file on each supported board (coverage table,
 board x method x input x result, in [`vec_community_baselines/README.md`](vec_community_baselines/README.md)), with the cell count
 stated rather than guessed (the released stages exceed most boards' `max_cells` in `panels/index.json`, so `all`
-errors with the bound unless `--allow-over-max`); a writer your own model can use so that its output is validated
+errors with the bound; there is no over-the-maximum opt-out any more); a writer your own model can use so that its output is validated
 before it leaves your machine. Validation is format only: it cannot tell log-normalised values from counts that
 merely look plausible.
 
@@ -176,8 +179,10 @@ leaderboard order.
 不预测隐藏目标上的名次），以及需要配置锁定和证据包的 Agent 赛道队伍。
 
 * [`vec_submit_check/`](vec_submit_check/)：`python -m vec_submit_check --board <榜> pred.h5ad` 对照已公布的榜契约做本地上传前
-  检查（基因面板与顺序、细胞数范围、数值有限/非负/可转 float32、坐标、文件大小）；每条规则标明是 portal（门户会拒）、stricter（`index.json`
-  的 `max_cells`，评测页却写"无上限"，默认报错，`--ignore-max-cells` 降为警告）还是 advisory（疑似原始计数、带标签）。比主办方多出来的：
+  检查（基因面板与顺序、细胞数范围、数值有限/非负/可转 float32、坐标、文件大小）；每条规则标明是 portal（门户会拒）、stricter（常数矩阵）
+  还是 advisory（疑似原始计数、带标签）。细胞数必须落在 `index.json` 的 `[min_cells, max_cells]` 内，不再有豁免开关：评测页曾写
+  "1,000 个以上无上限"，与 `index.json` 和门户的实际行为（超过 `max_cells` 的上传被拒）矛盾，主办方已于 2026-09-22 更正，旧版的
+  `--ignore-max-cells` 已删除。比主办方多出来的：
   轻依赖（不装打分器、不需要目标数据）、第一条失败规则说人话、对门户校验查不出来的问题给警告（原始计数文件能过校验但会被打错分）。
   PASS 只表示本地格式检查通过，不代表归一化正确、数据来源合规或参赛资格。示例输出：`[PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500`。
 * [`vec_community_baselines/`](vec_community_baselines/)（2026-09-30 应主办方要求由 `vec_baselines` 改名：`vec_baselines`

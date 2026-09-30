@@ -93,10 +93,14 @@ def test_cell_bounds(tmp_path, heart_panel):
     g = tmp_path / "big.h5ad"
     big.write_h5ad(g)
     rep = check(g, "T3:gata4")
-    assert "> max_cells=7449" in errors(rep)
-    # index.json's max_cells is the stricter reading (the evaluation pages state no cap): opt-out makes it a warning
-    rep = check(g, "T3:gata4", ignore_max_cells=True)
-    assert rep["ok"] and any("> max_cells=7449" in w for w in rep["warnings"])
+    assert "> max_cells=7449" in errors(rep) and "rejects" in errors(rep)
+    # index.json's max_cells is authoritative since the evaluation pages were corrected (2026-09-22): no opt-out
+    with pytest.raises(TypeError):
+        check(g, "T3:gata4", ignore_max_cells=True)
+    with pytest.raises(SystemExit) as exc:
+        checker.main(["--board", "T3:gata4", str(g), "--ignore-max-cells"])
+    assert exc.value.code == 2
+    assert checker.main(["--board", "T3:gata4", str(g)]) == 1
     assert checker.PAGE_MIN_CELLS == 1000 and load_index()["T2:embryo:val_interp"]["min_cells"] == 583
 
 

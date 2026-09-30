@@ -107,11 +107,11 @@ def test_select_rows_policies():
     assert np.array_equal(idx, np.arange(6000)) and notes["n_cells_mode"] == "all"
     with pytest.raises(ValueError, match=r"the source has 8000 cells and the board allows at most max_cells=7449.*\[1000, 7449\]"):
         bio.select_rows(8000, spec, n_cells="all")
-    # opt-out: above index.json's max_cells with a note (the evaluation pages state no cap; untested on the portal)
-    idx, notes = bio.select_rows(8000, spec, n_cells="all", allow_over_max=True)
-    assert len(idx) == 8000 and notes["over_max_cells_allowed"] is True and notes["n_cells_mode"] == "all"
-    idx, notes = bio.select_rows(9000, spec, n_cells=8000, allow_over_max=True)
-    assert len(idx) == 8000 and notes["over_max_cells_allowed"] is True
+    # no opt-out above index.json's max_cells: the portal rejects such an upload before scoring
+    with pytest.raises(TypeError):
+        bio.select_rows(8000, spec, n_cells="all", allow_over_max=True)
+    with pytest.raises(ValueError, match="rejects an upload above max_cells"):
+        bio.select_rows(9000, spec, n_cells=8000)
     with pytest.raises(ValueError):
         bio.select_rows(0, spec, n_cells="all")
     with pytest.raises(ValueError, match="positive"):
@@ -270,6 +270,12 @@ def test_cli_copy_last_and_flags(tmp_path, heart_panel, capsys):
     rc = make_main(["--method", "copy_last", "--board", "T2:embryo:val_interp", "--last", str(big), "--out", str(tmp_path / "too.h5ad"),
                     "--n-cells", "6000"])
     assert rc == 1 and "max_cells=5000" in capsys.readouterr().err
+    # the former --allow-over-max escape hatch is gone (index.json's max_cells is authoritative)
+    with pytest.raises(SystemExit):
+        make_main(["--method", "copy_last", "--board", "T2:embryo:val_interp", "--last", str(big), "--out",
+                   str(tmp_path / "over.h5ad"), "--n-cells", "all", "--allow-over-max"])
+    assert not (tmp_path / "over.h5ad").exists()
+    capsys.readouterr()
     # a count inside the bound works on the 498-gene embryo board from the 500-gene file
     rc = make_main(["--method", "copy_last", "--board", "T2:embryo:val_interp", "--last", str(big), "--out", str(tmp_path / "emb.h5ad"),
                     "--n-cells", "5000"])

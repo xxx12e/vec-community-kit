@@ -70,15 +70,15 @@ bio.write_submission(X, C, panel, "pred.h5ad", board)                 # ValueErr
 ```
 
 * `n_cells=<int>` must lie inside the board's `[min_cells, max_cells]` (`data/panels/index.json`). Above
-  `max_cells` raises unless `allow_over_max=True`; below `min_cells` raises unless `relax_cells=True` (smoke tests
+  `max_cells` raises; below `min_cells` raises unless `relax_cells=True` (smoke tests
   on tiny files; such a file is not uploadable). A source with fewer rows than requested, but at least `min_cells`, is written whole and the
   report notes `kept_all_rows`.
 * `n_cells="all"` writes every source cell. It raises when that exceeds the board's `max_cells`, and the message
   states the bound (e.g. `the source has 17057 cells and the board allows at most max_cells=5118; pass an explicit
   n_cells inside [1000, 5118]`). The released stages hold more cells than most boards allow, so in practice you
-  pass a number - or `allow_over_max=True` (`--allow-over-max`): the evaluation pages state no cap above the
-  1,000-cell minimum while the organisers' `panels/index.json` carries `max_cells`, and an upload above it is
-  untested, so the default is the stricter reading and the checker reports the excess as a warning.
+  pass a number. `index.json`'s `max_cells` is authoritative - the portal rejects an upload above it before scoring
+  (the evaluation pages were corrected to say so on 2026-09-22) - so the former `allow_over_max` /
+  `--allow-over-max` escape hatch was removed in 0.2.0.
 
 `report["write_info"]` records `n_available`, `target`, `n_written` and `n_cells_mode` (`all` / `explicit`).
 
@@ -103,7 +103,7 @@ python -m vec_community_baselines.make_baseline --method pseudobulk_shift --boar
 ```
 
 Options: `--n-cells N|all` (required), `--seed`, `--relax-cells` (tiny sample data; the file is then not
-uploadable), `--allow-over-max` (count above index.json's `max_cells`; untested on the portal), `--log1p-counts`
+uploadable), `--log1p-counts`
 (count-scale inputs), `--celltype-key`, `--json report.json`, `--panels DIR`. Exit code 0 only when the written
 file passes the local contract checks (format only). Example verdict lines:
 

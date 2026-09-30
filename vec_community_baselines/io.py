@@ -129,17 +129,15 @@ def parse_n_cells(n_cells):
     raise ValueError(N_CELLS_REQUIRED + f" (got {type(n_cells).__name__} {n_cells!r})")
 
 
-def select_rows(n_available: int, spec: dict, n_cells=None, seed: int = 0, relax_cells: bool = False,
-                allow_over_max: bool = False):
+def select_rows(n_available: int, spec: dict, n_cells=None, seed: int = 0, relax_cells: bool = False):
     """Row indices for a submission that land inside [min_cells, max_cells]. `n_cells` is REQUIRED.
 
-    n_cells: "all" -> target = n_available; raises ValueError (stating the bound) if that exceeds max_cells,
-                      unless allow_over_max (then notes["over_max_cells_allowed"] = True)
-             int   -> target = n_cells; must lie inside [min_cells, max_cells] (above max_cells raises unless
-                      allow_over_max; below min_cells raises unless relax_cells)
-    max_cells comes from the organisers' panels/index.json; the evaluation pages state no cap above the 1,000-cell
-    minimum, and an upload above max_cells is untested, so the default is the stricter reading.
+    n_cells: "all" -> target = n_available; raises ValueError (stating the bound) if that exceeds max_cells
+             int   -> target = n_cells; must lie inside [min_cells, max_cells] (above max_cells raises; below
+                      min_cells raises unless relax_cells)
              None  -> raises ValueError telling the caller what to pass
+    max_cells comes from the organisers' panels/index.json, which is authoritative: the portal rejects an upload
+    outside [min_cells, max_cells] before scoring (the former allow_over_max escape hatch was removed in 0.2.0).
       n >= target             -> random subset of `target` rows, WITHOUT replacement, sorted
       min_cells <= n < target -> every row, original order (duplicating would add nothing); notes["kept_all_rows"]
       n < min_cells           -> every row + (min_cells - n) rows drawn with replacement (duplicates),
@@ -152,10 +150,9 @@ def select_rows(n_available: int, spec: dict, n_cells=None, seed: int = 0, relax
     n_cells = parse_n_cells(n_cells)
     rng = np.random.default_rng(seed)
     lo, hi = int(spec["min_cells"]), int(spec["max_cells"])
-    over_hint = (" (index.json max_cells; the evaluation pages state no cap and an upload above it is untested: "
-                 "allow_over_max=True / --allow-over-max lets it through with a warning)")
+    over_hint = " (panels/index.json; the portal rejects an upload above max_cells before scoring)"
     if n_cells == "all":
-        if n_available > hi and not allow_over_max:
+        if n_available > hi:
             raise ValueError(f"n_cells='all' but the source has {n_available} cells and the board allows at most "
                              f"max_cells={hi}; pass an explicit n_cells inside [{lo}, {hi}] (e.g. n_cells={min(hi, 5000)})"
                              + over_hint)
@@ -164,13 +161,11 @@ def select_rows(n_available: int, spec: dict, n_cells=None, seed: int = 0, relax
     else:
         target = n_cells
         mode = "explicit"
-        if target > hi and not allow_over_max:
+        if target > hi:
             raise ValueError(f"n_cells={target} exceeds the board's max_cells={hi}; pass a value inside [{lo}, {hi}]" + over_hint)
         if target <= 0:
             raise ValueError(f"n_cells={target} must be positive")
     notes: dict = {"n_available": n_available, "target": target, "n_cells_mode": mode}
-    if target > hi:
-        notes["over_max_cells_allowed"] = True
     if target < lo:
         if not relax_cells:
             raise ValueError(f"n_cells={target} is below the board's min_cells={lo}; pass a value inside [{lo}, {hi}] "
@@ -194,7 +189,7 @@ def select_rows(n_available: int, spec: dict, n_cells=None, seed: int = 0, relax
 
 # ----------------------------------------------------------------------------- writing
 def write_submission(X, coords, genes, out_path, board: str, relax_cells: bool = False, n_cells=None,
-                     seed: int = 0, obs=None, compression=None, panels=None, allow_over_max: bool = False) -> dict:
+                     seed: int = 0, obs=None, compression=None, panels=None) -> dict:
     """Build a contract-checked AnnData from (X, coords, genes), write it, validate it, return the report.
 
     * var_names become exactly the board panel: columns of `X` are mapped by gene name, so a superset or a
@@ -204,8 +199,6 @@ def write_submission(X, coords, genes, out_path, board: str, relax_cells: bool =
     * obsm["spatial_3D"] float32 (n, 3) written when the board needs coordinates (required then; dropped otherwise).
     * rows selected with `select_rows` so n_obs lands inside [min_cells, max_cells]; `n_cells` is REQUIRED (an
       int inside the bounds, or "all" for every row - see the module docstring); None raises ValueError.
-      allow_over_max=True lets the count exceed index.json's max_cells (the evaluation pages state no cap; an
-      upload above max_cells is untested) and the checker then warns instead of failing.
     * vec_submit_check.check() runs on the written file; any error raises SubmissionError, except the
       "< min_cells" error when relax_cells=True (tiny sample data / smoke tests; such a file is NOT uploadable).
     `obs` (optional, indexed like the rows of X) is carried along for local diagnostics only: the scorer ignores
@@ -227,8 +220,7 @@ def write_submission(X, coords, genes, out_path, board: str, relax_cells: bool =
     col = np.array([pos[g] for g in panel], dtype=int)
     identity_cols = len(genes) == len(panel) and bool(np.all(col == np.arange(len(panel))))
 
-    rows, notes = select_rows(X.shape[0], spec, n_cells=n_cells, seed=seed, relax_cells=relax_cells,
-                              allow_over_max=allow_over_max)
+    rows, notes = select_rows(X.shape[0], spec, n_cells=n_cells, seed=seed, relax_cells=relax_cells)
     n = len(rows)
     identity_rows = n == X.shape[0] and bool(np.array_equal(rows, np.arange(X.shape[0])))
 
@@ -303,7 +295,7 @@ def write_submission(X, coords, genes, out_path, board: str, relax_cells: bool =
     tmp_path.unlink(missing_ok=True)
     try:
         a.write_h5ad(tmp_path, compression=compression)
-        rep = vcheck.check(tmp_path, board, panels, ignore_max_cells=allow_over_max)
+        rep = vcheck.check(tmp_path, board, panels)
     except Exception:
         tmp_path.unlink(missing_ok=True)
         raise

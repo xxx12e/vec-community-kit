@@ -2,10 +2,11 @@
 
 Local pre-upload checks against the published board contracts: data/panels/index.json plus one
 data/panels/<board>.genes.txt per board, copies of the public files at https://virtualembryo.ai/challenge/panels/
-(index.json re-fetched 2026-09-05), read together with the "Requirements for a valid file" section of
-https://virtualembryo.ai/challenge/evaluation?section=submissions&task=N (read 2026-09-05). The portal's own
-validator has the final say, and the organisers' starter kit (score_h5ad.py) validates locally too. "A file that
-fails here would have failed there" holds for the rules marked [portal]; the others are stricter or advisory:
+(index.json re-fetched 2026-09-30, unchanged since 2026-09-05), read together with the "Requirements for a valid
+file" section of https://virtualembryo.ai/challenge/evaluation?section=submissions&task=N (read 2026-09-30). The
+portal's own validator has the final say, and the organisers' starter kit (score_h5ad.py) validates locally too.
+"A file that fails here would have failed there" holds for the rules marked [portal]; the others are stricter or
+advisory:
 
   * [portal]   var_names == board panel, element by element, same order (the portal does not reorder genes)
   * [portal]   .X a 2D cells x genes matrix, finite, non-negative; sparse or dense (the scorer densifies and casts
@@ -13,11 +14,12 @@ fails here would have failed there" holds for the rules marked [portal]; the oth
   * [portal]   obsm["spatial_3D"] present, shape (n, >=3), finite, when the board needs coordinates (the scorer
                reads the first three columns)
   * [portal]   a single .h5ad of at most 1200 MB (MAX_FILE_MB)
-  * [portal]   n_obs >= min_cells of index.json; the evaluation pages state a 1,000-cell minimum for every board,
-               so a count between index.json's min_cells and 1,000 is additionally warned about (PAGE_MIN_CELLS)
-  * [stricter] n_obs <= max_cells of index.json. The evaluation pages say "no cap" above the minimum while the
-               organisers' machine-readable index.json carries max_cells per board; an upload above it is
-               untested, so this is an error unless --ignore-max-cells (then a warning)
+  * [portal]   min_cells <= n_obs <= max_cells of index.json. The evaluation pages (corrected on 2026-09-22; they
+               had said "no cap" above 1,000 cells) now state that both bounds differ by board, are listed on the
+               Data page and in index.json, and that an upload outside them is rejected before scoring. There is no
+               opt-out: index.json is authoritative.
+  * [advisory] a count between index.json's min_cells and 1,000 (the embryo board allows 583) is warned about,
+               because a paragraph of the evaluation pages still mentions a 1,000-cell minimum (PAGE_MIN_CELLS)
   * [stricter] a constant .X is an error (it cannot be a prediction)
   * [advisory] warnings for what the portal's validation does not catch: a .X max above COUNTS_MAX_WARN looks like
                raw counts (a raw-count file passes validation and is then scored wrongly), cell-type labels
@@ -29,7 +31,6 @@ genes_sha256 before it is trusted.
 Usage:
   python -m vec_submit_check --board T1:val pred.h5ad
   python -m vec_submit_check --board T2:heart:val_interp pred.h5ad --json report.json
-  python -m vec_submit_check --board T2:heart:val_interp big.h5ad --ignore-max-cells
 
 Exit code 0 = passes, 1 = fails, 2 = usage error.
 
@@ -57,8 +58,8 @@ PACKAGED_PANELS = Path(__file__).resolve().parent / "panels"
 MAX_FILE_MB = 1200.0
 # .X max above this looks like raw counts rather than log-normalised expression (warning only).
 COUNTS_MAX_WARN = 30.0
-# The evaluation pages state "at least 1,000 cells" for every board (read 2026-09-05); index.json's min_cells is
-# lower on one board. A count between the two is a warning.
+# index.json's min_cells is 583 on the embryo board; the requirements section of the evaluation pages defers to it,
+# but their "not constrained" paragraph still says 1,000 (read 2026-09-30). A count between the two is a warning.
 PAGE_MIN_CELLS = 1000
 
 
@@ -132,11 +133,11 @@ def sha256_file(path, chunk: int = 1 << 20) -> str:
     return h.hexdigest()
 
 
-def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB, ignore_max_cells: bool = False) -> dict:
+def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB) -> dict:
     """Validate one file against one board. Returns a report dict with ok / errors / warnings / info.
 
-    ignore_max_cells=True reports n_obs > max_cells (index.json) as a warning instead of an error: the evaluation
-    pages state no cap above the 1,000-cell minimum, while index.json carries max_cells; above it is untested.
+    The cell count must lie inside index.json's [min_cells, max_cells]; the portal rejects an upload outside them
+    before scoring, so there is no opt-out (the former ignore_max_cells escape hatch was removed in 0.2.0).
     """
     import anndata as ad
     import scipy.sparse as sp
@@ -173,15 +174,11 @@ def check(path, board: str, panels=None, max_file_mb: float = MAX_FILE_MB, ignor
     if n < lo:
         err(f"n_obs={n} < min_cells={lo} (panels/index.json)")
     elif n < PAGE_MIN_CELLS:
-        warn(f"n_obs={n} is below the 1,000-cell minimum stated on the evaluation pages although index.json allows "
-             f"min_cells={lo} for this board; an upload this small is untested")
+        warn(f"n_obs={n} is below 1,000 cells; index.json allows min_cells={lo} for this board, but a paragraph of the "
+             "evaluation pages still mentions a 1,000-cell minimum")
     if n > hi:
-        over = (f"n_obs={n} > max_cells={hi} in the organisers' panels/index.json (the evaluation pages state no cap "
-                "above the minimum; an upload above max_cells is untested)")
-        if ignore_max_cells:
-            warn(over + "; reported as a warning because ignore_max_cells was given")
-        else:
-            err(over + "; pass --ignore-max-cells to make this a warning")
+        err(f"n_obs={n} > max_cells={hi} (panels/index.json); the portal rejects an upload outside "
+            f"[{lo}, {hi}] before scoring - write fewer cells")
 
     # --- X ---
     X = a.X
@@ -273,15 +270,12 @@ def main(argv=None) -> int:
                    help="T1:val | T2:embryo:val_interp | T2:heart:val_interp | T2:heart:val_extrap | T3:gata4")
     p.add_argument("--panels", type=Path, default=None, help="directory with index.json + *.genes.txt (default: see module doc)")
     p.add_argument("--json", type=Path, help="write the report as JSON here")
-    p.add_argument("--ignore-max-cells", action="store_true",
-                   help="report n_obs > max_cells (panels/index.json) as a warning, not an error: the evaluation pages "
-                        "state no cap above the 1,000-cell minimum; an upload above max_cells is untested")
     args = p.parse_args(argv)
     if not args.h5ad.exists():
         print(f"no such file: {args.h5ad}", file=sys.stderr)
         return 2
     try:
-        rep = check(args.h5ad, args.board, args.panels, ignore_max_cells=args.ignore_max_cells)
+        rep = check(args.h5ad, args.board, args.panels)
     except (KeyError, FileNotFoundError) as e:
         print(f"usage error: {e}", file=sys.stderr)
         return 2
