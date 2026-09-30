@@ -71,6 +71,9 @@ def parse_args(argv=None):
     sp.add_argument("--run-dir", required=True)
     sp.add_argument("--out-root", default=None)
     sp.add_argument("--allow-abort-unknown", action="store_true")
+    sp.add_argument("--team-uploaded-mb", type=float, default=0.0,
+                    help="evidence MB your team has already uploaded; the package README states the running total "
+                         "against the 600 MB per-team cap")
     return p.parse_args(argv)
 
 
@@ -127,7 +130,8 @@ def main(argv=None) -> int:
         return cmd_postrun(args)
     if args.cmd == "package":
         return package_mod.main(["--run-dir", args.run_dir] + (["--out-root", args.out_root] if args.out_root else [])
-                                + (["--allow-abort-unknown"] if args.allow_abort_unknown else []))
+                                + (["--allow-abort-unknown"] if args.allow_abort_unknown else [])
+                                + ["--team-uploaded-mb", str(args.team_uploaded_mb)])
     return 2
 
 
