@@ -15,6 +15,19 @@ The organisers publish the board contracts (`panels/index.json` + gene lists), t
 veckit, a local validator/scorer in the starter kit (`score_h5ad.py`) and the portal's own format check. What each
 part here adds beyond those is stated below; official sources are cited with the date they were read.
 
+## What changed in 0.2.0 (2026-09-30, after the organisers' review)
+
+* `vec_baselines` is now **`vec_community_baselines`** (the old name is the organisers' official package; no alias).
+* **`pyproject.toml`**: `pip install -e ".[test]"` installs the four packages and five `vec-community-*` commands.
+* **`max_cells` is authoritative**: `--ignore-max-cells` (validator) and `--allow-over-max` (writer) are gone; the
+  evaluation pages were corrected on 2026-09-22.
+* **Local scoring prints the multi-seed band by default** (`--single-seed` for the old table): from 2026-10-20 the
+  scorer's subsample seed depends on each submission.
+* **Codex CLI**: a minimal, after-the-fact evidence packager (`codex-package`), untested against a live Codex run.
+* **Tutorials**: a section on what changes at the final phase (from 2026-10-20); the Agent-track lock now accepts
+  any board that `index.json` assigns to a task (the test boards), and `package --team-uploaded-mb` works as
+  documented (it was rejected by the top-level CLI before).
+
 ## The five parts
 
 ### 1. [`vec_submit_check/`](vec_submit_check/) - local pre-upload checks
@@ -119,6 +132,11 @@ and the Agent track's evidence - in English and Chinese, with a prerequisites ta
 only `requirements.txt`, which need veckit, and which need the Claude Code CLI. [`docs/metrics_overview.md`](docs/metrics_overview.md)
 explains what each metric measures.
 
+Section 11 (new, 2026-09-30) lists what changes at the final phase from 2026-10-20 - validation answers released as
+training material, two official submissions per board for the whole phase, the per-submission scorer seed, test
+inputs without labels and new board contracts, final rankings on the hidden test sets, nomination and evidence -
+citing the official timeline and rules pages as read on 2026-09-30.
+
 *Adds:* the complete walkthrough for both tracks in one place; the commands were executed against synthetic
 stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
 against the real release inside this repository; the cell-count bound is stated next to each command.
@@ -213,7 +231,7 @@ leaderboard order.
   的评审中说明，从 2026-10-20 起打分器的抽样种子随每次提交而变，所以公布的分数只是这类区间里的一次抽取，同一文件传两次分数也可能不同；
   本地区间衡量的是你所选伪切分上的抽样噪声（不是隐藏目标上的），落在区间之内的差异不算结果。比主办方多出来的：
   veckit 本身只对一个目标文件打出原始指标，封装补上了抽样、对半天花板、地板行、veckit 自己的 `skill()` 和公布的任务权重，以及多种子
-  的均值 +- 标准差。只是你所选伪切分上的比较：不是真实分数的预告，也不预测隐藏目标上的名次；在 veckit 0.1.1（commit `46d41e6`，请安装该
+  区间（均值 +- 标准差、最小..最大）。只是你所选伪切分上的比较：不是真实分数的预告，也不预测隐藏目标上的名次；在 veckit 0.1.1（commit `46d41e6`，请安装该
   commit）上测试过，主办方的打分器才是最终依据，封装可能滞后。
   示例输出：`pseudo_pred.h5ad on E8.75.h5ad: 53.11 +- 3.54 (sd), band 48.86..56.96 (min..max over seeds [0, 1, 2, 3, 4])`。
 * [`vec_agent_evidence/`](vec_agent_evidence/)：Agent 赛道的配置锁定（哈希提示词、设置、模型、工具策略、数据文件、CLI 二进制）、PreToolUse
@@ -231,6 +249,9 @@ leaderboard order.
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
   Claude Code CLI。命令在按真实目录布局摆放的合成数据上执行过（2026-09-30 本次修订后重跑，日志和环境见 `scratchpad/dryrun_log.txt`），没有在真实发布数据上跑过；
   细胞数范围写在命令旁边。
+  第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交、
+  打分器种子随每次提交而变、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
+  的读取日期（2026-09-30）。
   [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `55 passed`。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
