@@ -25,7 +25,8 @@ Every page URL came from the site navigation (read 2026-09-30); every watched pa
 
 Not watched: the leaderboard (it moves with every submission), the submit and account pages and the data manifest
 (sign-in), the list of filed community resources (the page loads it with JavaScript after the HTML), the data files,
-emails, Discord and Slack.
+other JSON files linked from the pages (such as `panels/t1_composition.json`, a description of the released Task 1
+stages; a new file of this kind shows up as a new site link), emails, Discord and Slack.
 
 ## What the changelog says
 
@@ -183,7 +184,8 @@ the contract; the contract copy here can feed any validator that reads `index.js
 所以不需要浏览器或 Playwright。列表在 `watchlist.json`。
 
 不监测：排行榜（每次提交都会变）、提交页和账户页以及数据清单（需要登录）、已提交的社区资源列表（页面在 HTML 之后用
-JavaScript 加载）、数据文件本身、邮件、Discord 和 Slack。
+JavaScript 加载）、数据文件本身、页面链接的其他 JSON 文件（例如描述已发布的 Task 1 阶段的 `panels/t1_composition.json`；
+新出现的这类文件会作为新链接报告）、邮件、Discord 和 Slack。
 
 ### 变更记录写些什么
 
