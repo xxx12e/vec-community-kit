@@ -1,0 +1,752 @@
+# Real-release pass of docs/tutorial_en.md (docs/tutorial_zh.md gives the same commands)
+# commands executed 2026-09-30T16:58:54Z .. 2026-09-30T17:05:47Z (UTC) on cloud Linux runner, 32 cores
+# environment: OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 LOKY_MAX_CPU_COUNT=4, niceness 19, user id 0
+# Kit: branch tutorial-real-release at 74a2a18 (git archive of that commit, so no .git in the copy; the Linux
+#   variants of section 3 were used: python -m venv .venv && source .venv/bin/activate). Python 3.10.13 (conda base
+#   interpreter of the runner) -> a fresh .venv; pip 23.0.1 and setuptools 65.5.0 inside it. Packages, as resolved
+#   by `pip install -e ".[test]"` and the veckit line of section 3: anndata 0.11.4, numpy 2.2.6, scipy 1.15.3,
+#   pandas 2.3.3, h5py 3.16.0, pytest 9.1.1, scikit-learn 1.7.2, veckit 0.1.1 (git commit 46d41e6).
+# Data: the files downloaded from the Data page (sign-in) were already on the runner. Instead of downloading again,
+#   each released file was symlinked into the layout of section 2 (data/raw/T1, T2_heart, T2_embryo, T3); nothing
+#   was copied, modified or moved off the runner. data/panels/ is the kit's copy; it equals the live
+#   https://virtualembryo.ai/challenge/panels/index.json and gene lists (compared 2026-09-30).
+# Driver: scratchpad/tutorial_realrun.py runs each command from the kit root in a fresh
+#   `bash -c "source .venv/bin/activate && <command>"` and records exit code, wall time and peak memory (max RSS of
+#   the command and its children, from wait4). Paths are shown as <kit> / <downloads> / <work>.
+# Left out on purpose: every value computed from the data (expression ranges, file hashes, metric values, scores,
+#   cell-type names and counts); "<omitted>" marks them. For each floor-model band the driver prints only whether
+#   the band contains 50 and whether its mean is within 5 points of 50 (the claim of tutorial section 7).
+# Not run: the upload (section 8); `vec_agent_evidence run` and `package` (section 9: they need the Claude Code CLI
+#   and a completed run); the E10.5 example of section 7 (the validation stages are released on 2026-10-20).
+# Commands that are not in the tutorial text but check a claim it makes: the five `--n-cells all` calls (section 5
+#   says `all` errors on every board), pseudobulk_shift on the heart pair (section 5 mentions its WARNING), the
+#   console script `vec-community-check` (section 3), a heart file checked against the embryo board (section 6),
+#   `--max-cells 6000` (section 7, reference cap), the stand-in B file of the paired example (as in the dry run).
+#
+# A first pass (2026-09-30 16:39-16:47 UTC, kit 78ac4c8, same runner and data; its log is not kept) found three
+# things, fixed before this pass:
+#   * `python -m pytest -q` ended with 2 failed (tests/test_evidence.py asked os.access(W_OK), always true for root;
+#     the runner runs as root) -> the tests check the permission bits (commit ef657f4);
+#   * the veckit check printed 'matches_tested': False for the tested commit: the recorded hashes came from a
+#     Windows CRLF checkout -> hashes are taken over LF content (commit f22e6c4);
+#   * veckit's T1 probe (LogisticRegression(n_jobs=-1)) started one worker process per core (32) under
+#     scikit-learn 1.7 -> this pass sets LOKY_MAX_CPU_COUNT=4, and tutorial section 7 says so. Run times and memory
+#     were the same within a few percent in both passes.
+# The tutorial text was then corrected where the release differs from it (file sizes and counts, no E7.75
+# single-cell file, 498 vs 500 genes in the embryo stages, obs["genotype"] in the T3 knockout, the reference cap,
+# run times and memory); see the commit "Tutorials: fix what the pass over the real release showed".
+
+$ python --version && python -m venv .venv && source .venv/bin/activate && python --version
+  Python 3.10.13
+  Python 3.10.13
+  -> rc=0  wall=2.3s  peak_rss=72MB
+
+$ pip install -e ".[test]"
+  Successfully built vec-community-kit
+  Successfully installed anndata-0.11.4 array-api-compat-1.15.0 exceptiongroup-1.3.1 h5py-3.16.0 iniconfig-2.3.0 natsort-8.4.0 numpy-2.2.6 packaging-26.3 pandas-2.3.3 pluggy-1.6.0 pygments-2.21.0 pytest-9.1.1 python-dateutil-2.9.0.post0 pytz-2026.4 scipy-1.15.3 six-1.17.0 tomli-2.4.1 typing-extensions-4.16.0 tzdata-2026.4 vec-community-kit-2026.10.0
+  -> rc=0  wall=13.9s  peak_rss=172MB
+
+$ python -m pip list 2>/dev/null | grep -i -E '^(anndata|numpy|scipy|pandas|h5py|pytest|scikit-learn|veckit|vec-community-kit|setuptools|pip) '
+  anndata           0.11.4
+  h5py              3.16.0
+  numpy             2.2.6
+  pandas            2.3.3
+  pip               23.0.1
+  pytest            9.1.1
+  scipy             1.15.3
+  setuptools        65.5.0
+  vec-community-kit 2026.10.0   <kit>
+  -> rc=0  wall=0.3s  peak_rss=42MB
+
+$ python -m pytest -q
+  ......................................sssssssss....s............         [100%]
+  54 passed, 10 skipped in 20.13s
+  -> rc=0  wall=20.8s  peak_rss=463MB
+
+$ pip install -r requirements.txt
+  Requirement already satisfied: iniconfig>=1.0.1 in ./.venv/lib/python3.10/site-packages (from pytest>=7.0->-r requirements.txt (line 11)) (2.3.0)
+  Requirement already satisfied: typing-extensions>=4.6.0 in ./.venv/lib/python3.10/site-packages (from exceptiongroup->anndata>=0.10->-r requirements.txt (line 5)) (4.16.0)
+  Requirement already satisfied: six>=1.5 in ./.venv/lib/python3.10/site-packages (from python-dateutil>=2.8.2->pandas>=2.0->-r requirements.txt (line 8)) (1.17.0)
+  -> rc=0  wall=0.5s  peak_rss=44MB
+
+$ for c in vec-community-check vec-community-baseline vec-community-score vec-community-split vec-community-evidence; do $c --help >/dev/null 2>&1; echo "$c rc=$?"; done
+  vec-community-check rc=0
+  vec-community-baseline rc=0
+  vec-community-score rc=0
+  vec-community-split rc=0
+  vec-community-evidence rc=0
+  -> rc=0  wall=1.3s  peak_rss=102MB
+
+$ pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"
+  Requirement already satisfied: six>=1.5 in ./.venv/lib/python3.10/site-packages (from python-dateutil>=2.8.2->pandas!=2.1.0rc0,!=2.1.2,>=1.4->anndata->veckit==0.1.1) (1.17.0)
+  Successfully built veckit
+  Successfully installed cloudpickle-3.1.2 joblib-1.6.0 scikit-learn-1.7.2 threadpoolctl-3.7.0 veckit-0.1.1
+  -> rc=0  wall=5.7s  peak_rss=79MB
+
+$ python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"
+  True {'module': '<kit>/.venv/lib/python3.10/site-packages/score_h5ad.py', 'root': '<kit>/.venv/lib/python3.10/site-packages', 'version': '0.1.1', 'sha256': {'score_h5ad.py': '52034554f03aec10193cb09baa2c78a1de04218ef678f327eb63acc58fa28add', 'common/core_metrics.py': '3be7099a0c9a7ad5b609f86078871ed8290ed0bd8916b0cb3e14fb9831909f31'}, 'matches_tested': True}
+  -> rc=0  wall=0.5s  peak_rss=102MB
+
+$ python -m pip list 2>/dev/null | grep -i -E '^(anndata|numpy|scipy|pandas|h5py|pytest|scikit-learn|veckit) '
+  anndata           0.11.4
+  h5py              3.16.0
+  numpy             2.2.6
+  pandas            2.3.3
+  pytest            9.1.1
+  scikit-learn      1.7.2
+  scipy             1.15.3
+  veckit            0.1.1
+  -> rc=0  wall=0.3s  peak_rss=42MB
+
+$ python -m pytest -q -rs
+  ...................................................s............         [100%]
+  =========================== short test summary info ============================
+  SKIPPED [1] tests/test_packaging.py:77: building the wheel offline needs setuptools>=77 in this environment
+  63 passed, 1 skipped in 55.32s
+  -> rc=0  wall=56.2s  peak_rss=601MB
+
+$ python - <<'EOF' ... EOF    # INSPECT in scratchpad/tutorial_realrun.py: h5py metadata only (shape, .X storage, obs/obsm keys, gene order against each panel) of every file under data/raw/
+  {"file": "T1/E8.5_RNA.h5ad", "MB": 570.9, "n_obs": 16787, "n_vars": 32285, "X": "csc_matrix float32", "obs": ["_index", "celltype"], "obsm": ["X_umap.harmony.rna"], "spatial_3D": null, "panels": {"T1:val": "same genes, same order"}}
+  {"file": "T1/E9.5_RNA.h5ad", "MB": 589.9, "n_obs": 17057, "n_vars": 32285, "X": "csc_matrix float32", "obs": ["_index", "celltype"], "obsm": ["X_umap.harmony.rna"], "spatial_3D": null, "panels": {"T1:val": "same genes, same order"}}
+  {"file": "T2_embryo/E6.75.h5ad", "MB": 17.5, "n_obs": 7093, "n_vars": 498, "X": "csc_matrix float32", "obs": ["_index", "celltype"], "obsm": ["spatial_2D", "spatial_3D"], "spatial_3D": [7093, 3], "panels": {"T2:embryo:val_interp": "same genes, same order", "T2:heart:val_extrap": "missing 2: ['Casp4', 'Pnliprp1']", "T2:heart:val_interp": "missing 2: ['Casp4', 'Pnliprp1']", "T3:gata4": "missing 2: ['Casp4', 'Pnliprp1']"}}
+  {"file": "T2_embryo/E7.25.h5ad", "MB": 33.6, "n_obs": 13295, "n_vars": 498, "X": "csc_matrix float32", "obs": ["_index", "celltype"], "obsm": ["spatial_2D", "spatial_3D"], "spatial_3D": [13295, 3], "panels": {"T2:embryo:val_interp": "same genes, same order", "T2:heart:val_extrap": "missing 2: ['Casp4', 'Pnliprp1']", "T2:heart:val_interp": "missing 2: ['Casp4', 'Pnliprp1']", "T3:gata4": "missing 2: ['Casp4', 'Pnliprp1']"}}
+  {"file": "T2_embryo/E8.0.h5ad", "MB": 117.7, "n_obs": 31671, "n_vars": 500, "X": "csc_matrix float32", "obs": ["_index", "celltype", "cm_celltype"], "obsm": ["spatial_2D", "spatial_3D"], "spatial_3D": [31671, 3], "panels": {"T2:embryo:val_interp": "has every panel gene (other order or extra genes)", "T2:heart:val_extrap": "same genes, same order", "T2:heart:val_interp": "same genes, same order", "T3:gata4": "same genes, same order"}}
+  {"file": "T2_heart/E8.25_late.h5ad", "MB": 225.1, "n_obs": 58716, "n_vars": 500, "X": "csc_matrix float32", "obs": ["_index", "celltype", "cm_celltype"], "obsm": ["spatial_2D", "spatial_3D"], "spatial_3D": [58716, 3], "panels": {"T2:embryo:val_interp": "has every panel gene (other order or extra genes)", "T2:heart:val_extrap": "same genes, same order", "T2:heart:val_interp": "same genes, same order", "T3:gata4": "same genes, same order"}}
+  {"file": "T2_heart/E8.75.h5ad", "MB": 83.8, "n_obs": 24826, "n_vars": 500, "X": "csc_matrix float32", "obs": ["_index", "celltype", "cm_celltype"], "obsm": ["spatial_2D", "spatial_3D"], "spatial_3D": [24826, 3], "panels": {"T2:embryo:val_interp": "has every panel gene (other order or extra genes)", "T2:heart:val_extrap": "same genes, same order", "T2:heart:val_interp": "same genes, same order", "T3:gata4": "same genes, same order"}}
+  {"file": "T2_heart/E9.5.h5ad", "MB": 163.6, "n_obs": 53742, "n_vars": 500, "X": "csc_matrix float32", "obs": ["_index", "celltype", "cm_celltype"], "obsm": ["spatial_2D", "spatial_3D"], "spatial_3D": [53742, 3], "panels": {"T2:embryo:val_interp": "has every panel gene (other order or extra genes)", "T2:heart:val_extrap": "same genes, same order", "T2:heart:val_interp": "same genes, same order", "T3:gata4": "same genes, same order"}}
+  {"file": "T3/E9.5_mab21l2_ko.h5ad", "MB": 457.7, "n_obs": 50294, "n_vars": 500, "X": "array float32", "obs": ["_index", "celltype", "embryo_section", "genotype", "leiden", "n_counts", "n_genes", "perturb_batch", "sample_id", "section", "slide", "time", "z_coord"], "obsm": ["X_pca", "X_pca_harmony", "X_umap", "spatial", "spatial_3D"], "spatial_3D": [50294, 3], "panels": {"T2:embryo:val_interp": "has every panel gene (other order or extra genes)", "T2:heart:val_extrap": "same genes, same order", "T2:heart:val_interp": "same genes, same order", "T3:gata4": "same genes, same order"}}
+  -> rc=0  wall=0.2s  peak_rss=59MB
+
+$ wc -l data/panels/*.genes.txt
+   32285 data/panels/T1__val.genes.txt
+   498 data/panels/T2__embryo__val_interp.genes.txt
+   500 data/panels/T2__heart__val_extrap.genes.txt
+   500 data/panels/T2__heart__val_interp.genes.txt
+   500 data/panels/T3__gata4.genes.txt
+   34283 total
+  -> rc=0  wall=0.0s  peak_rss=12MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last   --board T1:val               --last data/raw/T1/E9.5_RNA.h5ad          --out out/t1_copy_last.h5ad --n-cells 5000
+  [make_baseline] loaded last  E9.5_RNA.h5ad: 17057 cells x 32285 genes
+  [make_baseline] method info:
+  {
+  "method": "copy_last",
+  "n_cells": 5000,
+  "n_genes": 32285,
+  "has_coords": false,
+  "n_source_cells": 17057,
+  "row_selection": {
+    "n_available": 17057,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/t1_copy_last.h5ad @ T1:val  n_obs=5000 n_vars=32285 X=csr_matrix min=<omitted> max=<omitted> size=159.1MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 3.7s
+  -> rc=0  wall=4.2s  peak_rss=1849MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad       --out out/embryo_copy_last.h5ad --n-cells 5000
+  [make_baseline] loaded last  E8.0.h5ad: 31671 cells x 498 genes (+coords)
+  [make_baseline] method info:
+  {
+  "method": "copy_last",
+  "n_cells": 5000,
+  "n_genes": 498,
+  "has_coords": true,
+  "n_source_cells": 31671,
+  "row_selection": {
+    "n_available": 31671,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/embryo_copy_last.h5ad @ T2:embryo:val_interp  n_obs=5000 n_vars=498 X=dense[float32] min=<omitted> max=<omitted> size=10.3MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 0.2s
+  -> rc=0  wall=0.7s  peak_rss=385MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_interp  --last data/raw/T2_heart/E8.25_late.h5ad  --out out/heart_interp_copy_last.h5ad --n-cells 5000
+  [make_baseline] loaded last  E8.25_late.h5ad: 58716 cells x 500 genes (+coords)
+  [make_baseline] method info:
+  {
+  "method": "copy_last",
+  "n_cells": 5000,
+  "n_genes": 500,
+  "has_coords": true,
+  "n_source_cells": 58716,
+  "row_selection": {
+    "n_available": 58716,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500 X=dense[float32] min=<omitted> max=<omitted> size=10.3MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 0.2s
+  -> rc=0  wall=0.7s  peak_rss=381MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last data/raw/T2_heart/E9.5.h5ad        --out out/heart_extrap_copy_last.h5ad --n-cells 5000
+  [make_baseline] loaded last  E9.5.h5ad: 53742 cells x 500 genes (+coords)
+  [make_baseline] method info:
+  {
+  "method": "copy_last",
+  "n_cells": 5000,
+  "n_genes": 500,
+  "has_coords": true,
+  "n_source_cells": 53742,
+  "row_selection": {
+    "n_available": 53742,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/heart_extrap_copy_last.h5ad @ T2:heart:val_extrap  n_obs=5000 n_vars=500 X=dense[float32] min=<omitted> max=<omitted> size=10.3MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 0.2s
+  -> rc=0  wall=0.7s  peak_rss=320MB
+
+$ python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4             --wt   data/raw/T2_heart/E8.75.h5ad       --out out/t3_wt_identity.h5ad --n-cells 5000
+  [make_baseline] loaded wt    E8.75.h5ad: 24826 cells x 500 genes (+coords)
+  [make_baseline] method info:
+  {
+  "method": "wt_identity",
+  "n_cells": 5000,
+  "n_genes": 500,
+  "has_coords": true,
+  "n_source_cells": 24826,
+  "row_selection": {
+    "n_available": 24826,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 X=dense[float32] min=<omitted> max=<omitted> size=10.3MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 0.1s
+  -> rc=0  wall=0.6s  peak_rss=238MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last --board T1:val --last data/raw/T1/E9.5_RNA.h5ad --out out/all_t1.h5ad --n-cells all
+  FAIL: n_cells='all' but the source has 17057 cells and the board allows at most max_cells=5118; pass an explicit n_cells inside [1000, 5118] (e.g. n_cells=5000) (panels/index.json; the portal rejects an upload above max_cells before scoring)
+  [make_baseline] loaded last  E9.5_RNA.h5ad: 17057 cells x 32285 genes
+  -> rc=1  wall=0.7s  peak_rss=704MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad --out out/all_embryo.h5ad --n-cells all
+  FAIL: n_cells='all' but the source has 31671 cells and the board allows at most max_cells=5000; pass an explicit n_cells inside [583, 5000] (e.g. n_cells=5000) (panels/index.json; the portal rejects an upload above max_cells before scoring)
+  [make_baseline] loaded last  E8.0.h5ad: 31671 cells x 498 genes (+coords)
+  -> rc=1  wall=0.6s  peak_rss=344MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/all_heart_interp.h5ad --n-cells all
+  FAIL: n_cells='all' but the source has 58716 cells and the board allows at most max_cells=17616; pass an explicit n_cells inside [1000, 17616] (e.g. n_cells=5000) (panels/index.json; the portal rejects an upload above max_cells before scoring)
+  [make_baseline] loaded last  E8.25_late.h5ad: 58716 cells x 500 genes (+coords)
+  -> rc=1  wall=0.6s  peak_rss=340MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_extrap --last data/raw/T2_heart/E9.5.h5ad --out out/all_heart_extrap.h5ad --n-cells all
+  FAIL: n_cells='all' but the source has 53742 cells and the board allows at most max_cells=25179; pass an explicit n_cells inside [1000, 25179] (e.g. n_cells=5000) (panels/index.json; the portal rejects an upload above max_cells before scoring)
+  [make_baseline] loaded last  E9.5.h5ad: 53742 cells x 500 genes (+coords)
+  -> rc=1  wall=0.6s  peak_rss=277MB
+
+$ python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4 --wt data/raw/T2_heart/E8.75.h5ad --out out/all_t3.h5ad --n-cells all
+  FAIL: n_cells='all' but the source has 24826 cells and the board allows at most max_cells=7449; pass an explicit n_cells inside [1000, 7449] (e.g. n_cells=5000) (panels/index.json; the portal rejects an upload above max_cells before scoring)
+  [make_baseline] loaded wt    E8.75.h5ad: 24826 cells x 500 genes (+coords)
+  -> rc=1  wall=0.5s  peak_rss=196MB
+
+$ python - <<'EOF'
+from vec_community_baselines import io as bio, methods as bm
+spec, panel = bio.panel_for_board("T3:gata4")
+wt = bio.load_stage("data/raw/T2_heart/E8.75.h5ad", panel)
+X, C, info = bm.wt_identity(wt)
+report = bio.write_submission(X, C, panel, "out/t3_wt_identity.h5ad", "T3:gata4", n_cells=5000)
+print(report["ok"], report["info"]["n_obs"])
+EOF
+  True 5000
+  -> rc=0  wall=0.7s  peak_rss=290MB
+
+$ python -m vec_community_baselines.make_baseline --method pseudobulk_shift --board T2:heart:val_extrap --prev data/raw/T2_heart/E8.75.h5ad --last data/raw/T2_heart/E9.5.h5ad --out out/heart_extrap_pbshift.h5ad --n-cells 5000
+  WARNING: (cell-type names and counts omitted)
+  [make_baseline] loaded prev  E8.75.h5ad: 24826 cells x 500 genes (+coords)
+  [make_baseline] loaded last  E9.5.h5ad: 53742 cells x 500 genes (+coords)
+  [make_baseline] method info:
+  {
+  "method": "pseudobulk_shift",
+  "n_cells": 5000,
+  "n_genes": 500,
+  "has_coords": true,
+  "n_source_cells": 53742,
+  "celltype_key": "celltype",
+  "shared_types": <omitted>
+  "unmatched_types_in_last": <omitted>
+  "types_only_in_prev": <omitted>
+  "n_entries_clipped_at_zero": <omitted>
+  "per_type": <omitted>
+  "row_selection": {
+    "n_available": 53742,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/heart_extrap_pbshift.h5ad @ T2:heart:val_extrap  n_obs=5000 n_vars=500 X=dense[float32] min=<omitted> max=<omitted> size=10.3MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 0.5s
+  -> rc=0  wall=0.9s  peak_rss=402MB
+
+$ python -m vec_submit_check --board T2:heart:val_interp out/heart_interp_copy_last.h5ad
+  [PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  n_obs: 5000
+  n_vars: 500
+  sha256: <omitted>
+  size_mb: 10.3
+  max_file_mb: 1200.0
+  X_format: dense[float32]
+  X_min: <omitted>
+  X_max: <omitted>
+  X_nonzero_frac: <omitted>
+  spatial_3D_rms_radius: <omitted>
+  -> rc=0  wall=0.5s  peak_rss=135MB
+
+$ python -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --json out/t1_check.json
+  [PASS] out/t1_copy_last.h5ad @ T1:val  n_obs=5000 n_vars=32285
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  n_obs: 5000
+  n_vars: 32285
+  sha256: <omitted>
+  size_mb: 159.1
+  max_file_mb: 1200.0
+  X_format: csr_matrix
+  X_min: <omitted>
+  X_max: <omitted>
+  X_nonzero_frac: <omitted>
+  -> rc=0  wall=0.7s  peak_rss=449MB
+
+$ python -m vec_submit_check --board T2:embryo:val_interp out/embryo_copy_last.h5ad
+  [PASS] out/embryo_copy_last.h5ad @ T2:embryo:val_interp  n_obs=5000 n_vars=498
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  n_obs: 5000
+  n_vars: 498
+  sha256: <omitted>
+  size_mb: 10.3
+  max_file_mb: 1200.0
+  X_format: dense[float32]
+  X_min: <omitted>
+  X_max: <omitted>
+  X_nonzero_frac: <omitted>
+  spatial_3D_rms_radius: <omitted>
+  -> rc=0  wall=0.5s  peak_rss=135MB
+
+$ python -m vec_submit_check --board T2:heart:val_extrap out/heart_extrap_copy_last.h5ad
+  [PASS] out/heart_extrap_copy_last.h5ad @ T2:heart:val_extrap  n_obs=5000 n_vars=500
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  n_obs: 5000
+  n_vars: 500
+  sha256: <omitted>
+  size_mb: 10.3
+  max_file_mb: 1200.0
+  X_format: dense[float32]
+  X_min: <omitted>
+  X_max: <omitted>
+  X_nonzero_frac: <omitted>
+  spatial_3D_rms_radius: <omitted>
+  -> rc=0  wall=0.5s  peak_rss=135MB
+
+$ python -m vec_submit_check --board T3:gata4 out/t3_wt_identity.h5ad
+  [PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  n_obs: 5000
+  n_vars: 500
+  sha256: <omitted>
+  size_mb: 10.3
+  max_file_mb: 1200.0
+  X_format: dense[float32]
+  X_min: <omitted>
+  X_max: <omitted>
+  X_nonzero_frac: <omitted>
+  spatial_3D_rms_radius: <omitted>
+  -> rc=0  wall=0.5s  peak_rss=135MB
+
+$ vec-community-check --board T3:gata4 out/t3_wt_identity.h5ad
+  [PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  n_obs: 5000
+  n_vars: 500
+  sha256: <omitted>
+  size_mb: 10.3
+  max_file_mb: 1200.0
+  X_format: dense[float32]
+  X_min: <omitted>
+  X_max: <omitted>
+  X_nonzero_frac: <omitted>
+  spatial_3D_rms_radius: <omitted>
+  -> rc=0  wall=0.5s  peak_rss=136MB
+
+$ python -m vec_submit_check --board T2:embryo:val_interp out/heart_interp_copy_last.h5ad
+  [FAIL] out/heart_interp_copy_last.h5ad @ T2:embryo:val_interp  n_obs=5000 n_vars=500
+  ERROR: n_vars=500 but board expects 498
+  ERROR: gene names differ from panel; missing e.g. []; extra e.g. ['Casp4', 'Pnliprp1']
+  n_obs: 5000
+  n_vars: 500
+  sha256: <omitted>
+  size_mb: 10.3
+  max_file_mb: 1200.0
+  X_format: dense[float32]
+  X_min: <omitted>
+  X_max: <omitted>
+  X_nonzero_frac: <omitted>
+  spatial_3D_rms_radius: <omitted>
+  -> rc=1  wall=0.5s  peak_rss=136MB
+
+$ python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"
+  True {'module': '<kit>/.venv/lib/python3.10/site-packages/score_h5ad.py', 'root': '<kit>/.venv/lib/python3.10/site-packages', 'version': '0.1.1', 'sha256': {'score_h5ad.py': '52034554f03aec10193cb09baa2c78a1de04218ef678f327eb63acc58fa28add', 'common/core_metrics.py': '3be7099a0c9a7ad5b609f86078871ed8290ed0bd8916b0cb3e14fb9831909f31'}, 'matches_tested': True}
+  -> rc=0  wall=0.4s  peak_rss=102MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000
+  [make_baseline] loaded last  E8.25_late.h5ad: 58716 cells x 500 genes (+coords)
+  [make_baseline] method info:
+  {
+  "method": "copy_last",
+  "n_cells": 5000,
+  "n_genes": 500,
+  "has_coords": true,
+  "n_source_cells": 58716,
+  "row_selection": {
+    "n_available": 58716,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/pseudo_pred.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500 X=dense[float32] min=<omitted> max=<omitted> size=10.3MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 0.2s
+  -> rc=0  wall=0.7s  peak_rss=381MB
+
+$ python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad
+  
+  T2 heart  pred=pseudo_pred.h5ad  target=E8.75.h5ad  ref=E8.25_late.h5ad  cells pred/A/B/ref = 5000/1241/1242/4000  frac=0.1  seeds=[0, 1, 2, 3, 4]
+  metric               raw_mean    raw_sd      floor    ceiling   skill     sd    pts
+  (per-metric rows printed; values omitted)
+  TASK SCORE (0-100; floor=50, ceiling=100): <scores omitted>  [22.9s]
+  pseudo_pred.h5ad on E8.75.h5ad: <scores omitted>
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  note: the organisers, in their review of this kit, said the subsample seed will depend on each submission; this band shows how much the score moves with the subsample seed on YOUR pseudo split, not on the hidden target
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  floor-model check (tutorial section 7: a copy_last / wt_identity file lands near 50): band contains 50: yes; mean within 5 points of 50: yes
+  -> rc=0  wall=23.9s  peak_rss=950MB
+
+$ python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --single-seed
+  
+  T2 heart  pred=pseudo_pred.h5ad  target=E8.75.h5ad  ref=E8.25_late.h5ad  cells pred/A/B/ref = 5000/1241/1242/4000  frac=0.1 seed=0
+  group                        metric                    raw      floor    ceiling   skill    pts
+  (per-metric rows printed; values omitted)
+  TASK SCORE (0-100; floor=50, ceiling=100): <scores omitted>  [5.1s]
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  single seed: the organisers, in their review of this kit, said the subsample seed will depend on each submission; drop --single-seed / --seed to see how much the score moves with the seed (the band, default)
+  -> rc=0  wall=6.0s  peak_rss=617MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last --board T1:val --last data/raw/T1/E8.5_RNA.h5ad --out out/t1_pseudo_pred.h5ad --n-cells 5000
+  [make_baseline] loaded last  E8.5_RNA.h5ad: 16787 cells x 32285 genes
+  [make_baseline] method info:
+  {
+  "method": "copy_last",
+  "n_cells": 5000,
+  "n_genes": 32285,
+  "has_coords": false,
+  "n_source_cells": 16787,
+  "row_selection": {
+    "n_available": 16787,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/t1_pseudo_pred.h5ad @ T1:val  n_obs=5000 n_vars=32285 X=csr_matrix min=<omitted> max=<omitted> size=157.1MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 3.6s
+  -> rc=0  wall=4.1s  peak_rss=1823MB
+
+$ python -m vec_local_score --task T1 --pred out/t1_pseudo_pred.h5ad --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad
+  
+  T1  pred=t1_pseudo_pred.h5ad  target=E9.5_RNA.h5ad  ref=E8.5_RNA.h5ad  cells pred/A/B/ref = 5000/853/853/1679  frac=0.1  seeds=[0, 1, 2, 3, 4]
+  metric               raw_mean    raw_sd      floor    ceiling   skill     sd    pts
+  (per-metric rows printed; values omitted)
+  TASK SCORE (0-100; floor=50, ceiling=100): <scores omitted>  [124.2s]
+  t1_pseudo_pred.h5ad on E9.5_RNA.h5ad: <scores omitted>
+  note: the organisers, in their review of this kit, said the subsample seed will depend on each submission; this band shows how much the score moves with the subsample seed on YOUR pseudo split, not on the hidden target
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  floor-model check (tutorial section 7: a copy_last / wt_identity file lands near 50): band contains 50: no; mean within 5 points of 50: yes
+  -> rc=0  wall=125.5s  peak_rss=5747MB
+
+$ python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4 --wt data/raw/T2_heart/E9.5.h5ad --out out/t3_pseudo_pred.h5ad --n-cells 5000
+  [make_baseline] loaded wt    E9.5.h5ad: 53742 cells x 500 genes (+coords)
+  [make_baseline] method info:
+  {
+  "method": "wt_identity",
+  "n_cells": 5000,
+  "n_genes": 500,
+  "has_coords": true,
+  "n_source_cells": 53742,
+  "row_selection": {
+    "n_available": 53742,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/t3_pseudo_pred.h5ad @ T3:gata4  n_obs=5000 n_vars=500 X=dense[float32] min=<omitted> max=<omitted> size=10.3MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 0.2s
+  -> rc=0  wall=0.7s  peak_rss=320MB
+
+$ python -m vec_local_score --task T3 --pred out/t3_pseudo_pred.h5ad --target data/raw/T3/E9.5_mab21l2_ko.h5ad --wt data/raw/T2_heart/E9.5.h5ad
+  
+  T3  pred=t3_pseudo_pred.h5ad  target=E9.5_mab21l2_ko.h5ad  ref=E9.5.h5ad  cells pred/A/B/ref = 5000/2514/2515/4000  frac=0.1  seeds=[0, 1, 2, 3, 4]
+  metric               raw_mean    raw_sd      floor    ceiling   skill     sd    pts
+  (per-metric rows printed; values omitted)
+  TASK SCORE (0-100; floor=50, ceiling=100): <scores omitted>  [36.8s]
+  t3_pseudo_pred.h5ad on E9.5_mab21l2_ko.h5ad: <scores omitted>
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  note: the organisers, in their review of this kit, said the subsample seed will depend on each submission; this band shows how much the score moves with the subsample seed on YOUR pseudo split, not on the hidden target
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  floor-model check (tutorial section 7: a copy_last / wt_identity file lands near 50): band contains 50: yes; mean within 5 points of 50: yes
+  -> rc=0  wall=37.8s  peak_rss=1410MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last --board T2:embryo:val_interp --last data/raw/T2_embryo/E6.75.h5ad --out out/embryo_pseudo_pred.h5ad --n-cells 5000
+  [make_baseline] loaded last  E6.75.h5ad: 7093 cells x 498 genes (+coords)
+  [make_baseline] method info:
+  {
+  "method": "copy_last",
+  "n_cells": 5000,
+  "n_genes": 498,
+  "has_coords": true,
+  "n_source_cells": 7093,
+  "row_selection": {
+    "n_available": 7093,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/embryo_pseudo_pred.h5ad @ T2:embryo:val_interp  n_obs=5000 n_vars=498 X=dense[float32] min=<omitted> max=<omitted> size=10.3MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 0.1s
+  -> rc=0  wall=0.6s  peak_rss=168MB
+
+$ python -m vec_local_score --task T2 --setting embryo --pred out/embryo_pseudo_pred.h5ad --target data/raw/T2_embryo/E7.25.h5ad --reference data/raw/T2_embryo/E6.75.h5ad
+  
+  T2 embryo  pred=embryo_pseudo_pred.h5ad  target=E7.25.h5ad  ref=E6.75.h5ad  cells pred/A/B/ref = 5000/665/665/709  frac=0.1  seeds=[0, 1, 2, 3, 4]
+  metric               raw_mean    raw_sd      floor    ceiling   skill     sd    pts
+  (per-metric rows printed; values omitted)
+  TASK SCORE (0-100; floor=50, ceiling=100): <scores omitted>  [11.9s]
+  embryo_pseudo_pred.h5ad on E7.25.h5ad: <scores omitted>
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  note: the organisers, in their review of this kit, said the subsample seed will depend on each submission; this band shows how much the score moves with the subsample seed on YOUR pseudo split, not on the hidden target
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  floor-model check (tutorial section 7: a copy_last / wt_identity file lands near 50): band contains 50: no; mean within 5 points of 50: yes
+  -> rc=0  wall=12.9s  peak_rss=627MB
+
+$ python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_extrap --last data/raw/T2_heart/E8.75.h5ad --out out/heart_extrap_pseudo_pred.h5ad --n-cells 5000
+  [make_baseline] loaded last  E8.75.h5ad: 24826 cells x 500 genes (+coords)
+  [make_baseline] method info:
+  {
+  "method": "copy_last",
+  "n_cells": 5000,
+  "n_genes": 500,
+  "has_coords": true,
+  "n_source_cells": 24826,
+  "row_selection": {
+    "n_available": 24826,
+    "target": 5000,
+    "n_cells_mode": "explicit",
+    "sampled_without_replacement": true,
+    "n_written": 5000
+  }
+  }
+  
+  [PASS] out/heart_extrap_pseudo_pred.h5ad @ T2:heart:val_extrap  n_obs=5000 n_vars=500 X=dense[float32] min=<omitted> max=<omitted> size=10.3MB
+  PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
+  done in 0.2s
+  -> rc=0  wall=0.6s  peak_rss=238MB
+
+$ python -m vec_local_score --task T2 --setting heart --pred out/heart_extrap_pseudo_pred.h5ad --target data/raw/T2_heart/E9.5.h5ad --reference data/raw/T2_heart/E8.75.h5ad
+  
+  T2 heart  pred=heart_extrap_pseudo_pred.h5ad  target=E9.5.h5ad  ref=E8.75.h5ad  cells pred/A/B/ref = 5000/2687/2687/2483  frac=0.1  seeds=[0, 1, 2, 3, 4]
+  metric               raw_mean    raw_sd      floor    ceiling   skill     sd    pts
+  (per-metric rows printed; values omitted)
+  TASK SCORE (0-100; floor=50, ceiling=100): <scores omitted>  [33.8s]
+  heart_extrap_pseudo_pred.h5ad on E9.5.h5ad: <scores omitted>
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  note: the organisers, in their review of this kit, said the subsample seed will depend on each submission; this band shows how much the score moves with the subsample seed on YOUR pseudo split, not on the hidden target
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  floor-model check (tutorial section 7: a copy_last / wt_identity file lands near 50): band contains 50: yes; mean within 5 points of 50: yes
+  -> rc=0  wall=34.7s  peak_rss=1068MB
+
+$ python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --single-seed --max-cells 6000
+  
+  T2 heart  pred=pseudo_pred.h5ad  target=E8.75.h5ad  ref=E8.25_late.h5ad  cells pred/A/B/ref = 5000/1241/1242/5872  frac=0.1 seed=0
+  group                        metric                    raw      floor    ceiling   skill    pts
+  (per-metric rows printed; values omitted)
+  TASK SCORE (0-100; floor=50, ceiling=100): <scores omitted>  [5.2s]
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  single seed: the organisers, in their review of this kit, said the subsample seed will depend on each submission; drop --single-seed / --seed to see how much the score moves with the seed (the band, default)
+  -> rc=0  wall=6.1s  peak_rss=598MB
+
+$ python -c "import anndata as ad, numpy as np; a = ad.read_h5ad('out/pseudo_pred.h5ad'); a.obsm['spatial_3D'] = (np.asarray(a.obsm['spatial_3D']) * 1.25).astype(np.float32); a.write_h5ad('out/pseudo_pred_mine.h5ad')"
+  -> rc=0  wall=0.5s  peak_rss=114MB
+
+$ python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --pred out/pseudo_pred_mine.h5ad --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad
+  
+  T2 heart  target=E8.75.h5ad  ref=E8.25_late.h5ad  frac=0.1  seeds=[0, 1, 2, 3, 4]  (paired comparison)
+  A = pseudo_pred.h5ad: <scores omitted>
+  B = pseudo_pred_mine.h5ad: <scores omitted>
+  metric               A pts   B pts  B-A pts     sd
+  (per-metric rows printed; values omitted)
+  TASK SCORE B - A per seed: <scores omitted>
+  TASK SCORE B - A: <scores omitted>  [29.9s]
+  B - A (pseudo_pred_mine.h5ad - pseudo_pred.h5ad) on E8.75.h5ad: <scores omitted>
+  * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
+  note: paired: in every seed both files are scored against the same subsample, target halves, floor and ceiling, so the per-seed B - A removes the subsampling noise the two share; if its min..max straddles 0 the seeds disagree on which file is better. This compares two of your methods on this pseudo split, not on the hidden target
+  veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
+  -> rc=0  wall=31.0s  peak_rss=966MB
+
+$ python -m vec_local_score.make_pseudo_split --target data/raw/T2_heart/E8.75.h5ad --reference data/raw/T2_heart/E8.25_late.h5ad --out-dir pseudo/heart --panel data/panels/T2__heart__val_interp.genes.txt --require-coords
+  {
+  "target_file": "data/raw/T2_heart/E8.75.h5ad",
+  "reference_file": "data/raw/T2_heart/E8.25_late.h5ad",
+  "frac": 0.1,
+  "seed": 0,
+  "target_full_cells": 24826,
+  "target_score_cells": 1241,
+  "target_ceiling_cells": 1242,
+  "reference_full_cells": 58716,
+  "reference_cells": 5872,
+  "genes": 500,
+  "has_coords": true,
+  "note": "exported split for inspection / the veckit CLI; not an input to vec_local_score (which takes the raw stages and subsamples itself)"
+  }
+  -> rc=0  wall=0.9s  peak_rss=752MB
+
+$ python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad
+  ERROR: reference.h5ad was exported by vec_local_score.make_pseudo_split (uns['vec_pseudo_split']). The wrapper takes the RAW released stage files and subsamples / splits them itself; the exported files are for inspection and for the veckit CLI only
+  -> rc=1  wall=0.8s  peak_rss=163MB
+
+$ python -m pytest tests/test_evidence.py -q
+  .........                                                                [100%]
+  9 passed in 6.55s
+  -> rc=0  wall=7.2s  peak_rss=123MB
+
+$ which claude || echo 'claude: not on PATH (lock records it as missing; nothing is launched)'; python -m vec_agent_evidence lock --task T3 --prompt vec_agent_evidence/example_prompt.md --model claude-opus-5 --data-root ./data --hours 8 --max-turns 400 --runs-root runs_realrun
+  claude: not on PATH (lock records it as missing; nothing is launched)
+  [17:05:47Z evidence] locked 20260930-1705_T3_78dcaf7f: model=claude-opus-5 boards=['T3:gata4'] deadline=2026-10-01T01:05:46Z data_files=9 dirty=False dry_run=False
+  {
+  "run_id": "20260930-1705_T3_78dcaf7f",
+  "run_dir": "<kit>/runs_realrun/20260930-1705_T3_78dcaf7f",
+  "config_lock_sha256": <omitted>
+  "launch_command": [
+    "claude",
+    "-p",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--model",
+    "claude-opus-5",
+    "--max-turns",
+    "400",
+    "--permission-mode",
+    "bypassPermissions",
+    "--tools",
+    "Bash,Read,Edit,Write,Glob,Grep",
+    "--disallowedTools",
+    "WebFetch,WebSearch,PowerShell,Task,Agent,Skill,NotebookEdit,Workflow",
+    "--settings",
+    "<kit>/runs_realrun/20260930-1705_T3_78dcaf7f/claude_settings.json",
+    "--setting-sources",
+    "project",
+    "--strict-mcp-config",
+    "--add-dir",
+    "<kit>/data",
+    "--session-id",
+    "99b447ec-014d-405f-8fc0-feb0ee9d609c"
+  ]
+  }
+  -> rc=0  wall=1.7s  peak_rss=41MB
+
+SUMMARY {
+ "venv": 0,
+ "pip_install": 0,
+ "pip_versions": 0,
+ "pytest_no_veckit": 0,
+ "pip_requirements": 0,
+ "console_scripts": 0,
+ "veckit_install": 0,
+ "veckit_check": 0,
+ "pip_versions_after": 0,
+ "pytest_with_veckit": 0,
+ "inventory": 0,
+ "panel_lines": 0,
+ "b_t1": 0,
+ "b_embryo": 0,
+ "b_heart_interp": 0,
+ "b_heart_extrap": 0,
+ "b_t3": 0,
+ "all_t1": 1,
+ "all_embryo": 1,
+ "all_heart_interp": 1,
+ "all_heart_extrap": 1,
+ "all_t3": 1,
+ "py_api": 0,
+ "b_heart_extrap_pbshift": 0,
+ "check_heart_interp": 0,
+ "check_t1_json": 0,
+ "check_embryo": 0,
+ "check_heart_extrap": 0,
+ "check_t3": 0,
+ "check_console_script": 0,
+ "check_wrong_board": 1,
+ "ls_veckit_check": 0,
+ "ls_heart_interp_pred": 0,
+ "ls_heart_interp_band": 0,
+ "ls_heart_interp_single": 0,
+ "ls_t1_pred": 0,
+ "ls_t1_band": 0,
+ "ls_t3_pred": 0,
+ "ls_t3_band": 0,
+ "ls_embryo_pred": 0,
+ "ls_embryo_band": 0,
+ "ls_heart_extrap_pred": 0,
+ "ls_heart_extrap_band": 0,
+ "ls_heart_interp_maxcells": 0,
+ "ls_mine": 0,
+ "ls_paired": 0,
+ "ls_split": 0,
+ "ls_split_refused": 1,
+ "evidence_tests": 0,
+ "evidence_lock": 0
+}
