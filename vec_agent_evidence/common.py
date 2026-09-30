@@ -83,6 +83,11 @@ SECRET_PATTERNS = (
     ("oauth_access_token_field", _rx('"', "access", "Token", r'"\s*:')),
     ("oauth_refresh_token_field", _rx('"', "refresh", "Token", r'"\s*:')),
     ("oauth_credentials_block", _rx('"?', "claudeAi", "Oauth", r'"?\s*:')),
+    # OpenAI-style keys (Codex CLI and other agents): "sk-" + optional project prefix + key characters, not preceded
+    # by a word character (so "task-..." / "disk-..." identifiers do not match) and not an Anthropic key (above).
+    ("openai_api_key_shape", _rx(r"(?<![A-Za-z0-9_])", "sk-", r"(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}")),
+    # snake_case token fields of an auth file (e.g. the Codex CLI's), plain or JSON-escaped inside a transcript
+    ("auth_token_field", _rx(r'\\?"', "(?:id|access|refresh)", "_token", r'\\?"\s*:')),
 )
 SECRET_SCAN_SUFFIXES = (".json", ".jsonl", ".md", ".txt", ".log", ".py", ".sha256", ".env", ".yaml", ".yml", ".toml", ".cfg")
 

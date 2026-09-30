@@ -102,7 +102,15 @@ finalized ones. What comes out is an auditable evidence bundle (configuration sn
 best-effort guard hooks, audit log); it does not independently attest compliance with the rules, and it cannot
 know what your team uploaded before (`package --team-uploaded-mb` keeps the 600 MB team total in view).
 
-*Test line:* `python -m pytest tests/test_evidence.py -q` -> `8 passed` (a stand-in agent, no CLI, no API calls).
+*Codex CLI (minimal adapter, new 2026-09-30):* `python -m vec_agent_evidence codex-package` packages a finished
+`codex exec --json` run - the JSONL stream, the session rollout found by thread id, the prompt, the `AGENTS.md`
+instruction files, your harness files and the predictions - into the same trajectory / prompts / harness zips, with
+the same credential scan and size caps. It is **untested against a live Codex run** (tested on synthetic transcripts
+only) and works after the fact: no lock, launcher or hooks. See
+[`vec_agent_evidence/README.md`](vec_agent_evidence/README.md).
+
+*Test lines:* `python -m pytest tests/test_evidence.py -q` -> `8 passed` (a stand-in agent, no CLI, no API calls);
+`python -m pytest tests/test_codex_adapter.py -q` -> `6 passed` (synthetic Codex transcripts, no Codex CLI).
 
 ### 5. [`docs/tutorial_en.md`](docs/tutorial_en.md) / [`docs/tutorial_zh.md`](docs/tutorial_zh.md) - from zero to a first submission
 
@@ -214,7 +222,11 @@ leaderboard order.
   hook（拒绝能识别出的网络命令和受限文件操作），不是网络沙箱；审计日志和哈希用于运行后核验。比主办方多出来的：把锁定 -> 运行 -> 证据 ->
   上传包变成一条机械路径，锁定哈希变了、证据里有凭据形状的字符串、预测文件字节被改过都拒绝打包。产出的是可审计的证据包（配置快照、
   完整性校验、尽力而为的守卫 hook、审计日志），不能独立证明合规；它也不知道你们队之前传了多少（`package --team-uploaded-mb` 帮你盯住
-  600 MB 总额）。测试行：`python -m pytest tests/test_evidence.py -q` -> `8 passed`。
+  600 MB 总额）。测试行：`python -m pytest tests/test_evidence.py -q` -> `8 passed`。**Codex CLI（最小适配器，2026-09-30 新增）**：
+  `python -m vec_agent_evidence codex-package` 把一次已结束的 `codex exec --json` 运行（JSONL 事件流、按 thread id 找到的会话 rollout、
+  提示词、`AGENTS.md` 指令文件、你的 harness 文件和预测文件）打成同样的 trajectory / prompts / harness 三个 zip，同样做凭据扫描和
+  大小检查。它**没有在真实的 Codex 运行上测试过**（只用合成的会话记录测试，`tests/test_codex_adapter.py` -> `6 passed`），而且是事后
+  打包：没有锁定、启动器和 hook。
 * [`docs/tutorial_zh.md`](docs/tutorial_zh.md) / [`docs/tutorial_en.md`](docs/tutorial_en.md)：注册、下载数据、读懂每个榜的契约、生成第一份
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
   Claude Code CLI。命令在按真实目录布局摆放的合成数据上执行过（2026-09-05，日志和环境见 `scratchpad/dryrun_log.txt`），没有在真实发布数据上跑过；

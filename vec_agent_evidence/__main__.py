@@ -3,12 +3,16 @@
 
 Targets the Claude Code CLI (`claude -p --output-format stream-json`); adapt launch.build_command for another CLI.
 The hooks are regex hooks (reject recognised network commands and restricted file operations; audit log), not a sandbox.
+For a run of the Codex CLI (`codex exec --json`) there is a minimal, after-the-fact packager: codex-package (see
+codex.py; untested against a live Codex run).
 
 Sub-commands
   lock      freeze a run directory (config.lock.json, prompt, settings, hooks, snapshot, workspace) and stop
   run       lock -> launch the agent CLI -> postrun   (the lock is the start of the run: no human afterwards)
   postrun   collect evidence for an already-finished run directory (recovery after a harness crash)
   package   build the upload package (predictions + trajectory.zip / prompts.zip / harness.zip) for a run after postrun
+  codex-package  MINIMAL: package a finished `codex exec --json` run (stream, rollout, prompt, AGENTS.md, harness
+                 files, predictions) as the same three evidence kinds; untested against a live Codex run
 
 Examples
   python -m vec_agent_evidence lock --task T3 --prompt my_prompt.md --model <model-id> --data-root ./data --hours 8
@@ -16,6 +20,8 @@ Examples
       --data-root ./data --hours 10 --max-turns 600
   python -m vec_agent_evidence postrun --run-dir runs/<run_id>
   python -m vec_agent_evidence package --run-dir runs/<run_id>
+  python -m vec_agent_evidence codex-package --stream codex_stream.jsonl --prompt prompt.md --workspace ws \
+      --prediction T3:gata4=ws/out/pred.h5ad --out runs/_upload_codex/run1
 """
 from __future__ import annotations
 
@@ -26,7 +32,7 @@ import sys
 from pathlib import Path
 
 from . import common as C
-from . import evidence, launch as launch_mod, lock as lock_mod, package as package_mod
+from . import codex as codex_mod, evidence, launch as launch_mod, lock as lock_mod, package as package_mod
 
 
 def _add_lock_args(sp):
@@ -74,6 +80,8 @@ def parse_args(argv=None):
     sp.add_argument("--team-uploaded-mb", type=float, default=0.0,
                     help="evidence MB your team has already uploaded; the package README states the running total "
                          "against the 600 MB per-team cap")
+    codex_mod.add_args(sub.add_parser("codex-package", help="MINIMAL: package a finished `codex exec --json` run "
+                                      "(untested against a live Codex run)"))
     return p.parse_args(argv)
 
 
@@ -128,6 +136,8 @@ def main(argv=None) -> int:
         return cmd_run(args)
     if args.cmd == "postrun":
         return cmd_postrun(args)
+    if args.cmd == "codex-package":
+        return codex_mod.run_from_args(args)
     if args.cmd == "package":
         return package_mod.main(["--run-dir", args.run_dir] + (["--out-root", args.out_root] if args.out_root else [])
                                 + (["--allow-abort-unknown"] if args.allow_abort_unknown else [])

@@ -305,7 +305,9 @@ The rules (Agent Team section of the site):
 snapshots, integrity checks, best-effort guard hooks, audit log) that you hand to the organisers; it does not by
 itself attest that the run complied. The current implementation targets the Claude Code CLI in
 headless mode (`claude -p --output-format stream-json`), installed and logged in (section 3); another agent CLI
-needs `launch.build_command` adapted.
+needs `launch.build_command` adapted. For a Codex CLI run there is a minimal, after-the-fact packager,
+`python -m vec_agent_evidence codex-package` (stream, rollout, prompt, `AGENTS.md` files, harness files and
+predictions into the same three zips); it is untested against a live Codex run - see `vec_agent_evidence/README.md`.
 
 ```
 # 0. dry run with a stand-in agent, no CLI and no API calls: proves the plumbing on your machine

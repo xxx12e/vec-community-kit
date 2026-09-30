@@ -250,7 +250,9 @@ T1：留出 E9.5_RNA、用 E8.5_RNA 预测它 —— 预测用 `--last data/raw/
 
 `vec_agent_evidence` 把这一切变成机械步骤：产出的是交给主办方的可审计证据包（配置快照、完整性校验、尽力而为的守卫 hook、
 审计日志），它本身不能证明运行合规。当前实现面向无头模式的 Claude Code CLI（`claude -p --output-format stream-json`），
-需要先安装并登录（第 3 节）；换别的 agent CLI 需要改 `launch.build_command`。
+需要先安装并登录（第 3 节）；换别的 agent CLI 需要改 `launch.build_command`。Codex CLI 的运行有一个事后打包的最小适配器
+`python -m vec_agent_evidence codex-package`（把事件流、rollout、提示词、`AGENTS.md`、harness 文件和预测文件打成同样的三个 zip）；
+它没有在真实的 Codex 运行上测试过，详见 `vec_agent_evidence/README.md`。
 
 ```
 # 0. 用替身 agent 做一次干跑，不需要 CLI 也不调任何 API：证明流水线在你机器上能通

@@ -93,6 +93,49 @@ Prompt and settings templates may use the placeholders listed in `lock.template_
 `{{DEADLINE_UTC}}`, `{{BOARD_CONTRACT_TABLE}}`, `{{DATA_FILES_TABLE}}`, `{{PYTHON_POSIX}}`, ...); an unknown or
 unrendered placeholder fails the lock.
 
+## Codex CLI runs: `codex-package` (minimal adapter, untested against a live Codex run)
+
+The Codex CLI is the second most declared agent framework on the portal. `codex.py` packages a **finished**
+`codex exec --json` run into the same three evidence kinds, so a Codex team can attach trajectory + prompts (+
+harness) the same way. It is deliberately minimal:
+
+* **Untested against a live Codex run.** It was written from the Codex CLI's documented output as we understand
+  it and is tested only on synthetic transcripts written from those event names (`tests/test_codex_adapter.py`):
+  `thread.started`, `turn.started` / `turn.completed` (usage) / `turn.failed`, `item.started` / `item.completed`
+  with `command_execution`, `file_change`, `agent_message`, `reasoning`, ... items, and the older
+  `{"id", "msg": {"type": ...}}` shape. The trajectory is always a byte copy of what Codex wrote; only the summary
+  depends on those names, and an unknown format yields an empty summary plus a warning, never a dropped line.
+  Please report a real transcript that it misreads.
+* **After the fact only.** No configuration lock, launcher, wall clock or guard / audit hooks (the Claude Code path
+  above has them). Codex's own sandbox (`--sandbox workspace-write`) is the enforcement layer; lock your prompt and
+  harness yourself before the run (a commit hash is enough) and keep the exact command.
+
+Run Codex with its JSON event stream on stdout (check `codex exec --help` for your version; `-` reads the prompt
+from stdin), then package:
+
+```
+codex exec --json --model <model> --sandbox workspace-write --skip-git-repo-check --cd <workspace> - \
+    < prompt.md > codex_stream.jsonl 2> codex_stderr.log
+
+python -m vec_agent_evidence codex-package --stream codex_stream.jsonl --stderr codex_stderr.log \
+    --prompt prompt.md --workspace <workspace> --prediction T3:gata4=<workspace>/out/pred.h5ad \
+    --command-file cmd.txt --harness my_loop.py --model <model> --out runs/_upload_codex/run1
+```
+
+| kind | what goes in |
+|---|---|
+| trajectory | `codex_stream.jsonl` (byte copy), `codex_stderr.log`, the session rollout(s) found by thread id under `$CODEX_HOME/sessions` (default `~/.codex`), `trajectory_summary.json` (turns, usage, commands, files changed, errors) |
+| prompts | `initial_prompt.md` (byte copy of `--prompt`), every `AGENTS.md` / `AGENTS.override.md` Codex reads from the workspace and from `$CODEX_HOME` (global instructions), `user_messages.jsonl` (every user-role message found in the rollout) |
+| harness | the `--harness` files, `command.txt` (`--command-file`), `codex_manifest.json` (framework and model string, hashes of every evidence file, the summary, warnings) |
+
+`predictions/` holds byte-identical copies of the `--prediction` files after the board-contract check. The packager
+**refuses** on a credential-shaped string anywhere in the evidence (including OpenAI-style keys and auth-file token
+fields), a file or zip over 200 MB, a stream with no JSON events, or a prediction that fails its board contract.
+It **warns** (in `README.md` and the manifest) when no rollout is found, the model string is unknown or differs from
+what Codex recorded, no turn completed, the prediction's file name never appears in the stream (no visible
+provenance), or the prompt is not among the rollout's user messages. Never copy `$CODEX_HOME/auth.json` into a
+harness: it holds credentials (the scan would refuse it anyway).
+
 ## The hooks
 
 `hooks/guard.py` (PreToolUse; exit 2 + JSON reason denies the call) rejects recognised network commands and
@@ -112,9 +155,10 @@ post-run verification of what actually happened.
 
 ## Secret scan
 
-Evidence must never carry credentials. `evidence.secret_scan` and `package` scan every text-like evidence file for
-credential-shaped byte patterns (an Anthropic key prefix followed by key characters; OAuth token fields as JSON
-keys) and refuse to package on a hit. Pass any literal gateway key you used to `secret_scan(run, extra_values=[...])`
+Evidence must never carry credentials. `evidence.secret_scan`, `package` and `codex-package` scan every text-like
+evidence file for credential-shaped byte patterns (an Anthropic key prefix followed by key characters; an
+OpenAI-style `sk-` key not preceded by a word character; OAuth token fields as JSON keys, camelCase or snake_case,
+plain or JSON-escaped inside a transcript) and refuse to package on a hit. Pass any literal gateway key you used to `secret_scan(run, extra_values=[...])`
 to scan for its value as well. The patterns are assembled from fragments so the kit's own source never trips the scan.
 
 ## Sizes
@@ -138,8 +182,10 @@ feed one run's artefacts into another's workspace, never edit a submission.
 * Windows and POSIX are both supported for the launcher (CTRL_BREAK / SIGINT, then a process-tree kill). Network is
   not sandboxed by this kit: the guard is a regex hook that rejects recognised network commands; a firewall rule for
   the agent's Python interpreter is the hard block.
-* Only the Claude Code CLI is implemented (`claude -p --output-format stream-json`, headless, hooks via a settings
-  file). Another agent CLI needs `launch.build_command` adapted and its trajectory located by `evidence.collect_transcript`.
+* The full lock -> launch -> postrun -> package path is implemented for the Claude Code CLI only (`claude -p
+  --output-format stream-json`, headless, hooks via a settings file). For the Codex CLI there is the minimal,
+  after-the-fact `codex-package` (above; untested against a live Codex run). Another agent CLI needs
+  `launch.build_command` adapted and its trajectory located by `evidence.collect_transcript`.
 * Thinking blocks may be stored without their text by the CLI; the trajectory proves the tool calls and messages.
 * The bundle documents; it does not attest. Regex hooks, hashes and a read-only directory record and detect some
   changes; by themselves they cannot prove that nobody intervened, that no restriction was bypassed, or that the
