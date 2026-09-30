@@ -212,5 +212,5 @@ def render(entry: Entry, lang: str) -> str:
     while lines and lines[-1] == "":
         lines.pop()
     if not lines:
-        return Message("summary.no_change").render(lang) + "\n"
+        return Message("summary.no_difference").render(lang) + "\n"
     return "\n".join(lines) + "\n"

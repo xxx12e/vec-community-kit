@@ -544,7 +544,7 @@ def test_cli_diff_on_saved_pages(tmp_path, capsys):
     out = capsys.readouterr().out
     assert 'Changed: "2. Submissions"' in out and "```diff" in out
     assert cli.main(["diff", str(a), str(a)]) == 0
-    assert "No change" in capsys.readouterr().out
+    assert "No difference." in capsys.readouterr().out
     assert cli.main(["diff", str(FIX / "phase_v1.json"), str(FIX / "phase_v2.json"), "--lang", "zh"]) == 1
     assert zh("phase.phase_changed", old="p2", new="p3", label="P3 - Test phase") in capsys.readouterr().out
 

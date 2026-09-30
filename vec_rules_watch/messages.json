@@ -228,5 +228,6 @@
     "zh": "每日规则监测发现榜契约、阶段接口或官方打分器有变化。完整条目：{link}"
   },
 
-  "summary.no_change": {"en": "No change in this run.", "zh": "本次运行没有发现变化。"}
+  "summary.no_change": {"en": "No change in this run.", "zh": "本次运行没有发现变化。"},
+  "summary.no_difference": {"en": "No difference.", "zh": "没有差异。"}
 }
