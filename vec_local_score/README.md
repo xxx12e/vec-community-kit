@@ -35,10 +35,13 @@ scorer is the source of truth and this wrapper may lag it.**
 
 Tested against **veckit 0.1.1** (`pyproject.toml` version; clone at git commit
 `46d41e63f42a9aab815db20b742feeccd249cb17` of https://github.com/aristoteleo/veckit, 2026-08-10; sha256 of
-`score_h5ad.py` `9460f191d49cdcab2100ceb068759f4d6ea49570174c23846193c59f175f404d`, of `common/core_metrics.py`
-`e06dc84ecd8723ecacb1f31a0f4deb9a8722d37ff90193a7af05e2405fefb5e9`). Every result records the version, location
-and file hashes of the veckit that actually ran (`result["veckit"]`; `veckit_info()`), and the table footer says
-so when they differ from the tested ones.
+`score_h5ad.py` `52034554f03aec10193cb09baa2c78a1de04218ef678f327eb63acc58fa28add`, of `common/core_metrics.py`
+`3be7099a0c9a7ad5b609f86078871ed8290ed0bd8916b0cb3e14fb9831909f31`, both over the content with LF line endings as
+stored at that commit; CRLF is normalised to LF before hashing, so a Windows clone and a Linux `pip install` of the
+same commit match). Every result records the version, location and file hashes of the veckit that actually ran
+(`result["veckit"]`; `veckit_info()`, whose `matches_tested` compares them with the tested ones). Up to 2026.10.0
+the recorded hashes were those of a Windows CRLF checkout, so the tested commit installed on Linux reported
+`matches_tested: False`; the pass over the real release on a Linux runner found this.
 
 ## veckit is not vendored
 

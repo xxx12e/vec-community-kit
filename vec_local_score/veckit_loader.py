@@ -30,9 +30,13 @@ INSTALL_HINT = ("veckit not found. Install it with `pip install git+https://gith
 # The veckit the kit was developed and tested against (pyproject.toml version; git commit of the clone).
 TESTED_VECKIT_VERSION = "0.1.1"
 TESTED_VECKIT_COMMIT = "46d41e63f42a9aab815db20b742feeccd249cb17"
+# sha256 of each file's content with LF line endings, i.e. the bytes stored in the repository at that commit.
+# _sha256() normalises CRLF to LF before hashing, so a Windows clone (git core.autocrlf=true writes CRLF) and a
+# pip install on Linux give the same value. (Up to 2026.10.0 the raw bytes of a Windows CRLF checkout were
+# recorded here, so the same commit installed on Linux reported matches_tested=False.)
 TESTED_VECKIT_SHA256 = {
-    "score_h5ad.py": "9460f191d49cdcab2100ceb068759f4d6ea49570174c23846193c59f175f404d",
-    "common/core_metrics.py": "e06dc84ecd8723ecacb1f31a0f4deb9a8722d37ff90193a7af05e2405fefb5e9",
+    "score_h5ad.py": "52034554f03aec10193cb09baa2c78a1de04218ef678f327eb63acc58fa28add",
+    "common/core_metrics.py": "3be7099a0c9a7ad5b609f86078871ed8290ed0bd8916b0cb3e14fb9831909f31",
 }
 
 
@@ -75,11 +79,10 @@ def veckit_available() -> bool:
 
 
 def _sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
+    """sha256 of the file's content with CRLF normalised to LF (the form git stores), so that the same veckit
+    commit hashes the same whether it was checked out on Windows with CRLF or installed on Linux."""
+    data = Path(path).read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
 
 
 def veckit_info() -> dict:
