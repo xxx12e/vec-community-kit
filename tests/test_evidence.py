@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 import sys
 import zipfile
 from pathlib import Path
@@ -17,6 +18,12 @@ from vec_agent_evidence.__main__ import main as cli_main
 ROOT = Path(__file__).resolve().parents[1]
 FAKE_AGENT = Path(__file__).resolve().parent / "fake_agent.py"
 EXAMPLE_PROMPT = ROOT / "vec_agent_evidence" / "example_prompt.md"
+
+
+def is_read_only(path: Path) -> bool:
+    """No write permission bit set (what C.set_read_only does). Checked on the mode rather than with os.access,
+    because os.access(W_OK) is always true for root, as in many cloud containers."""
+    return not (stat.S_IMODE(os.stat(path).st_mode) & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH))
 
 
 def detach_links(runs_root: Path) -> None:
@@ -96,7 +103,7 @@ def test_lock_creates_all_files_and_hashes(tiny_data_root, runs_root, tmp_path):
     assert not any(n.endswith(".pyc") for n in names)
     assert C.sha256_file(run / "harness_snapshot.zip") == cfg["harness_snapshot_sha256"]
     # workspace: tools copy read-only, data access documented
-    assert not os.access(run / "workspace" / "tools" / "finalize_submission.py", os.W_OK)
+    assert is_read_only(run / "workspace" / "tools" / "finalize_submission.py")
     assert cfg["workspace"]["data_access"]["kind"] in ("junction", "symlink", "fallback_copy_panels_only")
     # the suggested launch command pins everything from the lock
     cmd = launch_mod.build_command(cfg, run)
@@ -183,7 +190,7 @@ def test_dry_run_end_to_end_and_package(tiny_data_root, runs_root, tmp_path):
     assert (run / "artifacts" / "NOTES.md").exists() and (run / "artifacts" / "candidates" / "c1" / "notes.md").exists()
     stream = [json.loads(x) for x in (run / "stream.jsonl").read_text(encoding="utf-8").splitlines()]
     assert stream[0]["type"] == "system" and stream[-1]["type"] == "result" and m["stream_events"] == len(stream)
-    assert not os.access(run / "config.lock.json", os.W_OK) and not os.access(run / "run_manifest.json", os.W_OK)
+    assert is_read_only(run / "config.lock.json") and is_read_only(run / "run_manifest.json")
     with pytest.raises(SystemExit):
         evidence.postrun(run, projects)                    # not repeatable
 

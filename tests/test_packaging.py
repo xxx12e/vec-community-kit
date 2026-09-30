@@ -14,7 +14,10 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-tomllib = pytest.importorskip("tomllib")          # Python 3.11+; the kit itself runs on 3.10
+try:
+    import tomllib                                   # Python 3.11+
+except ModuleNotFoundError:                          # Python 3.10 (the kit's minimum): pytest itself depends on tomli
+    tomllib = pytest.importorskip("tomli")
 
 
 def pyproject() -> dict:
