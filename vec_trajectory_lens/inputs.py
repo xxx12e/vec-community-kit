@@ -90,7 +90,7 @@ def resolve_dir(d: Path, framework: str = "auto", session=None, subagents: bool 
             full = [r for r in rollouts if not r.name.endswith(".dedup.jsonl")]
             if full:
                 return "codex", full
-            return "codex", [t / "codex_stream.jsonl"] + rollouts
+            return "codex", rollouts + [t / "codex_stream.jsonl"]     # the stream has no timestamps: after them
         if (t / "transcript").is_dir() and list((t / "transcript").glob("*.jsonl")):
             return "claude", sorted((t / "transcript").glob("*.jsonl"))
         if (t / "stream.jsonl").is_file():

@@ -64,9 +64,11 @@ def build(result, events, sources: list, network: list, scan: dict, redactions: 
     kinds = Counter(e.kind for e in events)
     tools = Counter(e.tool or "?" for e in events if e.kind == "tool_call")
     tool_errors = sum(1 for e in events if e.kind == "tool_result" and e.is_error)
-    # Claude Code writes "<synthetic>" as the model of messages it makes up itself (e.g. an API error shown as a reply)
-    models = Counter(e.model for e in events if e.model and e.kind in ("assistant", "tool_call")
-                     and e.model != "<synthetic>")
+    # Claude Code writes "<synthetic>" as the model of messages it makes up itself (e.g. an API error shown as a reply).
+    # Besides the model responses, the session / turn records name the model: Claude Code's init, Codex's
+    # turn_context and session_configured (a Codex dedup package keeps only those, its stream names no model)
+    models = Counter(e.model for e in events if e.model and e.model != "<synthetic>" and (
+        e.kind in ("assistant", "tool_call") or (e.kind == "system" and e.subkind in ("init", "turn"))))
     for m in result.native.get("models") or []:                 # e.g. modelUsage keys of a Claude Code result
         models.setdefault(m, 0)
     if result.native.get("init_model"):
@@ -99,9 +101,10 @@ def build(result, events, sources: list, network: list, scan: dict, redactions: 
         turns = result.native.get("turns_completed") or 0
     else:
         turns = sum(1 for e in events if e.kind == "system" and e.subkind == "step")
-    usage_basis = {"claude": "sum of each model response's usage (counted once per message id)",
-                   "codex": "sum of turn.completed usage (input includes cached input, as Codex reports it)",
-                   "opencode": "sum of step-finish tokens (one per model call)"}[fw]
+    usage_basis = result.native.get("tokens_basis") or {
+        "claude": "sum of each model response's usage (counted once per message id)",
+        "codex": "turn.completed usage (input includes cached input, as Codex reports it)",
+        "opencode": "sum of step-finish tokens (one per model call)"}[fw]
     if fw == "codex" and not seen and result.native.get("usage_last_total"):
         tokens = {k: result.native["usage_last_total"].get(k) for k in USAGE_KEYS}
         usage_basis = "last token_count total reported by Codex"

@@ -78,7 +78,7 @@ def static_summary(s: dict) -> str:
                (rows or '<tr><td colspan="3">none</td></tr>') + "</table></div>")
     mrows = "".join(f'<tr><td>{esc(m["model"])}</td><td class="num">{m["events"]}</td></tr>' for m in s["models"])
     krows = "".join(f'<tr><td>{esc(k)}</td><td class="num">{v}</td></tr>' for k, v in s["events_by_kind"].items())
-    out.append('<div class="box"><h2>Models</h2><table><tr><th>model string</th><th>events</th></tr>' +
+    out.append('<div class="box"><h2>Models</h2><table><tr><th>model string</th><th>events naming it</th></tr>' +
                (mrows or '<tr><td colspan="2">none in the log</td></tr>') + "</table><h2>Events by kind</h2><table>" +
                krows + "</table></div></section>")
     net = "".join(f'<li><a class="evlink" href="#e{r["event"]}">#{r["event"]}</a> <b>{esc(r["tool"])}</b> '

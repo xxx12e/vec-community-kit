@@ -165,7 +165,10 @@ def test_codex_stream_and_rollout(tmp_path):
     stream = jl(tmp_path / "codex_stream.jsonl", exec_json_stream())
     summ, events = core.analyse(stream)
     assert summ["framework"] == "codex" and summ["session_ids"] == [THREAD]
+    # turn.completed carries the running total: the last total, not the sum of the turns
     assert summ["tokens"]["input"] == 1500 and summ["tokens"]["cache_read"] == 300 and summ["turns"] == 2
+    assert [e.usage["input"] for e in events if e.subkind == "turn" and e.usage] == [1000, 500]
+    assert "running total" in summ["tokens_basis"]
     assert summ["tool_calls_by_tool"] == {"shell": 3, "file_change": 1} and summ["tool_errors"] == 1
     assert summ["files_written"] == ["src/model.py"] and "no model string in these logs" in summ["warnings"]
     home = tmp_path / "home"
@@ -173,15 +176,71 @@ def test_codex_stream_and_rollout(tmp_path):
     summ, events = core.analyse(ro)
     assert summ["cli_version"] == "0.0.0-synthetic" and summ["models"][0]["model"] == "gpt-test-model"
     assert [e.kind for e in events if e.kind in ("user", "assistant")] == ["user", "assistant"]
-    # an unzipped codex-package with a dedup rollout: the stream and the rollout are read together
+    # an unzipped codex-package with a dedup rollout (made by the packager's own dedup): read together with the
+    # stream, the rollout first (the stream has no timestamps); the model string is only in its turn_context
     pkg = tmp_path / "pkg" / "evidence" / "trajectory"
-    (pkg / "rollout").mkdir(parents=True)
+    (pkg / "codex_stream.jsonl").parent.mkdir(parents=True)
     (pkg / "codex_stream.jsonl").write_bytes(stream.read_bytes())
-    (pkg / "rollout" / (ro.stem + ".dedup.jsonl")).write_bytes(ro.read_bytes())
+    X.dedup_rollout(ro, pkg / "rollout" / (ro.stem + ".dedup.jsonl"))
+    assert b'"role": "assistant"' not in (pkg / "rollout" / (ro.stem + ".dedup.jsonl")).read_bytes()
     fw, files = inputs.resolve(tmp_path / "pkg")
-    assert fw == "codex" and [f.name for f in files] == ["codex_stream.jsonl", ro.stem + ".dedup.jsonl"]
-    summ, _ = core.analyse(tmp_path / "pkg")
-    assert summ["tool_calls"] == 4 and summ["models"][0]["model"] == "gpt-test-model"
+    assert fw == "codex" and [f.name for f in files] == [ro.stem + ".dedup.jsonl", "codex_stream.jsonl"]
+    summ, events = core.analyse(tmp_path / "pkg")
+    assert summ["tool_calls"] == 4 and [m["model"] for m in summ["models"]] == ["gpt-test-model"]
+    assert "no model string in these logs" not in summ["warnings"]
+    assert events[0].subkind == "init" and [e.kind for e in events].index("user") < [e.kind for e in events].index(
+        "tool_call")
+
+
+def codex_rollout_turn(path: Path) -> Path:
+    """A one-turn rollout as current Codex writes it (codex-rs/rollout/src/policy.rs): task_started / task_complete
+    event_msg records around the turn, tool outputs in the three exit-code forms, a token_count total."""
+    def ts(sec):
+        return f"2026-09-30T01:02:{sec:02d}.000Z"
+
+    def call(sec, cid, name, args):
+        return {"timestamp": ts(sec), "type": "response_item",
+                "payload": {"type": "function_call", "name": name, "arguments": json.dumps(args), "call_id": cid}}
+
+    def out(sec, cid, text):
+        return {"timestamp": ts(sec), "type": "response_item",
+                "payload": {"type": "function_call_output", "call_id": cid, "output": text}}
+
+    return jl(path, [
+        {"timestamp": ts(0), "type": "session_meta",
+         "payload": {"id": THREAD, "cwd": "/ws", "cli_version": "0.0.0-synthetic", "originator": "codex_exec"}},
+        {"timestamp": ts(1), "type": "event_msg", "payload": {"type": "task_started", "turn_id": "t1"}},
+        {"timestamp": ts(1), "type": "turn_context",
+         "payload": {"model": "gpt-test-model", "approval_policy": "never", "sandbox_policy": {"mode": "workspace-write"}}},
+        {"timestamp": ts(2), "type": "response_item",
+         "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "Predict."}]}},
+        call(3, "c1", "shell", {"command": ["bash", "-lc", "python broken.py"]}),
+        out(4, "c1", "Exit code: 1\nWall time: 0.2 seconds\nOutput:\nTraceback"),
+        call(5, "c2", "exec_command", {"cmd": "curl -s https://example.org"}),
+        out(6, "c2", "Chunk ID: a1\nWall time: 0.0100 seconds\nProcess exited with code 0\nOutput:\nExit code: 3\n"),
+        call(7, "c3", "shell", {"command": ["ls"]}),
+        out(8, "c3", json.dumps({"output": "x", "metadata": {"exit_code": 2, "duration_seconds": 0.1}})),
+        {"timestamp": ts(9), "type": "event_msg", "payload": {"type": "token_count", "info": {
+            "total_token_usage": {"input_tokens": 900, "cached_input_tokens": 100, "output_tokens": 40}}}},
+        {"timestamp": ts(10), "type": "response_item", "payload": {
+            "type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "Done."}]}},
+        {"timestamp": ts(11), "type": "event_msg",
+         "payload": {"type": "task_complete", "turn_id": "t1", "last_agent_message": "Done.", "duration_ms": 10000}},
+    ])
+
+
+def test_codex_rollout_turns_exit_codes_and_tokens(tmp_path):
+    summ, events = core.analyse(codex_rollout_turn(tmp_path / f"rollout-2026-09-30T01-02-00-{THREAD}.jsonl"))
+    assert summ["framework"] == "codex" and summ["turns"] == 1 and summ["cli_version"] == "0.0.0-synthetic"
+    # "Exit code: 1" (shell) and metadata.exit_code 2 (older JSON form) failed; "Process exited with code 0" did
+    # not, whatever the command printed after "Output:"
+    assert summ["tool_errors"] == 2
+    assert [e.is_error for e in events if e.kind == "tool_result"] == [True, None, True]
+    assert summ["tool_calls_by_tool"] == {"shell": 2, "exec_command": 1}
+    assert [r["tool"] for r in summ["network_flags"]] == ["exec_command"]       # its "cmd" argument is read
+    assert summ["tokens"]["input"] == 900 and summ["tokens"]["output"] == 40
+    assert [m["model"] for m in summ["models"]] == ["gpt-test-model"]
+    assert [e.text for e in events if e.subkind == "turn"][-1] == "turn completed in 10.0 s"
 
 
 def test_opencode_stream_export_database_and_storage(tmp_path):

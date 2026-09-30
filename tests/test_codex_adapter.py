@@ -27,7 +27,8 @@ def jl(path: Path, records) -> Path:
 
 
 def exec_json_stream(pred_rel="out/pred_T3_gata4.h5ad", extra=()):
-    """A two-turn run in the current `codex exec --json` shape."""
+    """A two-turn run in the current `codex exec --json` shape. turn.completed carries the thread's running total
+    (codex-rs/exec/src/event_processor_with_jsonl_output.rs, usage_from_last_total)."""
     return [
         {"type": "thread.started", "thread_id": THREAD},
         {"type": "turn.started"},
@@ -47,7 +48,7 @@ def exec_json_stream(pred_rel="out/pred_T3_gata4.h5ad", extra=()):
                                             "aggregated_output": "Traceback", "exit_code": 1, "status": "failed"}},
         {"type": "item.completed", "item": {"id": "item_5", "type": "agent_message", "text": f"Wrote {pred_rel}."}},
         {"type": "future.event", "payload": {"anything": 1}},
-        {"type": "turn.completed", "usage": {"input_tokens": 500, "cached_input_tokens": 100, "output_tokens": 50}},
+        {"type": "turn.completed", "usage": {"input_tokens": 1500, "cached_input_tokens": 300, "output_tokens": 350}},
     ] + list(extra)
 
 
@@ -101,6 +102,16 @@ def test_summarise_current_shape(codex_run):
     assert r["cli_version"] == "0.0.0-synthetic" and r["models"] == ["gpt-test-model"] and r["session_id"] == THREAD
     assert len(r["user_messages"]) == 1 and "Gata4" in r["user_messages"][0]["text"]
     assert codex.find_rollouts(codex_run["home"], None) == [] and codex.find_rollouts(codex_run["home"], "../x") == []
+
+
+def test_turn_usage_is_a_running_total():
+    # the running total of the last turn is the run's usage; summing the turns would count turn 1 twice
+    grow = [{"input_tokens": 1000, "output_tokens": 300}, {"input_tokens": 1500, "output_tokens": 350}]
+    assert codex.turn_usage_total(grow) == ({"input_tokens": 1500, "output_tokens": 350}, True)
+    # values that do not grow are per-turn values: summed
+    flat = [{"input_tokens": 1000, "output_tokens": 300}, {"input_tokens": 500, "output_tokens": 50}]
+    assert codex.turn_usage_total(flat) == ({"input_tokens": 1500, "output_tokens": 350}, False)
+    assert codex.turn_usage_total([]) == ({}, True)
 
 
 def test_summarise_legacy_shape(tmp_path):
