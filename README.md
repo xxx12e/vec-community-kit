@@ -120,10 +120,10 @@ only `requirements.txt`, which need veckit, and which need the Claude Code CLI. 
 explains what each metric measures.
 
 *Adds:* the complete walkthrough for both tracks in one place; the commands were executed against synthetic
-stages laid out like the real data directory (2026-09-05; log and environment in `scratchpad/dryrun_log.txt`), not
+stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
 against the real release inside this repository; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `41 passed` (synthetic data; the scorer tests are skipped without veckit).
+*Test line:* `python -m pytest -q` -> `55 passed` (synthetic data; the scorer tests are skipped without veckit).
 
 ## Install
 
@@ -229,9 +229,9 @@ leaderboard order.
   打包：没有锁定、启动器和 hook。
 * [`docs/tutorial_zh.md`](docs/tutorial_zh.md) / [`docs/tutorial_en.md`](docs/tutorial_en.md)：注册、下载数据、读懂每个榜的契约、生成第一份
   基线文件、校验、本地打分、上传、Agent 赛道的证据；开头有一张表说明哪些章节只需要 `requirements.txt`、哪些还需要 veckit、哪些需要
-  Claude Code CLI。命令在按真实目录布局摆放的合成数据上执行过（2026-09-05，日志和环境见 `scratchpad/dryrun_log.txt`），没有在真实发布数据上跑过；
+  Claude Code CLI。命令在按真实目录布局摆放的合成数据上执行过（2026-09-30 本次修订后重跑，日志和环境见 `scratchpad/dryrun_log.txt`），没有在真实发布数据上跑过；
   细胞数范围写在命令旁边。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `41 passed`。
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `55 passed`。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
 五个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；

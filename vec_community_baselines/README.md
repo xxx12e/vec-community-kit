@@ -29,17 +29,17 @@ reading is used: they are copied unchanged and reported in `info["unmatched_type
 
 What has actually been run, and where the record is. "PASS" = the written file passes `vec_submit_check` for that
 board (format only). Synthetic stages are laid out like the release (`scratchpad/tutorial_dryrun.py` plants them;
-the dated log with package versions is `scratchpad/dryrun_log.txt`, 2026-09-05); `tests/test_baselines.py` covers
+the dated log with package versions is `scratchpad/dryrun_log.txt`, re-run 2026-09-30); `tests/test_baselines.py` covers
 the writer, the row selection and the method arithmetic on synthetic data.
 
 | board | method | input stage(s) | record | result |
 |---|---|---|---|---|
 | `T1:val` | `copy_last` | `E9.5_RNA` | dry-run log | PASS (CSR, 32,285 genes) |
-| `T1:val` | `pseudobulk_shift` | `E8.5_RNA` -> `E9.5_RNA` | dry-run log (appended section) | PASS |
+| `T1:val` | `pseudobulk_shift` | `E8.5_RNA` -> `E9.5_RNA` | dry-run log | PASS |
 | `T2:embryo:val_interp` | `copy_last` | `E8.0` (500-gene heart schema mapped onto the 498-gene panel; also `--n-cells all`) | dry-run log | PASS |
 | `T2:heart:val_interp` | `copy_last` | `E8.25_late` | dry-run log | PASS |
 | `T2:heart:val_extrap` | `copy_last` | `E9.5` | dry-run log | PASS |
-| `T2:heart:val_extrap` | `pseudobulk_shift` | `E8.75` -> `E9.5` | dry-run log (appended section) | PASS |
+| `T2:heart:val_extrap` | `pseudobulk_shift` | `E8.75` -> `E9.5` | dry-run log | PASS |
 | `T3:gata4` | `wt_identity` | WT `E8.75` | dry-run log; `tests/test_baselines.py` (CLI, relaxed tiny file) | PASS |
 | any | `write_submission` | your own arrays | `tests/test_baselines.py` | column remap, clipping, bounds, `"all"` |
 

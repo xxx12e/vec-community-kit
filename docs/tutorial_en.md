@@ -7,8 +7,9 @@ validator, baseline generators with a submission writer, a local scoring wrapper
 and an evidence skeleton for the Agent track. It contains no modelling advice.
 
 The commands below were executed against small synthetic stages laid out like the data directory of section 2
-(2026-09-05; the log, with the Python and package versions, is `scratchpad/dryrun_log.txt`); they have not been
-run against the real release inside this repository. The only thing you change is having the real files there.
+(first on 2026-09-05, re-run on 2026-09-30 after the organiser-feedback revision; the log, with the Python and
+package versions, is `scratchpad/dryrun_log.txt`); they have not been run against the real release inside this
+repository. The only thing you change is having the real files there.
 
 ## 0. The challenge in one page
 

@@ -148,15 +148,16 @@ The same file with `--single-seed` (seed 0; the old default) prints one seed's f
 T2 heart  pred=pseudo_pred.h5ad  target=E8.75.h5ad  ref=E8.25_late.h5ad  cells pred/A/B/ref = 2400/120/120/240  frac=0.1 seed=0
 group                        metric                    raw      floor    ceiling   skill    pts
 ...
-Tissue shape and growth      scale_log_ratio*      -0.2968    -0.3007    -0.0069   0.508   4.23
+Tissue shape and growth      scale_log_ratio*      -0.2558    -0.3007    -0.0407   0.547   4.56
 ...
-                                        TASK SCORE (0-100; floor=50, ceiling=100)  49.85   [1.4s]
+                                      TASK SCORE (0-100; floor=50, ceiling=100)  50.02   [0.7s]
 * target-0 metric: skill computed on |value| (prediction, floor and ceiling), lower is better
 veckit 0.1.1; the organisers' scorer is the source of truth and this wrapper may lag it
 ```
 
-On this toy pair one seed gives 49.85 and the band over five seeds spans 48.86..56.96: a single local number can
-sit several points from the mean, which is why the band is the default. A resampled floor file lands **near** 50,
+On this toy pair seed 0 gives 50.02 while the band over five seeds spans 48.86..56.96 (mean 53.11): a single local
+number can sit several points from the mean, which is why the band is the default. Both outputs are copied from
+`scratchpad/dryrun_log.txt` (2026-09-30). A resampled floor file lands **near** 50,
 not exactly on it: the wrapper's floor row is a 10 % subsample of the
 reference stage and your file is a different sample of the same cells. Only the special case `--frac 1.0` with a
 prediction identical to the reference gives exactly 50.0 (that is what the tests check).

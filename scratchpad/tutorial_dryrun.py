@@ -92,6 +92,18 @@ def run(cmd: str, timeout=1800):
 
 def main():
     if "--clean" in sys.argv:
+        runs = ROOT / "scratchpad" / "runs_dryrun"
+        if runs.exists():                     # detach workspace/data junctions first: never delete through them
+            from vec_agent_evidence import common as C
+            for rd in runs.iterdir():
+                link = rd / "workspace" / "data"
+                if C.is_junction_or_link(link):
+                    try:
+                        os.rmdir(link)
+                    except OSError:
+                        os.unlink(link)
+            C.set_writable(runs)
+            shutil.rmtree(runs, ignore_errors=True)
         for p in (RAW, OUT, ROOT / "pseudo"):
             shutil.rmtree(p, ignore_errors=True)
         print("cleaned")
@@ -108,9 +120,14 @@ def main():
     rcs["he"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last data/raw/T2_heart/E9.5.h5ad        --out out/heart_extrap_copy_last.h5ad --n-cells 5000')[0]
     rcs["t3"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4             --wt   data/raw/T2_heart/E8.75.h5ad       --out out/t3_wt_identity.h5ad --n-cells 5000')[0]
     rcs["py_api"] = run(f'"{PY}" -c "from vec_community_baselines import io as bio, methods as bm; spec, panel = bio.panel_for_board(\'T3:gata4\'); wt = bio.load_stage(\'data/raw/T2_heart/E8.75.h5ad\', panel); X, C, info = bm.wt_identity(wt); report = bio.write_submission(X, C, panel, \'out/t3_wt_identity_api.h5ad\', \'T3:gata4\', n_cells=2000); print(report[\'ok\'], report[\'info\'][\'n_obs\'])"')[0]
+    # section 5, further coverage (vec_community_baselines/README.md coverage table)
+    rcs["t1_pbshift"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method pseudobulk_shift --board T1:val --prev data/raw/T1/E8.5_RNA.h5ad --last data/raw/T1/E9.5_RNA.h5ad --out out/t1_pbshift.h5ad --n-cells 5000')[0]
+    rcs["he_pbshift"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method pseudobulk_shift --board T2:heart:val_extrap --prev data/raw/T2_heart/E8.75.h5ad --last data/raw/T2_heart/E9.5.h5ad --out out/heart_extrap_pbshift.h5ad --n-cells 5000')[0]
+    rcs["embryo_all"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad --out out/embryo_all.h5ad --n-cells all')[0]
     # section 6
     rcs["check1"] = run(f'"{PY}" -m vec_submit_check --board T2:heart:val_interp out/heart_interp_copy_last.h5ad')[0]
     rcs["check2"] = run(f'"{PY}" -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --json out/t1_check.json')[0]
+    rcs["ignore_max_cells_removed"] = run(f'"{PY}" -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --ignore-max-cells')[0]
     # section 7
     rcs["avail"] = run(f'"{PY}" -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"')[0]
     rcs["pseudo_pred"] = run(f'"{PY}" -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_interp --last data/raw/T2_heart/E8.25_late.h5ad --out out/pseudo_pred.h5ad --n-cells 5000')[0]
@@ -122,6 +139,7 @@ def main():
     rcs["split_refused"] = run(f'"{PY}" -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad --target pseudo/heart/target_score.h5ad --reference pseudo/heart/reference.h5ad')[0]
     # section 9
     rcs["evidence_tests"] = run(f'"{PY}" -m pytest tests/test_evidence.py -q')[0]
+    rcs["codex_tests"] = run(f'"{PY}" -m pytest tests/test_codex_adapter.py -q')[0]
     rcs["lock"] = run(f'"{PY}" -m vec_agent_evidence lock --task T3 --prompt vec_agent_evidence/example_prompt.md --model claude-opus-5 --data-root ./data --hours 8 --runs-root scratchpad/runs_dryrun')[0]
     print("\nSUMMARY", json.dumps(rcs, indent=1))
     return 0
