@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import re
+import sqlite3
 import zipfile
 from pathlib import Path
 
@@ -13,6 +14,9 @@ import pytest
 
 import oc_fixtures as F
 from test_codex_adapter import THREAD, exec_json_stream, rollout
+from vec_agent_evidence import codex as X
+from vec_agent_evidence import opencode as O
+from vec_trajectory_lens.parsers import opencode as OCP
 from vec_trajectory_lens import core, inputs, parsers as P
 from vec_trajectory_lens.__main__ import main as lens_main
 from vec_trajectory_lens.redact import Redactor, scan_bytes
@@ -205,6 +209,72 @@ def test_opencode_stream_export_database_and_storage(tmp_path):
     summ, _ = core.analyse(legacy, session=F.SID)
     assert summ["cli_version"] == "1.1.40" and summ["tool_calls"] == 4 and summ["secret_scan"]["clean"]
     assert all(s["file"].startswith("storage/") for s in summ["sources"]) and len(summ["sources"]) > 10
+
+
+def test_opencode_data_dir_reads_the_database_before_old_storage(tmp_path, monkeypatch, capsys):
+    # an upgraded install: v1.2.0 copied storage/ into opencode.db and left the old files in place
+    data = tmp_path / "data"
+    F.make_storage(data, sid="ses_OLDlegacySession0001")
+    F.make_db(data / "opencode.db")
+    for session in (None, F.SID):
+        summ, _ = core.analyse(data, session=session)
+        assert summ["session_ids"][0] == F.SID and summ["cli_version"] == "1.18.33"
+        assert any("storage/ directory" in w and "was not read" in w for w in summ["warnings"])
+    # a session that only the old storage holds is still found there, and the report says why
+    summ, _ = core.analyse(data, session="ses_OLDlegacySession0001")
+    assert summ["cli_version"] == "1.1.40" and any("is not in opencode.db" in w for w in summ["warnings"])
+    # storage/ given on its own is read on its own
+    summ, _ = core.analyse(data / "storage")
+    assert summ["session_ids"] == ["ses_OLDlegacySession0001"]
+    # two install channels: the database that holds the session (or the most recent one) is read and named
+    chan = tmp_path / "chan"
+    F.make_db(chan / "opencode.db")
+    F.make_db(chan / "opencode-beta.db")
+    con = sqlite3.connect(str(chan / "opencode-beta.db"))
+    con.execute("UPDATE session SET id = 'ses_betaChannelRun01', time_updated = ? WHERE id = ?", (F.T0 + 99000, F.SID))
+    con.execute("UPDATE message SET session_id = 'ses_betaChannelRun01' WHERE session_id = ?", (F.SID,))
+    con.execute("UPDATE part SET session_id = 'ses_betaChannelRun01' WHERE session_id = ?", (F.SID,))
+    con.execute("UPDATE session SET parent_id = 'ses_betaChannelRun01' WHERE parent_id = ?", (F.SID,))
+    con.commit()
+    con.close()
+    summ, _ = core.analyse(chan)
+    assert summ["session_ids"][0] == "ses_betaChannelRun01"
+    assert any("2 OpenCode databases" in w and "opencode-beta.db was read" in w for w in summ["warnings"])
+    summ, _ = core.analyse(chan, session=F.SID)
+    assert summ["session_ids"][0] == F.SID and any("opencode.db was read" in w for w in summ["warnings"])
+    monkeypatch.setenv("OPENCODE_DB", "custom.db")                      # a relative OPENCODE_DB is looked up here
+    F.make_db(chan / "custom.db")
+    assert [p.name for p in OCP.data_dir_dbs(chan)] == ["opencode.db", "opencode-beta.db", "custom.db"]
+    # a database that is not OpenCode's: a readable refusal (exit 2), not a traceback
+    other = tmp_path / "other.db"
+    con = sqlite3.connect(str(other))
+    con.execute("CREATE TABLE x (a)")
+    con.commit()
+    con.close()
+    assert lens_main([str(other)]) == 2
+    assert "cannot be read as an OpenCode database" in capsys.readouterr().out
+    with pytest.raises(inputs.InputError, match="no OpenCode session ses_missing"):
+        core.analyse(data / "opencode.db", session="ses_missing")
+
+
+def test_opencode_database_is_read_without_creating_side_files(tmp_path):
+    ddir = tmp_path / "data"
+    db = F.make_db(ddir / "opencode.db", wal=True)
+    before = sorted(p.name for p in ddir.iterdir())
+    assert before == ["opencode.db"]
+    core.analyse(db)
+    core.analyse(ddir, session=F.SID)
+    assert O.export_from_db(db, F.SID)["info"]["id"] == F.SID
+    assert sorted(p.name for p in ddir.iterdir()) == before              # no -wal / -shm next to it
+    # while OpenCode still has it open (a -wal file exists), the pages in the -wal are read too
+    live = sqlite3.connect(str(db))
+    try:
+        live.execute("INSERT INTO todo VALUES (?,?,?,?,?,?,?)", (F.SID, "only in the wal", "pending", "low", 1, F.T0, F.T0))
+        live.commit()
+        assert (ddir / "opencode.db-wal").exists()
+        assert [t["content"] for t in O.export_from_db(db, F.SID)["todo"]] == ["write the prediction", "only in the wal"]
+    finally:
+        live.close()
 
 
 def test_redaction_everywhere(tmp_path, monkeypatch):

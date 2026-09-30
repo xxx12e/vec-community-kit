@@ -661,24 +661,42 @@ def _session_info_from_row(row: dict) -> dict:
     return info
 
 
-def export_from_db(db, session_id: str, max_depth: int = 3) -> dict:
-    """The session, its messages and parts (and those of its child sessions, e.g. subagents of the task tool) from
-    OpenCode's database, opened READ-ONLY, in the shape of `opencode export`. Only the tables in SESSION_TABLES are
-    queried; the database file itself is never copied. None when the session is not in this database."""
-    base = Path(db).resolve().as_uri()
-    # a WAL-mode database whose -wal / -shm files are gone (clean shutdown) cannot always be opened with mode=ro; then
-    # the main file is complete, and immutable=1 reads it without creating or locking anything (never while a -wal
-    # file exists: immutable would ignore the pages still in it)
-    modes = ["?mode=ro"] + ([] if Path(str(db) + "-wal").exists() else ["?mode=ro&immutable=1"])
+def open_db_readonly(db):
+    """A read-only connection to an SQLite database (sqlite3.Error when it cannot be read).
+
+    OpenCode keeps its database in WAL mode. When OpenCode has exited, the -wal file is gone and the main file is
+    complete: then the database is opened with immutable=1, which reads it without creating -wal / -shm files and
+    without taking a lock (a plain mode=ro open of a WAL database creates those two files next to it). While a -wal
+    (or -journal) file exists, OpenCode may still be running or did not shut down cleanly: then it is opened with
+    mode=ro, so the pages still in the -wal are read, and SQLite may create a -shm file. Nothing is ever written to
+    the database itself."""
+    db = Path(db)
+    base = db.resolve().as_uri()
+    busy = any(Path(str(db) + s).exists() for s in ("-wal", "-journal"))
+    modes = ["?mode=ro"] if busy else ["?mode=ro&immutable=1", "?mode=ro"]
     for i, mode in enumerate(modes):
         con = sqlite3.connect(base + mode, uri=True, timeout=10)
         try:
-            tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            break
-        except sqlite3.OperationalError:
+            con.execute("SELECT name FROM sqlite_master LIMIT 1").fetchall()
+            return con
+        except sqlite3.Error:
             con.close()
             if i == len(modes) - 1:
                 raise
+    raise sqlite3.OperationalError(f"cannot open {db.name}")      # not reached
+
+
+def export_from_db(db, session_id: str, max_depth: int = 3) -> dict:
+    """The session, its messages and parts (and those of its child sessions, e.g. subagents of the task tool) from
+    OpenCode's database, opened READ-ONLY (open_db_readonly), in the shape of `opencode export`. Only the tables in
+    SESSION_TABLES are queried; the database file itself is never copied. None when the session is not in this
+    database."""
+    con = open_db_readonly(db)
+    try:
+        tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    except sqlite3.Error:
+        con.close()
+        raise
     try:
         cur = con.cursor()
         missing = [t for t in ("session", "message", "part") if t not in tables]

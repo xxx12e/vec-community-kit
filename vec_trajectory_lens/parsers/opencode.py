@@ -8,12 +8,16 @@ against the OpenCode source, tag v1.18.33; untested against a live OpenCode run)
   export   {"info": session, "messages": [{"info": message, "parts": [...]}], "children": [...] (subagents)}
            parts: text, reasoning, tool {tool, callID, state {status, input, output | error, time}}, step-start,
            step-finish {tokens, cost}, patch {files}, file, subtask, agent, retry, compaction, snapshot
+A data directory is read database first (OpenCode v1.2.0 migrates storage/ into the database and leaves the old
+files in place, so storage/ is read only when there is no database or the session asked for is not in it); with
+several databases (opencode-<channel>.db) the one holding the session, else the most recent one, is read and named.
 Token usage is taken from the step-finish parts (one per model call); an assistant message's own "tokens" field is
 the LAST step's usage (OpenCode overwrites it per step), so it is not summed.
 """
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 
@@ -129,13 +133,35 @@ def events_from_export(exp: dict, source_name: str) -> ParseResult:
     return res
 
 
-def _latest_root_session_db(db) -> str | None:
-    con = sqlite3.connect(Path(db).resolve().as_uri() + "?mode=ro", uri=True, timeout=10)
+def _db_session(db, session=None):
+    """(time_updated, session id) of `session` in the database, or of the most recently updated root session when no
+    session is given; None when there is none. SystemExit with a readable message when the file cannot be read as an
+    OpenCode database (not OpenCode's, locked, damaged)."""
     try:
-        row = con.execute("SELECT id FROM session WHERE parent_id IS NULL ORDER BY time_updated DESC LIMIT 1").fetchone()
-        return row[0] if row else None
-    finally:
-        con.close()
+        con = O.open_db_readonly(db)
+        try:
+            if session:
+                row = con.execute("SELECT time_updated, id FROM session WHERE id = ?", (session,)).fetchone()
+            else:
+                row = con.execute("SELECT time_updated, id FROM session WHERE parent_id IS NULL "
+                                  "ORDER BY time_updated DESC LIMIT 1").fetchone()
+        finally:
+            con.close()
+    except sqlite3.Error as e:
+        raise SystemExit(f"{Path(db).name} cannot be read as an OpenCode database ({e}); pass the output of "
+                         "`opencode export <sessionID>` instead") from None
+    return (row[0] or 0, row[1]) if row else None
+
+
+def data_dir_dbs(ddir) -> list:
+    """The OpenCode databases in a data directory: opencode.db, opencode-<channel>.db, and OPENCODE_DB when it is a
+    relative name (OpenCode resolves that inside the data directory). An absolute OPENCODE_DB is not followed: pass
+    that file itself."""
+    out = O.db_candidates(ddir, env={})
+    env_db = os.environ.get("OPENCODE_DB")
+    if env_db and env_db != ":memory:" and not Path(env_db).is_absolute():
+        out += O.db_candidates(ddir, env={"OPENCODE_DB": env_db})
+    return list(dict.fromkeys(out))
 
 
 def _latest_root_session_storage(ddir) -> str | None:
@@ -152,36 +178,92 @@ def _latest_root_session_storage(ddir) -> str | None:
     return best[1] if best else None
 
 
+def _read_db(path: Path, sid: str, session_given: bool) -> ParseResult:
+    try:
+        got = O.export_from_db(path, sid)
+    except sqlite3.Error as e:
+        raise SystemExit(f"{path.name} cannot be read as an OpenCode database ({e}); pass the output of "
+                         "`opencode export <sessionID>` instead") from None
+    if not got:
+        raise SystemExit(f"no OpenCode session {sid} in {path.name}")
+    r = events_from_export(got, path.name)
+    # the rows that were read (not the database file, which also holds account tokens)
+    r.inputs = [(f"{path.name}: session {sid} (session / message / part / todo rows)",
+                 json.dumps(got, default=str).encode("utf-8"))]
+    r.notes.append(f"read read-only from {path.name} (session tables only)" +
+                   ("" if session_given else f"; no --session given: the most recently updated session ({sid}) was read"))
+    return r
+
+
+def _read_storage(ddir: Path, session) -> ParseResult:
+    sid = session or _latest_root_session_storage(ddir)
+    sfiles = O.storage_session_files(ddir, sid) if sid else []
+    got = O.export_from_storage(sfiles) if sfiles else None
+    if not got:
+        raise SystemExit(f"no OpenCode session {sid or ''} under {ddir / 'storage'}")
+    r = events_from_export(got, "storage")
+    r.inputs = [("storage/" + rel, p) for rel, p in sfiles]      # only this session's files, never auth.json
+    if not session:
+        r.notes.append(f"no --session given: the most recently updated session ({sid}) was read")
+    return r
+
+
+def _read_data_dir(ddir: Path, session) -> ParseResult:
+    """A data directory: the database first (OpenCode v1.2.0 and later; its migration copies storage/ into the
+    database and leaves the old files in place), the JSON storage/ of v1.1.x only when there is no database or the
+    session asked for is not in it."""
+    dbs = data_dir_dbs(ddir)
+    found, unreadable = [], []
+    for db in dbs:
+        try:
+            hit = _db_session(db, session)
+        except SystemExit as e:
+            unreadable.append(str(e))
+            continue
+        if hit:
+            found.append((hit[0], db, hit[1]))
+    has_storage = (ddir / "storage" / "session").is_dir()
+    if found:
+        _, db, sid = max(found, key=lambda x: x[0])
+        r = _read_db(db, sid, bool(session))
+        if len(dbs) > 1:
+            r.notes.append(f"{len(dbs)} OpenCode databases in this directory ({', '.join(d.name for d in dbs)}); "
+                           f"{db.name} was read, as it holds " + (f"session {sid}" if session else
+                                                                  "the most recently updated session"))
+        if has_storage:
+            r.notes.append("the storage/ directory (JSON files of OpenCode v1.1.x and older, copied into the database "
+                           "by v1.2.0) was not read")
+        r.notes += unreadable
+        return r
+    if has_storage:
+        r = _read_storage(ddir, session)
+        if dbs:
+            r.notes.append("read from storage/ (OpenCode v1.1.x and older): " +
+                           (f"session {session} is not in " if session else "no session in ") +
+                           ", ".join(d.name for d in dbs))
+        r.notes += unreadable
+        return r
+    if unreadable:
+        raise SystemExit("; ".join(unreadable))
+    raise SystemExit(f"no OpenCode session {session or ''} in {', '.join(d.name for d in dbs) or ddir}")
+
+
 def parse(files, options=None) -> ParseResult:
     options = options or {}
     session = options.get("session")
     results = []
     for path in files:
         path = Path(path)
-        if path.is_dir():                                   # a data directory or its storage/ (OpenCode <= v1.1.x)
-            ddir = path.parent if path.name == "storage" else path
-            sid = session or _latest_root_session_storage(ddir)
-            sfiles = O.storage_session_files(ddir, sid) if sid else []
-            got = O.export_from_storage(sfiles) if sfiles else None
-            if not got:
-                raise SystemExit(f"no OpenCode session {sid or ''} under {ddir / 'storage'}")
-            r = events_from_export(got, "storage")
-            r.inputs = [("storage/" + rel, p) for rel, p in sfiles]      # only this session's files, never auth.json
-            if not session:
-                r.notes.append(f"no --session given: the most recently updated session ({sid}) was read")
-            results.append(r)
+        if path.is_dir():
+            if path.name == "storage":                      # storage/ itself (OpenCode <= v1.1.x): only that
+                results.append(_read_storage(path.parent, session))
+            else:                                           # a data directory: database first, then storage/
+                results.append(_read_data_dir(path, session))
         elif O.is_sqlite(path):
-            sid = session or _latest_root_session_db(path)
-            got = O.export_from_db(path, sid) if sid else None
-            if not got:
-                raise SystemExit(f"no OpenCode session {sid or ''} in {path.name}")
-            r = events_from_export(got, path.name)
-            # the rows that were read (not the database file, which also holds account tokens)
-            r.inputs = [(f"{path.name}: session {sid} (session / message / part / todo rows)",
-                         json.dumps(got, default=str).encode("utf-8"))]
-            r.notes.append(f"read read-only from {path.name} (session tables only)" +
-                           ("" if session else f"; no --session given: the most recently updated session ({sid}) was read"))
-            results.append(r)
+            hit = _db_session(path, session)
+            if not hit:
+                raise SystemExit(f"no OpenCode session {session or ''} in {path.name}")
+            results.append(_read_db(path, hit[1], bool(session)))
         elif path.suffix.lower() == ".json":
             results.append(events_from_export(O.load_export(path), path.name))
         else:

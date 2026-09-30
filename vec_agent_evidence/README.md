@@ -210,7 +210,8 @@ Where OpenCode keeps things (from the source): data in `$XDG_DATA_HOME/opencode`
 **Credential files are never collected.** OpenCode keeps provider keys and OAuth tokens in `<data>/auth.json`,
 MCP OAuth tokens in `<data>/mcp-auth.json`, and account tokens in the `account`, `control_account` and `credential`
 tables of the same database that holds the sessions. So the database file is never copied: only the session,
-message, part and todo rows of the run's session are selected, read-only. Any input that is a credential file by name
+message, part and todo rows of the run's session are selected, read-only (after OpenCode has exited, with no `-wal`
+file next to the database, it is opened immutable, so SQLite creates no `-wal` / `-shm` side files either). Any input that is a credential file by name
 (`auth.json`, `mcp-auth.json`, `*.db`, `*.db-wal`, `*.sqlite`, `.env`, `*.pem`, ...), by the name of a link's target,
 by the SQLite header (a renamed database), or by the bytes of a credential file in the data directory (a renamed
 `auth.json`) is refused before anything is written, and the finished set is checked the same way again. The

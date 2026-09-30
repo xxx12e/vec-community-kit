@@ -6,11 +6,13 @@ Accepted:
     document, or OpenCode's database (with --session, else the most recent session)
   * a directory: an unzipped evidence package or run directory of this kit (evidence/trajectory/, trajectory/,
     transcript/, stream.jsonl ...), a Claude Code project directory (with --session, or when it holds one session),
-    an OpenCode data directory or its storage/ (OpenCode up to v1.1.x)
+    an OpenCode data directory (its database first: opencode.db, opencode-<channel>.db, or a relative OPENCODE_DB;
+    the storage/ JSON files of OpenCode up to v1.1.x only when there is no database or it lacks the session), or
+    storage/ itself
   * a .zip (e.g. trajectory.zip or evidence_bundle.zip): extracted into a temporary directory first (at most 1 GB)
 Priorities inside an evidence package: Claude transcript/ over stream.jsonl; Codex rollout over the stream (a dedup
-rollout is read together with the stream, which carries what it dropped); OpenCode session_export.json or storage/
-over the stream.
+rollout is read together with the stream, which carries what it dropped: the rollout first, as the stream has no
+timestamps); OpenCode session_export.json or storage/ over the stream.
 """
 from __future__ import annotations
 
@@ -65,11 +67,12 @@ def _find_trajectory_dir(d: Path):
 
 
 def resolve_dir(d: Path, framework: str = "auto", session=None, subagents: bool = True):
-    # OpenCode data directory (or its storage/) of OpenCode <= v1.1.x, or a data directory with the database
-    if (d / "storage" / "session").is_dir() or (d.name == "storage" and (d / "session").is_dir()):
+    # an OpenCode data directory (the parser reads its database first, and storage/ of OpenCode <= v1.1.x only when
+    # the database is missing or does not hold the session), or storage/ itself
+    if d.name == "storage" and (d / "session").is_dir():
         return "opencode", [d]
-    if framework in ("auto", "opencode") and O.db_candidates(d, env={}):
-        return "opencode", [O.db_candidates(d, env={})[0]]
+    if (d / "storage" / "session").is_dir() or (framework in ("auto", "opencode") and P.opencode.data_dir_dbs(d)):
+        return "opencode", [d]
     # this kit's run directory (Claude Code path): transcript/ first, else stream.jsonl
     if (d / "transcript").is_dir() and list((d / "transcript").glob("*.jsonl")):
         main = sorted((d / "transcript").glob("*.jsonl"))
