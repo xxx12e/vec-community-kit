@@ -18,6 +18,7 @@ It is a watcher, not a source: the organisers' pages are authoritative, and it d
 | board contract | https://virtualembryo.ai/challenge/panels/index.json and every gene list it names | canonical JSON (sorted keys), stored in full; rule-based "what this changes for your file" lines |
 | phase endpoint | https://kg.virtualembryo.ai/challenge/phase (the endpoint the site's own JavaScript calls) | canonical JSON, stored in full; rule-based lines |
 | official scorer | https://github.com/aristoteleo/veckit through the GitHub API | default-branch head (sha, date, subject), version in `pyproject.toml`, branches, tags, releases |
+| site links | every link under /challenge on the watched pages (navigation and footer included) | a new link is reported, marked when no watched page covers it, so a new page (say, a final-phase page) is noticed |
 
 Every page URL came from the site navigation (read 2026-09-30); every watched page had its text in the server HTML
 (checked with curl), so no browser or Playwright is needed. The list is `watchlist.json`.
@@ -92,6 +93,7 @@ requests with a 1.5 s pause between two requests to the same host: about one min
 | `contract/panels/index.json` + `*.genes.txt` | the board contract, in full |
 | `contract/phase.json` | the phase endpoint, in full |
 | `scorer/veckit.json` | the scorer repository's state |
+| `site-links.json` | the links under /challenge found on the watched pages |
 
 Nothing in it depends on the time of the run, so a run that finds nothing changes no file and makes no commit.
 
@@ -124,12 +126,15 @@ workflow's `GITHUB_TOKEN`, which is sent to api.github.com only.
   figures drawn as SVG, link targets and buttons: a change only in a link URL or a figure is not detected.
 * Sections are keyed by heading. A heading renamed with the same body is reported as renamed; renamed and edited at
   once, it shows as one section removed and one added.
+* A gene list that cannot be fetched (for example a new board listed before its list is public) is recorded as a
+  fetch error; the board change itself is still announced, and the previous copy of that list, if any, is kept, so
+  the validator refuses that board from `rules-watch/contract/panels/` until the new list arrives.
 * It is a text diff: it says which lines changed, not what they mean. "What this changes for your file" exists for
   the contract, the phase endpoint and the scorer only; for a page, read the page.
 * Once a day: a change made and reverted between two runs is missed, and GitHub may start a scheduled run late.
   GitHub also disables scheduled workflows after 60 days without repository activity (the challenge ends
   2026-12-11).
-* Tested with synthetic fixtures (`python -m pytest tests/test_rules_watch.py -q` -> `29 passed`, no network) and by
+* Tested with synthetic fixtures (`python -m pytest tests/test_rules_watch.py -q` -> `31 passed`, no network) and by
   two live runs from a home connection on 2026-09-30 (42 requests each, no fetch error, the second run found no
   change, so the normalised text is stable from one request to the next). **Not yet run inside GitHub Actions** at
   the time of writing: the runner's IP address could be challenged by Cloudflare; the fetcher recognises a challenge
@@ -172,6 +177,7 @@ the contract; the contract copy here can feed any validator that reads `index.js
 | 榜契约 | https://virtualembryo.ai/challenge/panels/index.json 以及它列出的每个基因列表 | 规范化 JSON（键排序），完整保存；按规则生成"对你的文件意味着什么" |
 | 阶段接口 | https://kg.virtualembryo.ai/challenge/phase（网站自己的 JavaScript 调用的接口） | 规范化 JSON，完整保存；按规则生成说明 |
 | 官方打分器 | 通过 GitHub API 读取 https://github.com/aristoteleo/veckit | 默认分支的最新提交（sha、日期、标题）、`pyproject.toml` 里的版本、分支、标签、发布 |
+| 网站链接 | 被监测页面上所有 /challenge 下的链接（包括导航和页脚） | 出现新链接就报告，并标明它是否还没被监测，这样新页面（比如最终阶段的说明页）也能被发现 |
 
 页面地址都来自网站导航（2026-09-30 读取）；每个被监测的页面，其文字都在服务器返回的 HTML 里（用 curl 核对过），
 所以不需要浏览器或 Playwright。列表在 `watchlist.json`。
@@ -237,6 +243,7 @@ python -m vec_rules_watch diff old_out/ new_out/                                
 | `contract/panels/index.json` + `*.genes.txt` | 完整的榜契约 |
 | `contract/phase.json` | 完整的阶段接口返回 |
 | `scorer/veckit.json` | 打分器仓库的状态 |
+| `site-links.json` | 被监测页面上找到的 /challenge 下的链接 |
 
 这些文件都不含运行时间，所以一次什么都没发现的运行不会改任何文件，也不会产生提交。
 
@@ -262,10 +269,12 @@ Disallow 规则，也没有 content signal）。GitHub API 调用使用工作流
 * 只读 `<main>`。导航、页眉、页脚和"On this page"框都被忽略，图片、用 SVG 画的图、链接地址和按钮也被忽略：只改了链接
   地址或图的变化检测不到。
 * 小节按标题区分。标题改名而内容不变，报告为改名；同时改名又改内容，会显示为移除一个小节、新增一个小节。
+* 取不到的基因列表（例如新榜已列出、但它的列表还没公开）记为获取错误；榜本身的变化照样报告，该列表的旧副本（如果有）会
+  保留，所以在新列表到来之前，校验器用 `rules-watch/contract/panels/` 会拒绝这个榜。
 * 它做的是文本比较：只说哪些行变了，不说意味着什么。"对你的文件意味着什么"只针对榜契约、阶段接口和打分器；页面请自己读。
 * 每天一次：两次运行之间改了又改回去的变化会漏掉；GitHub 的定时运行也可能推迟。仓库 60 天没有活动时 GitHub 会停用定时
   工作流（比赛在 2026-12-11 结束）。
-* 测试：合成数据的单元测试（`python -m pytest tests/test_rules_watch.py -q` -> `29 passed`，不联网），以及 2026-09-30 从
+* 测试：合成数据的单元测试（`python -m pytest tests/test_rules_watch.py -q` -> `31 passed`，不联网），以及 2026-09-30 从
   家里网络做的两次真实运行（每次 42 个请求，没有获取错误，第二次没有发现变化，说明规范化文本在两次请求之间是稳定的）。
   撰写本文时**还没有在 GitHub Actions 里运行过**：运行器的 IP 可能被 Cloudflare 拦下做人机验证；获取器能认出验证页，会记为
   "blocked by a bot challenge"，而不是记成变化。

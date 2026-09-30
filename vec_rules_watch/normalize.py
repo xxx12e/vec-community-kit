@@ -16,6 +16,7 @@ import json
 import re
 import unicodedata
 from html.parser import HTMLParser
+from urllib.parse import urljoin, urlsplit
 
 SECTION_LEVELS = (1, 2, 3, 4)
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
@@ -161,6 +162,36 @@ def blocks_to_sections(blocks) -> list:
     if cur["lines"] or cur["heading"]:
         sections.append(cur)
     return sections
+
+
+class _Links(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.hrefs: list = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            href = dict(attrs).get("href")
+            if href:
+                self.hrefs.append(href)
+
+
+def site_links(html: str, page_url: str, prefix: str = "/challenge") -> list:
+    """Sorted paths (with query, without fragment) of every <a href> on the page - navigation and footer included -
+    that stays on the page's host under `prefix`. Used to notice a page the watch list does not cover yet."""
+    p = _Links()
+    p.feed(html)
+    p.close()
+    base = urlsplit(page_url)
+    out = set()
+    for href in p.hrefs:
+        u = urlsplit(urljoin(page_url, href))
+        if u.scheme not in ("http", "https") or u.netloc != base.netloc:
+            continue
+        if not (u.path == prefix or u.path.startswith(prefix + "/")):
+            continue
+        out.add(u.path.rstrip("/") + (("?" + u.query) if u.query else ""))
+    return sorted(out)
 
 
 def html_to_sections(html: str) -> tuple:

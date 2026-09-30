@@ -23,6 +23,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from . import contract as C
 from . import pages as P
@@ -97,6 +98,7 @@ class Entry:
         self.scorer: list = []
         self.page_baselines: list = []       # Messages
         self.page_changes: list = []         # (page id, title Message, url, hint key, diff)
+        self.links: list = []                # Messages: links added to / removed from the site
         self.errors: list = []               # (source label Message or str, error)
         self.baselines: set = set()          # sources whose items are a first snapshot, not a change
         self.first_run = False
@@ -105,7 +107,8 @@ class Entry:
         self.out_rel = "rules-watch"
 
     def has_content(self) -> bool:
-        return bool(self.contract or self.phase or self.scorer or self.page_baselines or self.page_changes)
+        return bool(self.contract or self.phase or self.scorer or self.page_baselines or self.page_changes
+                    or self.links)
 
     def high_signal(self) -> bool:
         """A change (not a first snapshot) of the contract, the phase endpoint or the scorer."""
@@ -120,6 +123,8 @@ class Entry:
                  if items]
         if self.page_changes:
             parts.append(f"{len(self.page_changes)} page{'s' if len(self.page_changes) != 1 else ''}")
+        if self.links:
+            parts.append("site links")
         if self.page_baselines:
             parts.append(f"{len(self.page_baselines)} new page baseline(s)")
         return ", ".join(parts) or "no change"
@@ -145,6 +150,9 @@ class Entry:
         if "scorer" in which and self.scorer:
             out += [Message("head.scorer", url=self.urls.get("scorer", "")).render(lang), ""]
             out += self._items(self.scorer, lang) + [""]
+        if "pages" in which and self.links:
+            out += [Message("head.site").render(lang), ""]
+            out += ["- " + m.render(lang) for m in self.links] + [""]
         if "pages" in which and (self.page_baselines or self.page_changes):
             out += [Message("head.pages").render(lang), ""]
             if self.page_baselines:
@@ -263,9 +271,14 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
             items = C.diff_index(old_index, snap["index"], old_genes, snap["genes"], _display_path(pdir))
             changed |= _write(pdir / "index.json", canonical_json(snap["index"]))
             for name, genes in snap["genes"].items():
+                ok("genes:" + name, ccfg["genes_base_url"] + name)
                 changed |= _write(pdir / name, "\n".join(genes) + "\n")
+            for name, gerr in snap["genes_errors"].items():
+                # the previous copy (if any) is kept; the validator refuses it if index.json moved on
+                fail("genes:" + name, ccfg["genes_base_url"] + name, name, gerr)
+            referenced = set(snap["genes"]) | set(snap["genes_errors"])
             for p in (pdir.glob("*.genes.txt") if pdir.exists() else []):
-                if p.name not in snap["genes"]:
+                if p.name not in referenced:
                     changed |= _remove(p)
             entry.contract = items
 
@@ -317,11 +330,12 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
         if not want(sid):
             continue
         title = Message(f"title.{pid}")
-        sections, err = fetch_page(fetcher, url, min_chars)
+        got, err = fetch_page(fetcher, url, min_chars)
         if err:
             fail(sid, url, title, err)
             continue
         ok(sid, url)
+        sections = got["sections"]
         meta_path = out / "pages" / f"{pid}.json"
         txt_path = out / "pages" / f"{pid}.txt"
         state_path = state / "pages" / f"{pid}.json"
@@ -350,7 +364,7 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
                 entry.page_changes.append((pid, title, url, page.get("hint", "none"), diff))
             last_changed = date
         meta = {"id": pid, "url": url, "sha256": new_sha, "last_changed": last_changed,
-                "full_text_in_repo": bool(full_text),
+                "full_text_in_repo": bool(full_text), "links": got["links"],
                 "sections": P.section_meta(sections)}
         changed |= _write(meta_path, canonical_json(meta))
         _write(state_path, canonical_json({"sha256": new_sha, "url": url, "sections": sections}))
@@ -367,6 +381,8 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
         for p in sorted((out / "pages").iterdir()):
             if p.suffix in (".json", ".txt") and p.stem not in ids:
                 changed |= _remove(p)
+    if wanted is None:
+        changed |= _site_links(cfg, out, entry)
 
     # -- status: sources not run this time (--only) keep their previous record --
     for sid, rec in old_sources.items():
@@ -396,6 +412,37 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
             "first_run": entry.first_run, "rebaselined": entry.rebaselined, "entry_en": entry_en,
             "entry_zh": entry_zh, "issue_body": issue_body, "date": date,
             "requests": getattr(fetcher, "requests", None)}
+
+
+def _path_of(url: str) -> str:
+    u = urlsplit(url)
+    return u.path.rstrip("/") + (("?" + u.query) if u.query else "")
+
+
+def _site_links(cfg: dict, out: Path, entry: Entry) -> bool:
+    """The union of the links under /challenge on every watched page (a page that failed today contributes its
+    previous links): a link that appears is a page the watch list may not cover yet."""
+    links = set()
+    for page in cfg.get("pages", []):
+        meta = _read_json(out / "pages" / f"{page['id']}.json")
+        if isinstance(meta, dict):
+            links.update(meta.get("links") or [])
+    path = out / "site-links.json"
+    old = _read_json(path)
+    pages = cfg.get("pages", [])
+    watched = {_path_of(p["url"]) for p in pages}
+    genes_base = _path_of(cfg["contract"]["genes_base_url"]) if cfg.get("contract") else None
+    host = "{0.scheme}://{0.netloc}".format(urlsplit(pages[0]["url"])) if pages else ""
+    if isinstance(old, dict) and isinstance(old.get("links"), list):
+        before = set(old["links"])
+        for link in sorted(links - before):
+            is_watched = link in watched or bool(genes_base and link.startswith(genes_base))
+            entry.links.append(Message("site.link_added", url=host + link,
+                                       note=Message("site.watched" if is_watched else "site.not_watched")))
+        for link in sorted(before - links):
+            entry.links.append(Message("site.link_removed", url=host + link))
+    return _write(path, canonical_json({"links": sorted(links),
+                                        "note": "links under /challenge found on the watched pages"}))
 
 
 def render_issue(entry: Entry, date: str, hhmm: str) -> str:

@@ -322,7 +322,7 @@ def test_first_run_baseline_then_changes_then_no_change(tmp_path):
 
     res2 = do_run(tmp_path, 2, 2)
     assert res2["high_signal"] and res2["entry"] and not res2["first_run"]
-    assert res2["headline"] == "contract, phase, scorer, 1 page"
+    assert res2["headline"] == "contract, phase, scorer, 1 page, site links"
     en2 = (out / "CHANGES.md").read_text(encoding="utf-8")
     assert en2.index("## 2026-10-02") < en2.index("## 2026-10-01")                # newest first
     assert en2.count("<!-- entries below, newest first -->") == 1
@@ -388,21 +388,17 @@ def test_fetch_failure_is_recorded_not_fatal(tmp_path):
     do_run(tmp_path, 1, 1)
     out = tmp_path / "out"
     before = snapshot(out)
-    down = {f"{BASE}/rules": 503, "https://api.example.test/challenge/phase": "timeout",
-            f"{BASE}/panels/TX__beta.genes.txt": 500}
+    down = {f"{BASE}/rules": 503, "https://api.example.test/challenge/phase": "timeout"}
     res = do_run(tmp_path, 2, 2, extra=down)
-    ids = dict(res["errors"])
-    assert ids == {"page:rules": "HTTP 503", "phase": "timeout", "contract": "TX__beta.genes.txt: HTTP 500"}
+    assert dict(res["errors"]) == {"page:rules": "HTTP 503", "phase": "timeout"}
     status = json.loads((out / "status.json").read_text())["sources"]
     assert status["page:rules"] == {"url": f"{BASE}/rules", "ok": False, "error": "HTTP 503",
                                     "failing_since": "2026-10-02"}
-    # contract is all-or-nothing: index.json v2 was fetched, but not written because a gene list failed
-    for keep in ("contract/panels/index.json", "contract/panels/TX__alpha.genes.txt", "contract/phase.json",
-                 "pages/rules.json"):
+    for keep in ("contract/phase.json", "pages/rules.json"):                      # previous snapshot kept
         assert snapshot(out)[keep] == before[keep], keep
-    assert "Could not fetch in this run" in res["entry_en"]                        # the scorer did change
+    assert "Could not fetch in this run" in res["entry_en"]                        # the contract did change
     assert zh("entry.fetch_errors", sources="X").split("X")[0] in res["entry_zh"]
-    assert "Removed" not in res["entry_en"]
+    assert 'Removed: "' not in res["entry_en"] and "Phase p2" not in res["entry_en"]
     # still failing the next day: failing_since does not move, status.json does not change
     status_bytes = (out / "status.json").read_bytes()
     res2 = do_run(tmp_path, 2, 3, extra=down)
@@ -411,7 +407,41 @@ def test_fetch_failure_is_recorded_not_fatal(tmp_path):
     res3 = do_run(tmp_path, 2, 4)
     assert res3["errors"] == [] and res3["high_signal"]
     assert json.loads((out / "status.json").read_text())["sources"]["page:rules"]["ok"] is True
-    assert "three official" in res3["entry_en"]
+    assert "three official" in res3["entry_en"] and "Phase p2 -> p3" in res3["entry_en"]
+
+
+def test_gene_list_down_still_announces_the_board_change(tmp_path):
+    do_run(tmp_path, 1, 1)
+    out = tmp_path / "out"
+    old_beta = (out / "contract" / "panels" / "TX__beta.genes.txt").read_bytes()
+    res = do_run(tmp_path, 2, 2, extra={f"{BASE}/panels/TX__beta.genes.txt": 500})
+    assert dict(res["errors"]) == {"genes:TX__beta.genes.txt": "HTTP 500"}
+    en = res["entry_en"]
+    assert "New board TX:gamma:test" in en and "cell bounds [500, 2000] -> [500, 1500]" in en
+    assert "gene panel changed: 3 -> 4 genes, ? added, ? removed" in en           # no list yet: counts unknown
+    assert "TX__beta.genes.txt (HTTP 500)" in en
+    panels = out / "contract" / "panels"
+    assert (panels / "TX__beta.genes.txt").read_bytes() == old_beta               # previous copy kept
+    assert not (panels / "TX__alpha.genes.txt").exists()                          # board gone: list removed
+    assert (panels / "TX__gamma.genes.txt").exists()
+    # the list comes back: the gene-level detail is reported then
+    res2 = do_run(tmp_path, 2, 3)
+    assert res2["errors"] == []
+    assert "gene panel changed: 3 -> 4 genes, 1 added, 0 removed, the order of the kept genes changed" in res2["entry_en"]
+    assert "does not match index.json" not in res2["entry_en"]
+
+
+def test_new_site_link_is_reported(tmp_path):
+    do_run(tmp_path, 1, 1)
+    links = json.loads((tmp_path / "out" / "site-links.json").read_text())["links"]
+    assert links == ["/challenge", "/challenge/rules"]                             # other hosts, fragments dropped
+    res = do_run(tmp_path, 1, 2, page="page_v2.html")
+    en = res["entry_en"]
+    assert ("New link on the challenge site: https://example.test/challenge/final-phase?tab=1 (not in the watch "
+            "list yet") in en
+    assert zh("head.site") in res["entry_zh"]
+    res2 = do_run(tmp_path, 1, 3, page="page_v1.html")
+    assert "Link no longer on the watched pages: https://example.test/challenge/final-phase?tab=1" in res2["entry_en"]
 
 
 def test_empty_shell_page_is_an_error_not_a_baseline(tmp_path):
@@ -443,7 +473,8 @@ def test_only_runs_the_named_sources(tmp_path):
                 only=["phase"], log=lambda *a: None)
     assert res["headline"] == "phase"
     status = json.loads((tmp_path / "out" / "status.json").read_text())["sources"]
-    assert set(status) == {"contract", "phase", "scorer", "page:rules"}
+    assert set(status) == {"contract", "phase", "scorer", "page:rules", "genes:TX__alpha.genes.txt",
+                           "genes:TX__beta.genes.txt"}
 
 
 # -- messages --

@@ -1,8 +1,9 @@
 """Fetch each watched source and turn it into a snapshot, or into a short error string.
 
-Every function returns (snapshot, error): exactly one of the two is set. A source is all-or-nothing: the board
-contract is taken only when index.json and every gene list it names were fetched, the scorer only when every
-GitHub call answered, so a half-fetched source never overwrites a whole previous snapshot.
+Every function returns (snapshot, error): exactly one of the two is set. The scorer is all-or-nothing (taken only
+when every GitHub call answered), so a half-fetched source never overwrites a whole previous snapshot. The board
+contract is taken when index.json was fetched; a gene list that could not be fetched is reported separately (its
+previous copy is kept), so a new board is announced even while its gene list is not downloadable yet.
 """
 from __future__ import annotations
 
@@ -10,25 +11,23 @@ import re
 from urllib.parse import quote, urljoin
 
 from .contract import parse_genes
-from .normalize import html_to_sections, parse_json_bytes, text_chars
+from .normalize import html_to_sections, parse_json_bytes, site_links, text_chars
 
 SUBJECT_CAP = 200
 
 
 def fetch_page(fetcher, url: str, min_chars: int = 300):
+    """({"sections": [...], "links": [site paths linked from the whole page]}, error)."""
     res = fetcher.fetch(url)
     if not res.ok:
         return None, res.error
-    try:
-        html = res.body.decode("utf-8", "replace")
-    except Exception:  # noqa: BLE001
-        return None, "could not decode the page"
+    html = res.body.decode("utf-8", "replace")
     sections, used_main = html_to_sections(html)
     if text_chars(sections) < min_chars:
         # an empty shell (a client-side-only render, a challenge page, an error page served with 200)
         return None, "page text too short (%d characters%s)" % (text_chars(sections),
                                                                "" if used_main else ", no <main>")
-    return sections, ""
+    return {"sections": sections, "links": site_links(html, url)}, ""
 
 
 def fetch_json(fetcher, url: str):
@@ -41,28 +40,34 @@ def fetch_json(fetcher, url: str):
         return None, "not JSON"
 
 
+GENES_NAME = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]*\.txt")
+
+
 def fetch_contract(fetcher, index_url: str, genes_base_url: str):
-    """(snapshot, error); snapshot = {"index": dict, "genes": {genes_file: [genes]}}."""
+    """(snapshot, error); snapshot = {"index": dict, "genes": {genes_file: [genes]}, "genes_errors": {genes_file:
+    error}}. Only index.json failing is an error of the whole source."""
     index, err = fetch_json(fetcher, index_url)
     if err:
         return None, "index.json: " + err
     if not isinstance(index, dict):
         return None, "index.json: not a JSON object"
-    genes = {}
+    genes, errors = {}, {}
     for board in sorted(index):
         spec = index[board]
         if not isinstance(spec, dict) or not spec.get("genes_file"):
             continue
         name = str(spec["genes_file"])
-        if name in genes:
+        if name in genes or name in errors:
             continue
-        if not re.fullmatch(r"[A-Za-z0-9_.:-]+", name) or name.startswith("."):
-            return None, f"{board}: unexpected genes_file name"
+        if not GENES_NAME.fullmatch(name):
+            errors[name] = "unexpected genes_file name"         # never used as a path
+            continue
         res = fetcher.fetch(urljoin(genes_base_url, quote(name)))
-        if not res.ok:
-            return None, f"{name}: {res.error}"
-        genes[name] = parse_genes(res.body.decode("utf-8", "replace"))
-    return {"index": index, "genes": genes}, ""
+        if res.ok:
+            genes[name] = parse_genes(res.body.decode("utf-8", "replace"))
+        else:
+            errors[name] = res.error
+    return {"index": index, "genes": genes, "genes_errors": errors}, ""
 
 
 def _version_from_pyproject(text: str):

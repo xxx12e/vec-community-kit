@@ -164,6 +164,12 @@
   "scorer.branch_moved": {"en": "Branch {branch} moved {old} -> {new}.", "zh": "分支 {branch} 从 {old} 移到 {new}。"},
   "scorer.default_branch_changed": {"en": "Default branch {old} -> {new}.", "zh": "默认分支 {old} -> {new}。"},
 
+  "head.site": {"en": "### Site links", "zh": "### 网站链接"},
+  "site.link_added": {"en": "New link on the challenge site: {url}{note}", "zh": "比赛网站上出现新链接：{url}{note}"},
+  "site.link_removed": {"en": "Link no longer on the watched pages: {url}", "zh": "被监测的页面上不再有这个链接：{url}"},
+  "site.watched": {"en": "", "zh": ""},
+  "site.not_watched": {"en": " (not in the watch list yet: it may be a new page worth reading)", "zh": "（尚未列入监测：可能是值得一读的新页面）"},
+
   "pages.baseline": {"en": "Baseline recorded for {n} pages.", "zh": "已为 {n} 个页面记录基线。"},
   "page.baseline": {"en": "{title} ({url}): baseline recorded, {n} section(s).", "zh": "{title}（{url}）：已记录基线，{n} 个小节。"},
   "page.changed": {"en": "{title} ({url}): {summary}.", "zh": "{title}（{url}）：{summary}。"},
