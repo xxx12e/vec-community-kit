@@ -4,8 +4,11 @@
 事实都来自官方站点（https://virtualembryo.ai/challenge）；如有出入，以官方为准。工具包本身只是通用工具：格式校验器、
 基线生成器与提交文件写入器、主办方打分器的本地封装、Agent 赛道的证据骨架。它不包含任何建模建议。
 
-下面的命令都在一组按第 2 节目录布局摆放的小型合成数据上执行过（2026-09-05 首次执行，2026-09-30 按主办方反馈修订后重跑；含 Python 与依赖版本的日志见
-`scratchpad/dryrun_log.txt`），没有在本仓库里对真实发布数据跑过；你唯一要换的是把真实文件放到同样的位置。
+下面的命令已于 2026-09-30（UTC）按顺序、原样在真实发布数据上执行过：在一台云端 Linux 机器（32 核，Python 3.10.13）上放一份
+全新的工具包，按第 3 节安装，把从数据页下载的文件链接成第 2 节的目录布局。精简后的日志（Python 与依赖版本、退出码、细胞数与
+基因数、运行时间和内存）见 `scratchpad/realrun_log_2026-10-01.txt`（其中不含分数和表达值）；执行这些命令的脚本是
+`scratchpad/tutorial_realrun.py`。这次执行不包括：上传（第 8 节）和一次真实的 Agent 赛道运行（第 9 节；其测试和锁定步骤执行了）。
+更早在按同样布局摆放的小型合成数据上的执行记录见 `scratchpad/dryrun_log.txt`。
 
 ## 0. 一页看懂比赛
 
@@ -14,7 +17,7 @@
 * 三个任务、五个公开榜（board）：
   * **T1** 单细胞 RNA-seq（32,285 个基因，无坐标）：由早期阶段预测更晚阶段。
   * **T2** 3D MERFISH（500 基因面板，带坐标）：全胚胎设定（插值）和心脏设定（插值榜 + 外推榜）。
-  * **T3** 条件敲除（与 T2 同构，多一个 condition 列）：由训练用敲除和匹配野生型预测一个未见过的敲除。
+  * **T3** 条件敲除（与 T2 同一面板、同样带坐标，多一个基因型列）：由训练用敲除和匹配野生型预测一个未见过的敲除。
 * 两个赛道在同一套隐藏测试集上打分，排名和奖金池分开：**Human Team** 和 **Agent Team**。Agent 赛道多一条要求：
   配置锁定（configuration lock）之后全自主，并用证据证明。
 * 每个赛道奖金：1 x 8K、2 x 5K、3 x 3K 美元；另有旅行奖；以及 Community Contribution Award（每项贡献最多 200 美元，
@@ -39,24 +42,37 @@
 
 ```
 data/
-  panels/                 公开的榜契约副本（index.json + *.genes.txt；本工具包已附带）
-  raw/T1/E8.5_RNA.h5ad    T1 训练（约 571 MB，16,787 个细胞）
-  raw/T1/E9.5_RNA.h5ad    T1 训练（约 590 MB，17,057 个细胞）
-  raw/T2_heart/E8.25_late.h5ad, E8.75.h5ad, E9.5.h5ad     心脏训练阶段（E8.75 与 E9.5 同时是 T3 的野生型参考）
-  raw/T2_embryo/E6.75.h5ad, E7.25.h5ad, E8.0.h5ad          全胚胎训练阶段
-  raw/T3/<Mab21l2 KO at E9.5>.h5ad                          T3 训练用敲除（约 458 MB）
+  panels/                         公开的榜契约副本（index.json + *.genes.txt；本工具包已附带）
+  raw/T1/E8.5_RNA.h5ad            T1 训练：571 MB，16,787 个细胞 x 32,285 个基因
+  raw/T1/E9.5_RNA.h5ad            T1 训练：590 MB，17,057 个细胞 x 32,285 个基因
+  raw/T2_heart/E8.25_late.h5ad    心脏训练 E8.25：225 MB，58,716 个细胞 x 500 个基因
+  raw/T2_heart/E8.75.h5ad         心脏训练 E8.75（也是 T3 在 E8.75 的野生型）：84 MB，24,826 个细胞 x 500
+  raw/T2_heart/E9.5.h5ad          心脏训练 E9.5（也是 T3 在 E9.5 的野生型）：164 MB，53,742 个细胞 x 500
+  raw/T2_embryo/E6.75.h5ad        全胚胎训练：17 MB，7,093 个细胞 x 498 个基因
+  raw/T2_embryo/E7.25.h5ad        全胚胎训练：34 MB，13,295 个细胞 x 498 个基因
+  raw/T2_embryo/E8.0.h5ad         全胚胎训练：118 MB，31,671 个细胞 x 500 个基因
+  raw/T3/E9.5_mab21l2_ko.h5ad     T3 训练用敲除（Mab21l2 敲除 @E9.5）：458 MB，50,294 个细胞 x 500 个基因
 ```
 
-各文件内容：
+`raw/` 下的文件夹名是本工具包的约定；文件名是发布时的名字，只有敲除文件例外：数据页没有写出它的文件名，`E9.5_mab21l2_ko.h5ad`
+是本教程使用的名字，如果你下载到的文件名不同，在第 7 节的命令里换成你的文件名。两个野生型就是心脏文件（数据页列出的大小相同），
+`raw/T3/` 下没有另一份副本。大小和细胞数来自真实数据执行时用的文件（大小与数据页一致）。
 
-* T1：`.X` float32、log1p 归一化、32,285 个基因；`obs["celltype"]`；无坐标。验证目标 E10.5（不公开），测试目标 E12.5
-  （隐藏）。另有 E7.75 文件已发布但任何榜都不使用。
-* T2：`.X` 对数归一化、有限、非负，500 基因面板；`obs["celltype"]`；`obsm["spatial_3D"]` float32 (n, 3)，每个胚胎自己的
-  局部坐标系（阶段之间未配准）。全胚胎设定：训练 E6.75、E7.25、E8.0；验证 E7.5（插值）；测试 E7.75。全胚胎面板是 498 个基因
-  （面板中有两个基因缺失）。心脏设定：训练 E8.25、E8.75、E9.5；验证 E8.5（插值）和 E10.5（外推）；测试 E12.5（外推）。
-  测试阶段所有心脏阶段都成为训练输入。
-* T3：与 T2 同构，多一个 `obs["condition"]`。训练：Mab21l2 敲除 @E9.5。验证：Gata4 敲除 @E8.75（两个重复）。测试：
-  beta-catenin 敲除 @E8.75（两个重复）。野生型参考：E8.75 和 E9.5（与 T2 心脏共用）。
+各文件内容（在发布文件上核对过）：
+
+* T1：`.X` float32、稀疏（CSC）、log1p 归一化，32,285 个基因，顺序与 `T1:val` 面板一致；`obs["celltype"]`；无坐标（`obsm`
+  里只有一个 UMAP）。验证目标 E10.5（不公开），测试目标 E12.5（隐藏）。E7.75 的单细胞文件没有发布：E7.75 是 T2 全胚胎设定的
+  隐藏测试阶段，所以数据页写明它不对任何任务分发。
+* T2：`.X` float32、稀疏（CSC）、对数归一化、有限、非负；`obs["celltype"]`（心脏各阶段和全胚胎 E8.0 另有 `obs["cm_celltype"]`）；
+  `obsm["spatial_3D"]` float32 (n, 3)，每个胚胎自己的局部坐标系（阶段之间未配准），旁边还有一个 `obsm["spatial_2D"]`。全胚胎
+  设定：训练 E6.75、E7.25、E8.0；验证 E7.5（插值）；测试 E7.75。E6.75 和 E7.25 只有 498 个基因（Casp4 和 Pnliprp1 在这两个阶段
+  没有测），E8.0 有全部 500 个，所以全胚胎榜的面板是 498 个基因。心脏设定：训练 E8.25、E8.75、E9.5；验证 E8.5（插值）和 E10.5
+  （外推）；测试 E12.5（外推）。测试阶段所有心脏阶段都成为训练输入。心脏文件和 E8.0 的 500 个基因与心脏榜、T3 榜的面板同序；
+  E6.75 和 E7.25 与全胚胎榜的面板同序。
+* T3：与 T2 同一个 500 基因面板（同序）、同样的 `obsm["spatial_3D"]`。发布的敲除文件里 `.X` 是稠密的，基因型记录在
+  `obs["genotype"]` 里，而不是数据页结构表（那里标着 "tbc"）写的 `obs["condition"]`，另外还有若干字段（样本、玻片、切片……）；
+  工具包两列都不读。训练：Mab21l2 敲除 @E9.5。验证：Gata4 敲除 @E8.75（两个重复）。测试：beta-catenin 敲除 @E8.75（两个重复）。
+  野生型参考：E8.75 和 E9.5（与 T2 心脏共用）。
 
 不要以任何途径获取被保留的阶段或基因型：规则禁止使用这些阶段/基因型的实测数据，包括含有它们的外部数据集（T1：E10.5、E12.5
 以及 E9.5 之后到 E13.5（含）之间的任何外部数据；心脏：E8.25 到 E8.75 窗口以及 E10.5、E12.5；全胚胎：E7.5 到 E7.75；T3：E8.75
@@ -68,10 +84,15 @@ data/
 ```
 git clone <本仓库> vec-community-kit
 cd vec-community-kit
-python -m venv .venv && .venv\Scripts\activate        # Windows；其他系统用 source .venv/bin/activate
+python -m venv .venv && .venv\Scripts\activate        # Windows；Linux/macOS：python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[test]"                               # 工具包本身 + anndata、numpy、scipy、pandas、h5py + pytest
 python -m pytest -q                                    # 合成数据测试，不需要比赛数据
 ```
+
+实际情况（真实数据执行，Linux，Python 3.10.13，pip 需要联网）：安装约 15 秒，解析出 anndata 0.11.4、numpy 2.2.6、scipy 1.15.3、
+pandas 2.3.3、h5py 3.16.0 和 pytest 9.1.1（Python 3.10 拿到的这些包比 3.12 旧一些，两者都能用）。没有 veckit 时测试结果是
+`54 passed, 10 skipped`（跳过的是本地打分测试，以及需要环境里 setuptools 77 或更新版本的 wheel 构建测试）；装上 veckit 后是
+`63 passed, 1 skipped`。以 root 身份运行（很多云容器就是这样）也能通过。
 
 `pip install -e .` 还会安装五个命令，与下文用到的 `python -m` 写法完全相同（`vec-community-check`、`vec-community-baseline`、
 `vec-community-score`、`vec-community-split`、`vec-community-evidence`，见顶层 README）。`pip install -r requirements.txt` 只装依赖，
@@ -82,7 +103,7 @@ python -m pytest -q                                    # 合成数据测试，�
 | 你想做 | 章节 | 需要 |
 |---|---|---|
 | 读懂契约、生成基线文件、校验、上传 | 4、5、6、8 | `pip install -e ".[test]"` 或 `pip install -r requirements.txt`（anndata、numpy、scipy、pandas、h5py；测试用 pytest）。不需要别的。 |
-| 在伪切分上本地打分 | 7 | 另需主办方的打分器 **veckit** 及其依赖（numpy、scipy、anndata、scikit-learn）。从主办方处获取：`pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"`，或把 https://github.com/aristoteleo/veckit 克隆到任意目录并用 `VECKIT_PATH` 指向它（Windows：`set VECKIT_PATH=C:\path\to\veckit`；其他系统：`export VECKIT_PATH=/path/to/veckit`）。检查：`python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"`。本工具包在 veckit 0.1.1 上测试过。 |
+| 在伪切分上本地打分 | 7 | 另需主办方的打分器 **veckit** 及其依赖（numpy、scipy、anndata、scikit-learn）。从主办方处获取：`pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"`，或把 https://github.com/aristoteleo/veckit 克隆到任意目录并用 `VECKIT_PATH` 指向它（Windows：`set VECKIT_PATH=C:\path\to\veckit`；其他系统：`export VECKIT_PATH=/path/to/veckit`）。检查：`python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"` 打印 `True` 和一个字典；装的是测试过的那个提交（不计换行符差异）时，其中 `'version': '0.1.1'`、`'matches_tested': True`。本工具包在 veckit 0.1.1 上测试过。`pip` 这条路需要 `git`，在 Python 3.10 上会顺带装上 scikit-learn 1.7.2。 |
 | 真正运行 Agent 赛道骨架 | 9 | 另需安装并登录 Claude Code CLI（`claude --version` 能打印版本；无头命令 `claude -p "say ok" --max-turns 1` 能返回结果）。干跑 `python -m pytest tests/test_evidence.py -q` 既不需要 CLI 也不需要 API key。 |
 
 没有 veckit 时，打分器相关测试会被跳过，其余一切照常工作。
@@ -122,19 +143,20 @@ python -m pytest -q                                    # 合成数据测试，�
 落在这个值**附近**，而不是正好等于它。它仍然是最合适的第一次上传：用一个已知的参考点把整条流水线跑通。（`pseudobulk_shift`
 是第三个基线，不是地板行：每个细胞按自己细胞类型在两个阶段之间的均值变化平移。）
 
-`--n-cells` **必填**：一个在该榜细胞数范围内的整数，或 `all`（写入输入的全部细胞）。已发布的阶段在五个榜中的四个上都超过
-上限，`all` 会报错并告诉你范围；请给数字。每条命令旁边写着该榜的范围（来自 `data/panels/index.json`）。
+`--n-cells` **必填**：一个在该榜细胞数范围内的整数，或 `all`（写入输入的全部细胞）。下面用到的每个已发布阶段的细胞数都超过
+所在榜的 `max_cells`，所以 `all` 会报错并告诉你范围（真实数据执行时五个都核对过）；请给数字（第 4 节第 3 条）。每条命令旁边
+写着该榜的范围（来自 `data/panels/index.json`）。
 
 ```
 # T1:val：1000-5118 个细胞。E9.5_RNA 有 17,057 个细胞，`all` 会报错；5000 在范围内。
 python -m vec_community_baselines.make_baseline --method copy_last   --board T1:val               --last data/raw/T1/E9.5_RNA.h5ad          --out out/t1_copy_last.h5ad --n-cells 5000
-# T2:embryo:val_interp：583-5000 个细胞（5000 是上限）。
+# T2:embryo:val_interp：583-5000 个细胞（5000 是上限）。E8.0 有 31,671 个细胞，`all` 会报错。
 python -m vec_community_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad       --out out/embryo_copy_last.h5ad --n-cells 5000
-# T2:heart:val_interp：1000-17616 个细胞。E8.25_late 约有 59,000 个细胞（index.json 的 ref_cells x 10），`all` 会报错。
+# T2:heart:val_interp：1000-17616 个细胞。E8.25_late 有 58,716 个细胞，`all` 会报错。
 python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_interp  --last data/raw/T2_heart/E8.25_late.h5ad  --out out/heart_interp_copy_last.h5ad --n-cells 5000
-# T2:heart:val_extrap：1000-25179 个细胞。E9.5 约有 54,000 个细胞，`all` 会报错。
+# T2:heart:val_extrap：1000-25179 个细胞。E9.5 有 53,742 个细胞，`all` 会报错。
 python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last data/raw/T2_heart/E9.5.h5ad        --out out/heart_extrap_copy_last.h5ad --n-cells 5000
-# T3:gata4：1000-7449 个细胞。E8.75 约有 25,000 个细胞，`all` 会报错。
+# T3:gata4：1000-7449 个细胞。E8.75 有 24,826 个细胞，`all` 会报错。
 python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4             --wt   data/raw/T2_heart/E8.75.h5ad       --out out/t3_wt_identity.h5ad --n-cells 5000
 ```
 
@@ -142,13 +164,16 @@ python -m vec_community_baselines.make_baseline --method wt_identity --board T3:
 
 * `--n-cells N` 恰好写 N 个细胞，不放回抽取（固定种子，`--seed`）；N 必须在该榜范围内（超过 `max_cells` 直接拒绝，绝不
   悄悄截断）。`--n-cells all` 写入输入的全部细胞，超过 `max_cells` 时报错并给出范围（见第 4 节第 3 条）。若输入的细胞数少于 N（但不少于
-  `min_cells`），则全部写入并打印一条 NOTE。上面的阶段规模：E9.5_RNA 的 17,057 来自数据页；心脏各阶段取 `index.json` 中
-  `ref_cells` 的十倍（打分器的 10% 参考抽样），所以是"约"。
-* 全胚胎榜可以直接喂 500 基因的心脏同构文件，写入器按基因名映射成 498 基因面板。
+  `min_cells`），则全部写入并打印一条 NOTE。注释里的阶段规模是发布文件的细胞数（第 2 节）。
+* 全胚胎榜可以直接喂 500 基因的文件（例如发布的 E8.0），写入器按基因名映射成 498 基因面板。
 * 哪个阶段算 "last" 由你决定；插值榜通常取目标之前紧邻的阶段，外推榜取最晚发布的阶段。
 * CLI 会打印写出文件的本地契约校验结论，只有通过时退出码才是 0，例如
-  `[PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 X=dense[float32] min=0.0 max=10.2 size=10.1MB`，
+  `[PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 X=dense[float32] min=0.0 max=... size=10.3MB`，
   随后一行 `PASS = local format checks passed; ...`（只是格式检查通过，不代表归一化正确、数据来源合规或参赛资格）。
+* 在真实文件上的表现：上面每条命令在那台机器上都不到 5 秒。T1 那条会把 590 MB 的整个阶段读进来，内存峰值约 1.9 GB，其余都
+  低于 0.5 GB。T1 文件按稀疏格式写出，5,000 个细胞约 160 MB；T2/T3 文件是稠密的，约 10 MB。
+* 在发布的心脏阶段上，各阶段的细胞类型标签并不一致（数据页说注释词表尚未统一），所以 `pseudobulk_shift` 只平移那些在更早阶段
+  也存在的类型的细胞，并打印一条 WARNING 列出其余类型（`--celltype-key` 可以换用另一列 `obs`）。
 
 在 Python 里：
 
@@ -177,20 +202,25 @@ python -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --json out/t1_ch
 [PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500
   PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
   sha256: <64 hex characters: keep it with the file you upload>
-  X_format: dense[float32]  X_min: 0.0  X_max: 12.1656  spatial_3D_rms_radius: 84.589  ...
+  size_mb: 10.3  X_format: dense[float32]  X_min: 0.0  X_max: ...  spatial_3D_rms_radius: ...
 ```
 
-退出码 0 = 通过，1 = 不通过，2 = 用法错误（未知的榜或文件不存在）。这是一组对照已公布契约的本地上传前检查，不是对门户
-全部规则的复刻：门户自己的校验器说了算，但在这里不通过的文件到了门户同样不通过，所以先在本地查能省掉不必要的"上传-排错"
-往返。最常见的失败：基因顺序不一致（`reorder with the panel file`）、`n_obs` 超出榜的范围、负值或 NaN（每个榜都拒绝负值）、
+在真实文件上每次检查约 1 秒、内存低于 0.5 GB；`vec-community-check`（第 3 节）给出同样的报告。把心脏文件拿去对全胚胎榜检查
+会失败，报 `n_vars=500 but board expects 498` 并列出多出来的两个基因。
+
+退出码 0 = 通过，1 = 不通过，2 = 用法错误（未知的榜或文件不存在）。这是一组对照已公布契约的本地格式检查；每条规则在
+`vec_submit_check/README.md` 里标明是 portal / stricter / advisory。门户自己的校验器说了算，主办方的 starter kit（`score_h5ad.py`）
+也能在本地校验；在这里违反 portal 规则的文件到了门户同样会被拒。PASS 不说明归一化是否正确、细胞从哪里来、是否符合参赛规则。
+最常见的失败：基因顺序不一致（`reorder with the panel file`）、`n_obs` 超出榜的范围、负值或 NaN（每个榜都拒绝负值）、
 缺少 `obsm["spatial_3D"]`、超过文件大小上限。关于 `obs["celltype"]` 的警告无害；`.X max looks like raw counts` 的警告说明
 你的矩阵没有做对数归一化。
 
 ## 7. 在伪验证切分上本地打分
 
-你无法对隐藏目标打分，但可以留出一个已发布阶段，用更早的阶段预测它，再用主办方的打分器算分。`vec_local_score` 为此封装了
-veckit，遵循 veckit 打分器截至 0.1.1 版的流程：每个阶段抽样 10%、对半天花板、地板行、skill 尺度（外加评测页公布的任务权重）。
-主办方门户上的打分器才是最终依据，这层封装可能滞后于它。
+你无法对隐藏目标打分，但可以留出一个已发布阶段，用更早的阶段预测它（绝不能用留出的阶段本身），再用主办方的打分器算分。
+结果比较的是你的方法在这个切分上的表现，不预测它们在隐藏目标上的名次。`vec_local_score` 为此封装了 veckit，遵循 veckit
+打分器截至 0.1.1 版的流程：每个阶段抽样 10%、对半天花板、地板行、skill 尺度（外加评测页公布的任务权重）；默认还把参考阶段
+限制在 4,000 个细胞以内（见下面的"实际情况"）。主办方门户上的打分器才是最终依据，这层封装可能滞后于它。
 
 前置条件：veckit（第 3 节）。检查：
 `python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"`。
@@ -209,14 +239,44 @@ python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad 
 第二条（`--single-seed`，可加 `--seed N`）输出单个种子的完整指标表。之所以默认给区间，是因为主办方在对本工具包的评审中说，
 抽样种子将随每次提交而定；只看一个本地种子，就看不出分数随抽样变动多少。
 
-T1：留出 E9.5_RNA、用 E8.5_RNA 预测它 —— 预测用 `--last data/raw/T1/E8.5_RNA.h5ad` 构造，打分用
-`--task T1 --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad`。T3：留出训练用敲除 ——
-`--task T3 --target <Mab21l2 敲除> --wt <同阶段（E9.5）匹配野生型>`，预测用野生型构造。
+其他榜同样的做法，各举一个切分（T1：留出 E9.5_RNA，用 E8.5_RNA 预测；T3：留出训练用敲除，用同阶段的野生型作 `--wt`；全胚胎：
+留出 E7.25，以 E6.75 为参考；心脏外推：留出 E9.5，以 E8.75 为参考）。这里每个预测都是从参考阶段构造的地板模型，只用来演示
+流程；换成你自己方法的文件：
+
+```
+python -m vec_community_baselines.make_baseline --method copy_last --board T1:val --last data/raw/T1/E8.5_RNA.h5ad --out out/t1_pseudo_pred.h5ad --n-cells 5000
+python -m vec_local_score --task T1 --pred out/t1_pseudo_pred.h5ad --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad
+python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4 --wt data/raw/T2_heart/E9.5.h5ad --out out/t3_pseudo_pred.h5ad --n-cells 5000
+python -m vec_local_score --task T3 --pred out/t3_pseudo_pred.h5ad --target data/raw/T3/E9.5_mab21l2_ko.h5ad --wt data/raw/T2_heart/E9.5.h5ad
+python -m vec_community_baselines.make_baseline --method copy_last --board T2:embryo:val_interp --last data/raw/T2_embryo/E6.75.h5ad --out out/embryo_pseudo_pred.h5ad --n-cells 5000
+python -m vec_local_score --task T2 --setting embryo --pred out/embryo_pseudo_pred.h5ad --target data/raw/T2_embryo/E7.25.h5ad --reference data/raw/T2_embryo/E6.75.h5ad
+python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_extrap --last data/raw/T2_heart/E8.75.h5ad --out out/heart_extrap_pseudo_pred.h5ad --n-cells 5000
+python -m vec_local_score --task T2 --setting heart --pred out/heart_extrap_pseudo_pred.h5ad --target data/raw/T2_heart/E9.5.h5ad --reference data/raw/T2_heart/E8.75.h5ad
+```
+
+这些只是例子，不是推荐：任何已发布阶段都可以留出，只要预测从不使用它。伪预测的 `--board` 只决定文件的基因面板和细胞数范围。
+
+在真实文件上的实际情况（上面那台机器，五个种子，`OMP_NUM_THREADS=4`）：
+
+| 切分 | cells pred/A/B/ref（表头一行） | 时间 | 内存峰值 |
+|---|---|---|---|
+| T1，用 E8.5_RNA 预测 E9.5_RNA | 5000/853/853/1679 | 约 2 分钟 | 约 6 GB |
+| T2 心脏，用 E8.25_late 预测 E8.75 | 5000/1241/1242/4000 | 约 25 秒 | 约 1 GB |
+| T2 心脏，用 E8.75 预测 E9.5 | 5000/2687/2687/2483 | 约 35 秒 | 约 1 GB |
+| T2 全胚胎，用 E6.75 预测 E7.25 | 5000/665/665/709 | 约 15 秒 | 约 0.6 GB |
+| T3，用野生型 E9.5 预测 Mab21l2 敲除 | 5000/2514/2515/4000 | 约 40 秒 | 约 1.5 GB |
+
+`--single-seed` 大约是它的四分之一。T1 切分内存用得最多：两个全转录组阶段都要整个读进来，被打分的细胞要在 32,285 个基因上
+稠密化。ref 一列体现了封装的上限：`--max-cells`（默认 4,000）在 10% 抽样之后再限制参考阶段，在真实文件上对 E8.25_late（10%
+为 5,872 个细胞）和心脏 E9.5（5,374 个）起作用；想保留完整的 10% 样本（与 `index.json` 里主办方的 `ref_cells` 一致），加
+`--max-cells 6000`。veckit 的细胞类型探针向 joblib 要全部核心（`n_jobs=-1`）；scikit-learn 1.7（Python 3.10 装到的版本）会因此
+每个核心起一个工作进程，所以在共用的机器上打分前设 `LOKY_MAX_CPU_COUNT=4`（或你可以用的核心数）。
 
 怎么读：每个阶段抽样 10%，目标一分为二；地板（原样重提参考阶段）定义 skill 尺度上的 50，天花板（目标的另一半）定义 100；
 你的预测得到每个指标的 skill（用 veckit 自己的 `skill()`）和一个任务分。两个"目标值为 0"的指标（`scale_log_ratio`、
 `severity_slope`）标有 `*`：它们的 skill 按绝对值计算（过冲和不足同样计）。你重抽样得到的 `copy_last` 文件会落在 50
-**附近**，而不是正好 50 —— 封装里的地板行是参考阶段的 10% 抽样，你的文件是同一批细胞的另一次抽样；偏离 50 几分是正常的。
+**附近**，而不是正好 50 —— 封装里的地板行是参考阶段的 10% 抽样，你的文件是同一批细胞的另一次抽样；偏离 50 几分是正常的
+（真实数据执行时，上面五个地板模型预测的五种子均值都在 50 的 5 分以内）。
 本地分数**不是**真实分数的预告；它只是在同一切分、同一组种子上给你自己的方法排序。每一列的含义见
 `docs/metrics_overview.md`；封装到底实现了哪些约定，见 `vec_local_score/README.md`。
 
@@ -232,13 +292,13 @@ python -m vec_local_score --task T2 --setting heart --pred out/pseudo_pred.h5ad 
 E8.75。看 B - A 的最小..最大：整段在 0 的同一侧，说明在这个切分的每个种子上都是同一个文件领先；跨过 0，说明各种子意见不一，
 这个差异不算结果。两个区间可以重叠而配对差值始终同号：在试运行的合成数据上，一个替身 B（把 `copy_last` 文件的坐标放大到目标
 的尺寸）的区间是 52.49..61.32，A 是 48.86..56.96，而 B - A 在全部五个种子上是 +3.63..+4.38。无论哪种情况，这都只是这个伪切分
-上的比较，不预测隐藏目标上的名次。
+上的比较，不预测隐藏目标上的名次。在真实文件上配对命令约 30 秒、1 GB（真实数据日志只记录它跑通了，不记录数值）。
 
 10 月 20 日起验证阶段连同答案一起发布（第 11 节），届时可以用真实的留出阶段代替训练阶段作为 `--target`——例如把发布的 T2 心脏
 E10.5 作为 `--target`、E9.5 作为 `--reference`，预测只用更早的阶段构造。这仍然是工具包的本地流程，不是主办方的分数。
 
-`python -m vec_local_score.make_pseudo_split` 是可选工具：把一个固定切分导出成文件，供检查或直接调用 veckit 命令行。它的
-输出不是 `vec_local_score` 的输入（封装会拒绝它们，否则会抽样两次）。
+`python -m vec_local_score.make_pseudo_split` 是可选工具：把一个固定切分导出成文件，供检查或直接调用 veckit 命令行（它只做
+10% 抽样，不加参考阶段上限）。它的输出不是 `vec_local_score` 的输入（封装会拒绝它们，否则会抽样两次）。
 
 ## 8. 上传
 
@@ -282,7 +342,9 @@ python -m vec_agent_evidence run --task T3 --prompt my_prompt.md --model <完整
 python -m vec_agent_evidence package --run-dir runs/<run_id>
 ```
 
-（同样的参数换成 `python -m vec_agent_evidence lock ...` 只冻结运行目录并打印将要执行的启动命令，不启动任何东西，适合先检查。）
+（同样的参数换成 `python -m vec_agent_evidence lock ...` 只冻结运行目录并打印将要执行的启动命令，不启动任何东西，适合先检查。
+真实数据执行时，`lock` 加 `--data-root ./data` 在几秒内算完了九个发布 `.h5ad` 文件的哈希；PATH 上没有 `claude` 时，它把可执行
+文件记为缺失，照样打印命令。`run` 和 `package` 两步不在那次执行范围内。）
 
 你会得到（全部哈希记录在 `config.lock.json`，并在 `run_manifest.json` 里复核）：
 
@@ -301,7 +363,8 @@ python -m vec_agent_evidence package --run-dir runs/<run_id>
 requests/urllib 一行程序、任何 URL……）、读取 CLI 配置目录、引用其他运行目录、绕过 `tools/finalize_submission.py` 直接写
 `submission/`（该工具会校验、哈希并登记每个定稿文件）、修改只读的工具和数据、以及杀进程命令；审计 hook 记录每一次工具调用。
 它们是作用在工具输入上的正则 hook，不是网络沙箱：运行后的核验靠的是审计日志、轨迹以及锁定时和运行后记录的哈希。agent 在
-它的工作区里拥有与你相同的校验器、基线生成器和本地打分器（只读副本）。
+它的工作区里拥有与你相同的校验器、基线生成器和本地打分器（只读副本）。这里的只读指文件权限，挡不住以 root 身份运行的进程
+（很多云容器就是这样）；如果你在意，就用普通用户运行 agent。守卫 hook 和记录下来的哈希在两种情况下都起作用。
 
 人可以做和不可以做的事：锁定前，随意；锁定到 `run_manifest.json` 出现之间，什么都不做（不要打开这次运行的流、工作区或
 公开排名）；之后，读 manifest 和 NOTES.md，决定上传哪一次已完成的运行，原样上传文件和 zip，把学到的东西写进下一版提示词

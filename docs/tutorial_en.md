@@ -6,10 +6,13 @@ the tools in this kit. Every fact about the challenge below comes from the offic
 validator, baseline generators with a submission writer, a local scoring wrapper around the organisers' scorer,
 and an evidence skeleton for the Agent track. It contains no modelling advice.
 
-The commands below were executed against small synthetic stages laid out like the data directory of section 2
-(first on 2026-09-05, re-run on 2026-09-30 after the organiser-feedback revision; the log, with the Python and
-package versions, is `scratchpad/dryrun_log.txt`); they have not been run against the real release inside this
-repository. The only thing you change is having the real files there.
+The commands below were executed, in order and as written, against the real release on 2026-09-30 (UTC): a fresh
+copy of the kit on a cloud Linux runner (32 cores, Python 3.10.13), installed as section 3 says, with the files
+downloaded from the Data page linked into the layout of section 2. The trimmed log, with the Python and package
+versions, exit codes, cell and gene counts, run times and memory, is `scratchpad/realrun_log_2026-10-01.txt`
+(scores and expression values are left out of it); `scratchpad/tutorial_realrun.py` is the script that ran them.
+Not part of that pass: the upload (section 8) and a live Agent-track run (section 9; its tests and the lock step
+were run). Earlier runs on small synthetic stages laid out the same way are in `scratchpad/dryrun_log.txt`.
 
 ## 0. The challenge in one page
 
@@ -19,8 +22,8 @@ repository. The only thing you change is having the real files there.
   * **T1** single-cell RNA-seq (32,285 genes, no coordinates): predict a later stage from earlier stages.
   * **T2** 3D MERFISH (500-gene panel, coordinates): a whole-embryo setting (interpolation) and a heart setting
     (interpolation and extrapolation boards).
-  * **T3** conditional knockouts (same schema as T2 plus a condition): predict an unseen knockout from a training
-    knockout and the matched wild types.
+  * **T3** conditional knockouts (same panel and coordinates as T2, plus a genotype column): predict an unseen
+    knockout from a training knockout and the matched wild types.
 * Two tracks scored on the same hidden tests with separate rankings and prize pools: **Human Team** and
   **Agent Team**. The Agent track adds one requirement: autonomy after a configuration lock, proven by evidence.
 * Prizes per track: 1 x 8K, 2 x 5K, 3 x 3K USD. Travel awards. A Community Contribution Award (up to 200 USD per
@@ -51,26 +54,43 @@ under one data root, for example:
 
 ```
 data/
-  panels/                 copies of the public board contracts (index.json + *.genes.txt; shipped with this kit)
-  raw/T1/E8.5_RNA.h5ad    T1 training (about 571 MB, 16,787 cells)
-  raw/T1/E9.5_RNA.h5ad    T1 training (about 590 MB, 17,057 cells)
-  raw/T2_heart/E8.25_late.h5ad, E8.75.h5ad, E9.5.h5ad     heart training stages (E8.75 and E9.5 double as T3 wild types)
-  raw/T2_embryo/E6.75.h5ad, E7.25.h5ad, E8.0.h5ad          embryo training stages
-  raw/T3/<Mab21l2 KO at E9.5>.h5ad                          T3 training knockout (about 458 MB)
+  panels/                         copies of the public board contracts (index.json + *.genes.txt; shipped with this kit)
+  raw/T1/E8.5_RNA.h5ad            T1 training: 571 MB, 16,787 cells x 32,285 genes
+  raw/T1/E9.5_RNA.h5ad            T1 training: 590 MB, 17,057 cells x 32,285 genes
+  raw/T2_heart/E8.25_late.h5ad    heart training E8.25: 225 MB, 58,716 cells x 500 genes
+  raw/T2_heart/E8.75.h5ad         heart training E8.75 (also the T3 wild type at E8.75): 84 MB, 24,826 cells x 500
+  raw/T2_heart/E9.5.h5ad          heart training E9.5 (also the T3 wild type at E9.5): 164 MB, 53,742 cells x 500
+  raw/T2_embryo/E6.75.h5ad        embryo training: 17 MB, 7,093 cells x 498 genes
+  raw/T2_embryo/E7.25.h5ad        embryo training: 34 MB, 13,295 cells x 498 genes
+  raw/T2_embryo/E8.0.h5ad         embryo training: 118 MB, 31,671 cells x 500 genes
+  raw/T3/E9.5_mab21l2_ko.h5ad     T3 training knockout (Mab21l2 KO at E9.5): 458 MB, 50,294 cells x 500 genes
 ```
 
-What each file holds:
+The folder names under `raw/` are this kit's convention; the file names are the released ones, except that the
+Data page does not print the knockout's file name: `E9.5_mab21l2_ko.h5ad` is the name used in this tutorial, so if
+your download is named differently, use your name in the section 7 commands. The two wild types are the heart files
+(the Data page lists the same sizes); there is no separate copy under `raw/T3/`. Sizes and counts are those of the
+files used in the real-release pass (the sizes match the Data page).
 
-* T1: `.X` float32, log1p-normalised, 32,285 genes; `obs["celltype"]`; no coordinates. Validation target is E10.5
-  (withheld), test target E12.5 (hidden). An E7.75 file is released but not used by any board.
-* T2: `.X` log-normalised, finite, non-negative over the 500-gene panel; `obs["celltype"]`; `obsm["spatial_3D"]`
-  float32 (n, 3) in a per-embryo local frame (not registered across stages). Embryo setting: train E6.75, E7.25,
-  E8.0; validation E7.5 (interpolation); test E7.75. The embryo panel has 498 genes (two panel genes are absent).
-  Heart setting: train E8.25, E8.75, E9.5; validation E8.5 (interpolation) and E10.5 (extrapolation); test E12.5
-  (extrapolation). In the test phase every heart stage becomes training input.
-* T3: same schema as T2 plus `obs["condition"]`. Train: Mab21l2 knockout at E9.5. Validation: Gata4 knockout at
-  E8.75 (two replicates). Test: beta-catenin knockout at E8.75 (two replicates). Reference wild types: E8.75 and
-  E9.5 (shared with T2 heart).
+What each file holds (checked on the released files):
+
+* T1: `.X` float32, sparse (CSC), log1p-normalised, 32,285 genes in the order of the `T1:val` panel;
+  `obs["celltype"]`; no coordinates (`obsm` holds only a UMAP). Validation target is E10.5 (withheld), test target
+  E12.5 (hidden). No E7.75 single-cell file is released: E7.75 is the hidden test stage of the T2 embryo setting, so
+  the Data page lists it as not distributed for any task.
+* T2: `.X` float32, sparse (CSC), log-normalised, finite, non-negative; `obs["celltype"]` (the heart stages and
+  embryo E8.0 also carry `obs["cm_celltype"]`); `obsm["spatial_3D"]` float32 (n, 3) in a per-embryo local frame
+  (not registered across stages), next to an `obsm["spatial_2D"]`. Embryo setting: train E6.75, E7.25, E8.0;
+  validation E7.5 (interpolation); test E7.75. E6.75 and E7.25 carry 498 genes (Casp4 and Pnliprp1 were not
+  measured there), E8.0 carries all 500, so the embryo board's panel has 498 genes. Heart setting: train E8.25,
+  E8.75, E9.5; validation E8.5 (interpolation) and E10.5 (extrapolation); test E12.5 (extrapolation). In the test
+  phase every heart stage becomes training input. The heart files and E8.0 have their 500 genes in the order of the
+  heart and T3 panels; E6.75 and E7.25 are in the order of the embryo panel.
+* T3: the same 500-gene panel (same order) and `obsm["spatial_3D"]` as T2. The released knockout file stores `.X`
+  dense and records the genotype in `obs["genotype"]`, not in the `obs["condition"]` of the Data page's schema table
+  (marked "tbc" there), together with further fields (sample, slide, section, ...); the kit reads neither column.
+  Train: Mab21l2 knockout at E9.5. Validation: Gata4 knockout at E8.75 (two replicates). Test: beta-catenin
+  knockout at E8.75 (two replicates). Reference wild types: E8.75 and E9.5 (shared with T2 heart).
 
 Never try to obtain the withheld stages or genotypes by any route: the rules forbid measured data from held-out
 stages and genotypes, including external datasets that contain them (T1: E10.5, E12.5 and any external data after
@@ -84,10 +104,16 @@ the method summary; an undisclosed external source is a violation regardless of 
 ```
 git clone <this repository> vec-community-kit
 cd vec-community-kit
-python -m venv .venv && .venv\Scripts\activate        # Windows; use source .venv/bin/activate elsewhere
+python -m venv .venv && .venv\Scripts\activate        # Windows; Linux/macOS: python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[test]"                               # the kit + anndata, numpy, scipy, pandas, h5py + pytest
 python -m pytest -q                                    # synthetic tests, no challenge data needed
 ```
+
+What to expect (real-release pass, Linux, Python 3.10.13, internet access for pip): the install takes about 15 s
+and resolves anndata 0.11.4, numpy 2.2.6, scipy 1.15.3, pandas 2.3.3, h5py 3.16.0 and pytest 9.1.1 (Python 3.10
+gets older releases of these than 3.12 does; both work). Without veckit the tests end with `54 passed, 10 skipped`
+(the local-scoring tests, plus the wheel build, which needs setuptools 77 or newer in the environment); with veckit
+installed, `63 passed, 1 skipped`. They also pass when run as root, as in many cloud containers.
 
 `pip install -e .` also installs five commands that are the same as the `python -m` forms used below
 (`vec-community-check`, `vec-community-baseline`, `vec-community-score`, `vec-community-split`,
@@ -99,7 +125,7 @@ Prerequisites by section (Python 3.10 or newer throughout):
 | you want to | sections | you need |
 |---|---|---|
 | understand the contracts, build baseline files, validate, upload | 4, 5, 6, 8 | `pip install -e ".[test]"` or `pip install -r requirements.txt` (anndata, numpy, scipy, pandas, h5py; pytest for the tests). Nothing else. |
-| score locally on a pseudo split | 7 | additionally the organisers' scorer **veckit** and its dependencies (numpy, scipy, anndata, scikit-learn). Obtain it from the organisers: `pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"`, or `git clone https://github.com/aristoteleo/veckit` anywhere and point `VECKIT_PATH` at the clone (`set VECKIT_PATH=C:\path\to\veckit` on Windows, `export VECKIT_PATH=/path/to/veckit` elsewhere). Check: `python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"`. The kit was tested against veckit 0.1.1. |
+| score locally on a pseudo split | 7 | additionally the organisers' scorer **veckit** and its dependencies (numpy, scipy, anndata, scikit-learn). Obtain it from the organisers: `pip install "git+https://github.com/aristoteleo/veckit.git@46d41e63f42a9aab815db20b742feeccd249cb17"`, or `git clone https://github.com/aristoteleo/veckit` anywhere and point `VECKIT_PATH` at the clone (`set VECKIT_PATH=C:\path\to\veckit` on Windows, `export VECKIT_PATH=/path/to/veckit` elsewhere). Check: `python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"` prints `True` and a dict with `'version': '0.1.1'` and `'matches_tested': True` when the installed files are those of the tested commit (line endings aside). The kit was tested against veckit 0.1.1. The `pip` route needs `git` and pulled in scikit-learn 1.7.2 on Python 3.10. |
 | run the Agent-track skeleton for real | 9 | additionally the Claude Code CLI installed and logged in (`claude --version` prints a version; a headless `claude -p "say ok" --max-turns 1` returns a result). The dry run `python -m pytest tests/test_evidence.py -q` needs neither the CLI nor an API key. |
 
 Without veckit the scorer tests are skipped and everything else works.
@@ -150,20 +176,20 @@ known reference point. (`pseudobulk_shift` is a third, non-floor baseline: each 
 mean change between two stages.)
 
 `--n-cells` is **required**: an integer inside the board's cell bounds, or `all` for every cell of the input.
-The released stages hold more cells than four of the five boards' `max_cells`, so `all` would stop with an error
-that states the bound; pass a number (section 4 rule 3). The bound is written next to each command (from
-`data/panels/index.json`).
+Every released stage used below holds more cells than its board's `max_cells`, so `all` stops with an error that
+states the bound (checked on all five in the real-release pass); pass a number (section 4 rule 3). The bound is
+written next to each command (from `data/panels/index.json`).
 
 ```
 # T1:val: 1000-5118 cells. E9.5_RNA has 17,057 cells, so `all` would error; 5000 fits.
 python -m vec_community_baselines.make_baseline --method copy_last   --board T1:val               --last data/raw/T1/E9.5_RNA.h5ad          --out out/t1_copy_last.h5ad --n-cells 5000
-# T2:embryo:val_interp: 583-5000 cells (5000 is the maximum).
+# T2:embryo:val_interp: 583-5000 cells (5000 is the maximum). E8.0 has 31,671 cells, so `all` would error.
 python -m vec_community_baselines.make_baseline --method copy_last   --board T2:embryo:val_interp --last data/raw/T2_embryo/E8.0.h5ad       --out out/embryo_copy_last.h5ad --n-cells 5000
-# T2:heart:val_interp: 1000-17616 cells. E8.25_late has roughly 59,000 cells (index.json ref_cells x 10), so `all` would error.
+# T2:heart:val_interp: 1000-17616 cells. E8.25_late has 58,716 cells, so `all` would error.
 python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_interp  --last data/raw/T2_heart/E8.25_late.h5ad  --out out/heart_interp_copy_last.h5ad --n-cells 5000
-# T2:heart:val_extrap: 1000-25179 cells. E9.5 has roughly 54,000 cells, so `all` would error.
+# T2:heart:val_extrap: 1000-25179 cells. E9.5 has 53,742 cells, so `all` would error.
 python -m vec_community_baselines.make_baseline --method copy_last   --board T2:heart:val_extrap  --last data/raw/T2_heart/E9.5.h5ad        --out out/heart_extrap_copy_last.h5ad --n-cells 5000
-# T3:gata4: 1000-7449 cells. E8.75 has roughly 25,000 cells, so `all` would error.
+# T3:gata4: 1000-7449 cells. E8.75 has 24,826 cells, so `all` would error.
 python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4             --wt   data/raw/T2_heart/E8.75.h5ad       --out out/t3_wt_identity.h5ad --n-cells 5000
 ```
 
@@ -172,16 +198,22 @@ Notes:
 * `--n-cells N` writes exactly N cells drawn without replacement (seeded, `--seed`); N must lie inside the board's
   bounds (a value above `max_cells` is refused, never clamped). `--n-cells all` writes every cell of the input and
   errors, stating the bound, when that exceeds `max_cells`. If the input has fewer cells than N (but at least
-  `min_cells`) every cell is written and the CLI prints a NOTE. The stage sizes above are 17,057 for E9.5_RNA (data
-  page) and, for the heart stages, ten times `index.json`'s `ref_cells` (the scorer's 10 % reference), so "roughly".
-* The embryo board takes a 500-gene heart-schema file and writes the 498-gene panel automatically (columns are
-  mapped by gene name).
+  `min_cells`) every cell is written and the CLI prints a NOTE. The stage sizes in the comments are the cell counts
+  of the released files (section 2).
+* The embryo board takes a 500-gene file, such as the released E8.0, and writes the 498-gene panel automatically
+  (columns are mapped by gene name).
 * Which stage is "last" is your choice; for an interpolation board it is usually the stage right before the
   target, for an extrapolation board the latest released stage.
 * The CLI prints the local contract verdict for the written file and exits 0 only when it passes, e.g.
-  `[PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 X=dense[float32] min=0.0 max=10.2 size=10.1MB`
+  `[PASS] out/t3_wt_identity.h5ad @ T3:gata4  n_obs=5000 n_vars=500 X=dense[float32] min=0.0 max=... size=10.3MB`
   followed by `PASS = local format checks passed; it does not confirm log-normalisation, data provenance or
   eligibility`.
+* What to expect on the real files: each command above finished in under 5 s on the runner. The T1 command reads
+  the whole 590 MB stage and peaked at about 1.9 GB of memory, the others below 0.5 GB. The T1 file is written
+  sparse, about 160 MB for 5,000 cells; the T2/T3 files are dense, about 10 MB.
+* On the released heart stages the cell-type labels are not the same from stage to stage (the Data page says the
+  annotation vocabulary is not harmonised), so `pseudobulk_shift` shifts only the cells whose type also exists in
+  the earlier stage and prints a WARNING that names the others (`--celltype-key` selects another `obs` column).
 
 From Python:
 
@@ -212,8 +244,12 @@ python -m vec_submit_check --board T1:val out/t1_copy_last.h5ad --json out/t1_ch
 [PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500
   PASS = local format checks passed; it does not confirm log-normalisation, data provenance or eligibility
   sha256: <64 hex characters: keep it with the file you upload>
-  X_format: dense[float32]  X_min: 0.0  X_max: 12.1656  spatial_3D_rms_radius: 84.589  ...
+  size_mb: 10.3  X_format: dense[float32]  X_min: 0.0  X_max: ...  spatial_3D_rms_radius: ...
 ```
+
+On the real files each check took about a second and under 0.5 GB of memory; `vec-community-check` (section 3)
+gives the same report. A heart file checked against the embryo board fails with `n_vars=500 but board expects 498`
+and names the two extra genes.
 
 Exit code 0 = passes, 1 = fails, 2 = usage error (unknown board or missing file). These are local format checks
 against the published contracts; each rule is labelled portal / stricter / advisory in `vec_submit_check/README.md`.
@@ -230,8 +266,8 @@ You cannot score against the hidden target, but you can hold out a released stag
 ones (never from the held-out stage itself), and run the organisers' scorer on that. The result compares your
 methods on that split; it does not predict their order on the hidden target. `vec_local_score` wraps veckit for this and follows the veckit
 scorer's protocol as of veckit 0.1.1: 10 % subsample of every stage, split-half ceiling, floor row, skill scale
-(plus the task weights published on the evaluation pages). The organisers' portal scorer is the source of truth
-and the wrapper may lag it.
+(plus the task weights published on the evaluation pages); by default it also caps the reference at 4,000 cells
+(see "What to expect" below). The organisers' portal scorer is the source of truth and the wrapper may lag it.
 
 Prerequisite: veckit (section 3). Check with
 `python -c "from vec_local_score import veckit_available, veckit_info; print(veckit_available(), veckit_info())"`.
@@ -254,10 +290,42 @@ seeds 0-4 as mean, sd and min..max, with a per-metric table of means. The second
 review of this kit, said the subsample seed will depend on each submission; a single local seed hides how much the
 score moves with the subsample.
 
-For T1 hold out E9.5_RNA and predict it from E8.5_RNA: build the prediction from `--last data/raw/T1/E8.5_RNA.h5ad`
-and score with `--task T1 --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad`. For T3 hold
-out the training knockout: `--task T3 --target <Mab21l2 knockout> --wt <matched wild type at the same stage, E9.5>`,
-with the prediction built from the wild type.
+The same pattern for the other boards, one split each (T1: hold out E9.5_RNA, predict it from E8.5_RNA; T3: hold
+out the training knockout, with the wild type of the same stage as `--wt`; embryo: hold out E7.25 with E6.75 as the
+reference; heart extrapolation: hold out E9.5 with E8.75 as the reference). Each prediction is the floor model built
+from the reference, so it only shows the plumbing; replace it with your own method's file:
+
+```
+python -m vec_community_baselines.make_baseline --method copy_last --board T1:val --last data/raw/T1/E8.5_RNA.h5ad --out out/t1_pseudo_pred.h5ad --n-cells 5000
+python -m vec_local_score --task T1 --pred out/t1_pseudo_pred.h5ad --target data/raw/T1/E9.5_RNA.h5ad --reference data/raw/T1/E8.5_RNA.h5ad
+python -m vec_community_baselines.make_baseline --method wt_identity --board T3:gata4 --wt data/raw/T2_heart/E9.5.h5ad --out out/t3_pseudo_pred.h5ad --n-cells 5000
+python -m vec_local_score --task T3 --pred out/t3_pseudo_pred.h5ad --target data/raw/T3/E9.5_mab21l2_ko.h5ad --wt data/raw/T2_heart/E9.5.h5ad
+python -m vec_community_baselines.make_baseline --method copy_last --board T2:embryo:val_interp --last data/raw/T2_embryo/E6.75.h5ad --out out/embryo_pseudo_pred.h5ad --n-cells 5000
+python -m vec_local_score --task T2 --setting embryo --pred out/embryo_pseudo_pred.h5ad --target data/raw/T2_embryo/E7.25.h5ad --reference data/raw/T2_embryo/E6.75.h5ad
+python -m vec_community_baselines.make_baseline --method copy_last --board T2:heart:val_extrap --last data/raw/T2_heart/E8.75.h5ad --out out/heart_extrap_pseudo_pred.h5ad --n-cells 5000
+python -m vec_local_score --task T2 --setting heart --pred out/heart_extrap_pseudo_pred.h5ad --target data/raw/T2_heart/E9.5.h5ad --reference data/raw/T2_heart/E8.75.h5ad
+```
+
+These are examples, not recommendations: any released stage can be held out, as long as the prediction never uses
+it. The `--board` of a pseudo prediction only picks the gene panel and the cell bounds of the file.
+
+What to expect on the real files (runner above, five seeds, `OMP_NUM_THREADS=4`):
+
+| split | cells pred/A/B/ref (header line) | time | peak memory |
+|---|---|---|---|
+| T1, E9.5_RNA from E8.5_RNA | 5000/853/853/1679 | about 2 min | about 6 GB |
+| T2 heart, E8.75 from E8.25_late | 5000/1241/1242/4000 | about 25 s | about 1 GB |
+| T2 heart, E9.5 from E8.75 | 5000/2687/2687/2483 | about 35 s | about 1 GB |
+| T2 embryo, E7.25 from E6.75 | 5000/665/665/709 | about 15 s | about 0.6 GB |
+| T3, Mab21l2 KO from wild type E9.5 | 5000/2514/2515/4000 | about 40 s | about 1.5 GB |
+
+`--single-seed` takes about a quarter of that. The T1 split needs the most memory: both whole-transcriptome stages
+are read in full and the scored cells are densified over 32,285 genes. The reference column shows the wrapper's cap: `--max-cells` (default 4,000) limits
+the reference after the 10 % subsample, and on the real files it binds for E8.25_late (5,872 cells at 10 %) and
+the E9.5 heart stage (5,374); pass `--max-cells 6000` to keep the whole 10 % sample, as the organisers' `ref_cells`
+in `index.json` do. veckit's cell-type probe asks joblib for every core (`n_jobs=-1`); with scikit-learn 1.7 (what
+Python 3.10 installs) that starts one worker process per core, so on a shared machine set `LOKY_MAX_CPU_COUNT=4`
+(or the number of cores you may use) before scoring.
 
 How to read it: every stage is subsampled to 10 %, the target is split in half; the floor (the reference
 resubmitted) defines 50 and the ceiling (the other half of the target) defines 100 on the skill scale; your
@@ -265,7 +333,8 @@ prediction gets a skill per metric (veckit's own `skill()`) and a task score. Th
 (`scale_log_ratio`, `severity_slope`) are marked `*`: their skill is computed on the absolute values (an overshoot
 counts like an undershoot). Your resampled `copy_last` file lands **near** 50, not exactly on it - the wrapper's
 floor row is a 10 % subsample of the reference and your file is a different sample of the same cells; a value a
-few points off 50 is normal. A local score is **not** a preview of the real one; it ranks your own methods on the
+few points off 50 is normal (in the real-release pass, the five-seed mean of each of the five floor-model
+predictions above was within 5 points of 50). A local score is **not** a preview of the real one; it ranks your own methods on the
 same split with the same seeds. `docs/metrics_overview.md` explains every column, and `vec_local_score/README.md`
 states exactly which conventions the wrapper implements.
 
@@ -284,15 +353,16 @@ it with `write_submission`, section 5) - never from E8.75. Read the min..max of 
 a result. Two bands can overlap while the paired difference keeps its sign: on the synthetic pair of the dry run, a
 stand-in B (the `copy_last` file with its coordinates grown to the target's size) has the band 52.49..61.32 against
 A's 48.86..56.96, and B - A is +3.63..+4.38 on all five seeds. Either way it is a comparison on this pseudo split,
-not a prediction of the order on the hidden target.
+not a prediction of the order on the hidden target. On the real files the paired command took about 30 s and 1 GB
+(the real-release log records that it ran, not its numbers).
 
 From 20 October the validation stages are released with their answers (section 11), so a real held-out stage can
 be the `--target` instead of a training stage - for example the released T2 heart E10.5 with `--reference` E9.5,
 the prediction built from the earlier stages only. It is still the kit's local protocol, not the organisers' score.
 
 `python -m vec_local_score.make_pseudo_split` is optional: it exports one fixed split as files for inspection or for
-calling the veckit CLI directly. Its outputs are not inputs to `vec_local_score` (the wrapper refuses them, because
-it would subsample twice).
+calling the veckit CLI directly (it applies the 10 % subsample without the reference cap). Its outputs are not
+inputs to `vec_local_score` (the wrapper refuses them, because it would subsample twice).
 
 ## 8. Upload
 
@@ -343,7 +413,9 @@ python -m vec_agent_evidence package --run-dir runs/<run_id>
 ```
 
 (`python -m vec_agent_evidence lock ...` with the same arguments freezes a run directory and prints the exact
-launch command without launching anything, if you want to inspect it first.)
+launch command without launching anything, if you want to inspect it first. In the real-release pass, `lock` with
+`--data-root ./data` hashed the nine released `.h5ad` files in a few seconds; with no `claude` on PATH it records the
+binary as missing and still prints the command. The `run` and `package` steps were not part of that pass.)
 
 What you get, all hashed in `config.lock.json` and re-verified in `run_manifest.json`:
 
@@ -369,7 +441,9 @@ directory, references to other runs, writes into `submission/` except through `t
 process-kill commands; the audit hook logs every tool call. These are regex hooks over the tool input, not a
 network sandbox: the audit log, the trajectory and the hashes recorded at lock and post-run time are what supports
 verification after the run. The agent has the same validator, baseline generator and local scorer as you do,
-copied read-only into its workspace.
+copied read-only into its workspace. Read-only here means file permissions, which do not stop a process running as
+root (as in many cloud containers); run the agent as an ordinary user if that matters to you. The guard hook and the
+recorded hashes apply either way.
 
 Human do's and don'ts: before the lock, anything; between the lock and `run_manifest.json`, nothing (do not open
 the stream, the workspace or the ranking for that run); after, read the manifest and NOTES.md, decide which
