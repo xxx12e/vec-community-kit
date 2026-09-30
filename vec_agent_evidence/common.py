@@ -95,6 +95,11 @@ SECRET_PATTERNS = (
                                  r"(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}")),
     # snake_case token fields of an auth file (e.g. the Codex CLI's), plain or JSON-escaped inside a transcript
     ("auth_token_field", _rx(r'\\?"', "(?:id|access|refresh)", "_token", r'\\?"\s*:')),
+    # an entry of OpenCode's auth.json: per provider an object whose "type" field (oauth / api / wellknown) is followed
+    # by its "refresh" or "key" field; plain, pretty-printed or JSON-escaped inside a transcript (the key value itself
+    # need not look like a key, so the entry's shape is what is matched)
+    ("opencode_auth_entry", _rx(r'\\?"', "ty", r'pe\\?"(?:\s|\\[nrt])*:(?:\s|\\[nrt])*\\?"', "(?:oauth|api|wellknown)",
+                                r'\\?"(?:\s|\\[nrt])*,(?:\s|\\[nrt])*\\?"', "(?:refresh|key)", r'\\?"(?:\s|\\[nrt])*:')),
 )
 SECRET_SCAN_SUFFIXES = (".json", ".jsonl", ".md", ".txt", ".log", ".py", ".sha256", ".env", ".yaml", ".yml", ".toml", ".cfg")
 
