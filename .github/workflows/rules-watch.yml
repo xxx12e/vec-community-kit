@@ -2,12 +2,13 @@ name: rules-watch
 
 # Daily watch of the Virtual Embryo Challenge's public pages, board contract (panels/index.json + gene lists), phase
 # endpoint and the organisers' scorer veckit on GitHub. Writes rules-watch/ (per-section hashes, the contract,
-# CHANGES.md and CHANGES.zh.md) and commits it only when something changed. See vec_rules_watch/README.md.
+# CHANGES.md and CHANGES.zh.md) and commits it only when something changed. A source that cannot be fetched is
+# recorded and written to the changelog; it never fails the job. See vec_rules_watch/README.md.
 #
 # Repository settings this needs (Settings > Actions > General > Workflow permissions: "Read and write
 # permissions"). Optional repository variables (Settings > Secrets and variables > Actions > Variables):
 #   RULES_WATCH_FULL_TEXT = true   also commit the full normalised page text (off by default)
-#   RULES_WATCH_ISSUES    = false  do not open an issue when the contract, the phase or the scorer changes
+#   RULES_WATCH_ISSUES    = false  never open issues (see "Open an issue" below for when they are opened)
 
 on:
   schedule:
@@ -16,7 +17,7 @@ on:
 
 permissions:
   contents: write                 # commit rules-watch/
-  issues: write                   # open an issue on a contract / phase / scorer change
+  issues: write                   # open an issue (label rules-watch) for the changes listed below
 
 concurrency:
   group: rules-watch
@@ -74,7 +75,11 @@ jobs:
           echo "::error::could not push the rules-watch commit"
           exit 1
 
-      - name: Open an issue for a contract, phase or scorer change
+      # An issue is opened for: a change of the board contract or the phase endpoint; a change of the scorer's
+      # default branch, version, tags or releases (other branches: changelog only); a change of a page marked
+      # "issue" in watchlist.json (rules, terms, FAQ, timeline, prizes); the contract, the phase endpoint, the
+      # scorer or every page not fetched for still_failing_days (2) days. Everything else: the changelog only.
+      - name: Open an issue
         if: steps.watch.outputs.high_signal == 'true' && vars.RULES_WATCH_ISSUES != 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -82,7 +87,8 @@ jobs:
           WATCH_HEADLINE: ${{ steps.watch.outputs.headline }}
         run: |
           gh label create rules-watch --color 0E8A16 \
-            --description "Board contract, phase or scorer change found by the daily rules watch" 2>/dev/null || true
+            --description "Daily rules watch: contract, phase, scorer, rules/FAQ/timeline pages, fetch outages" \
+            2>/dev/null || true
           gh issue create --label rules-watch --title "Rules watch $WATCH_DATE: $WATCH_HEADLINE" \
             --body-file "$RUNNER_TEMP/rules-watch-issue.md" || echo "::warning::could not open the issue"
 

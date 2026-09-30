@@ -4,8 +4,10 @@
 Sub-commands
   run   fetch every source once, compare with the previous snapshot in --out (and the full text in --state), write
         the public snapshot and prepend a dated entry to CHANGES.md / CHANGES.zh.md when something changed.
-        Exit code 0 even when a source could not be fetched (the error is recorded in status.json and the entry);
-        --strict turns fetch errors into exit code 3.
+        Exit code 0 even when a source could not be fetched: the error is recorded in status.json, and the
+        changelog says when a source starts failing, when it still fails after still_failing_days days (an issue
+        for the contract, the phase endpoint, the scorer or every page) and when it is back. --strict turns fetch
+        errors into exit code 3.
   diff  compare two saved pages, two JSON files or two --out directories locally (no network). Exit code 0 = no
         difference, 1 = differences printed, 2 = an input is missing or unreadable (for example not JSON).
 
@@ -136,7 +138,8 @@ def main(argv=None) -> int:
     r.add_argument("--summary", default=None, help="append a Markdown summary here (default $GITHUB_STEP_SUMMARY)")
     r.add_argument("--github-output", default=None, help="append key=value outputs here (default $GITHUB_OUTPUT)")
     r.add_argument("--issue-file", default=None,
-                   help="write an issue body here when the contract, phase or scorer changed (else remove it)")
+                   help="write an issue body here when the run is worth an issue (a contract, phase or scorer "
+                        "change, a change of a page marked issue, a key source failing for days); else remove it")
     r.add_argument("--strict", action="store_true", help="exit 3 when any source could not be fetched")
     r.set_defaults(func=cmd_run)
     d = sub.add_parser("diff", help="compare two pages / JSON files / output directories (no network)")

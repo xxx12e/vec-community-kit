@@ -21,8 +21,13 @@ STAGE_RE = re.compile(r"\bE\d+(?:\.\d+)?\b")
 MAX_NAMES = 10
 
 
-def item(msg: Message, *impact) -> dict:
-    return {"msg": msg, "impact": [m for m in impact if m is not None]}
+def item(msg: Message, *impact, quiet: bool = False) -> dict:
+    """One changelog line and its "what this changes for your file" lines. quiet: goes to the changelog but does not
+    by itself open an issue (a non-default branch of the scorer moving)."""
+    out = {"msg": msg, "impact": [m for m in impact if m is not None]}
+    if quiet:
+        out["quiet"] = True
+    return out
 
 
 def panel_sha256(genes) -> str:
@@ -312,14 +317,16 @@ def diff_scorer(old, new: dict, pinned: str) -> list:
                                     pre=Message("word.prerelease") if r.get("prerelease") else "")))
         elif t not in nrl:
             out.append(item(Message("scorer.release_removed", tag=t)))
+    # other branches (work in progress): changelog only, no issue by themselves
     ob, nb = old.get("branches") or {}, new.get("branches") or {}
     for b in sorted(set(ob) | set(nb)):
         if b == branch and b in ob:
             continue                                 # the default branch head is reported above
         if b not in ob:
-            out.append(item(Message("scorer.branch_added", branch=b, sha=_short(nb[b]))))
+            out.append(item(Message("scorer.branch_added", branch=b, sha=_short(nb[b])), quiet=True))
         elif b not in nb:
-            out.append(item(Message("scorer.branch_removed", branch=b, sha=_short(ob[b]))))
+            out.append(item(Message("scorer.branch_removed", branch=b, sha=_short(ob[b])), quiet=True))
         elif ob[b] != nb[b]:
-            out.append(item(Message("scorer.branch_moved", branch=b, old=_short(ob[b]), new=_short(nb[b]))))
+            out.append(item(Message("scorer.branch_moved", branch=b, old=_short(ob[b]), new=_short(nb[b])),
+                            quiet=True))
     return out

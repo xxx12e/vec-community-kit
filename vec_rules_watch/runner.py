@@ -9,7 +9,8 @@ Two directories:
 
 Public layout (out):
   CHANGES.md, CHANGES.zh.md          changelog, newest first
-  status.json                        sources and their fetch status (an error is recorded with the date it began)
+  status.json                        sources and their fetch status (an error is recorded with the date it began,
+                                     and "alerted" once the changelog has said it is still failing)
   pages/<id>.json                    per page: url, page sha256, per-section heading + sha256 + line count
   pages/<id>.txt                     full normalised text, ONLY with --full-text (off by default)
   contract/panels/index.json         the board contract, canonical JSON (a drop-in VEC_PANELS_DIR together with...)
@@ -35,6 +36,8 @@ from .sources import fetch_contract, fetch_json, fetch_page, fetch_scorer
 WATCHLIST = Path(__file__).resolve().parent / "watchlist.json"
 MARKER = "<!-- entries below, newest first -->"
 SCHEMA = 1
+KEY_SOURCES = ("contract", "phase", "scorer")    # failing for still_failing_days days: an issue, not only an entry
+ISSUE_MAX_CHARS = 60000                          # GitHub refuses an issue body above 65536 characters
 
 
 def load_watchlist(path=None) -> dict:
@@ -99,7 +102,13 @@ class Entry:
         self.page_baselines: list = []       # Messages
         self.page_changes: list = []         # (page id, title Message, url, hint key, diff)
         self.links: list = []                # Messages: links added to / removed from the site
-        self.errors: list = []               # (source label Message or str, error)
+        self.errors: list = []               # (source label, error, failing since; None if it began in this run)
+        self.new_errors = 0                  # sources that failed in this run and not in the previous one
+        self.still_failing: list = []        # (label, error, since): failing for still_failing_days, said once
+        self.recovered: list = []            # (label, failing since): fetched again after an error
+        self.blind = False                   # a key source, or every page, reached still_failing_days in this run
+        self.still_failing_days = 2
+        self.issue_pages: set = set()        # ids of changed pages marked "issue" in the watch list
         self.baselines: set = set()          # sources whose items are a first snapshot, not a change
         self.first_run = False
         self.rebaselined = False
@@ -108,25 +117,45 @@ class Entry:
 
     def has_content(self) -> bool:
         return bool(self.contract or self.phase or self.scorer or self.page_baselines or self.page_changes
-                    or self.links)
+                    or self.links or self.new_errors or self.still_failing or self.recovered)
 
     def high_signal(self) -> bool:
-        """A change (not a first snapshot) of the contract, the phase endpoint or the scorer."""
-        return any(items and name not in self.baselines
-                   for name, items in (("contract", self.contract), ("phase", self.phase), ("scorer", self.scorer)))
+        """Worth an issue: a change (not a first snapshot) of the contract or the phase endpoint; a change of the
+        scorer other than a work-in-progress branch moving; a change of a page marked "issue" in the watch list
+        (rules, terms, FAQ, timeline, prizes); or a key source (or every page) not fetched for still_failing_days
+        days - the watch is blind there, and silence would be misleading."""
+        if any(items and name not in self.baselines for name, items in (("contract", self.contract),
+                                                                       ("phase", self.phase))):
+            return True
+        if "scorer" not in self.baselines and any(not it.get("quiet") for it in self.scorer):
+            return True
+        return bool(self.issue_pages or self.blind)
 
     def headline(self) -> str:
         if self.first_run:
             return "baseline"
-        parts = [name + (" baseline" if name in self.baselines else "")
-                 for name, items in (("contract", self.contract), ("phase", self.phase), ("scorer", self.scorer))
-                 if items]
+        parts = []
+        for name, items in (("contract", self.contract), ("phase", self.phase), ("scorer", self.scorer)):
+            if not items:
+                continue
+            if name in self.baselines:
+                parts.append(name + " baseline")
+            elif name == "scorer" and all(it.get("quiet") for it in items):
+                parts.append("scorer branches")
+            else:
+                parts.append(name)
         if self.page_changes:
             parts.append(f"{len(self.page_changes)} page{'s' if len(self.page_changes) != 1 else ''}")
         if self.links:
             parts.append("site links")
         if self.page_baselines:
             parts.append(f"{len(self.page_baselines)} new page baseline(s)")
+        if self.errors:
+            parts.append(f"fetch errors: {len(self.errors)}")
+        if self.still_failing:
+            parts.append(f"still failing: {len(self.still_failing)}")
+        if self.recovered:
+            parts.append(f"fetched again: {len(self.recovered)}")
         return ", ".join(parts) or "no change"
 
     # rendering
@@ -139,7 +168,9 @@ class Entry:
                 out.append("  - " + Message("entry.impact", text=m).render(lang))
         return out
 
-    def render_sections(self, lang: str, which=("contract", "phase", "scorer", "pages")) -> list:
+    def render_sections(self, lang: str, which=("contract", "phase", "scorer", "pages"), page_ids=None) -> list:
+        """page_ids: None = every page change, site link and page baseline; a set = only the changes of those
+        pages (the issue body)."""
         out = []
         if "contract" in which and self.contract:
             out += [Message("head.contract", url=self.urls.get("contract", "")).render(lang), ""]
@@ -150,14 +181,16 @@ class Entry:
         if "scorer" in which and self.scorer:
             out += [Message("head.scorer", url=self.urls.get("scorer", "")).render(lang), ""]
             out += self._items(self.scorer, lang) + [""]
-        if "pages" in which and self.links:
+        if "pages" in which and self.links and page_ids is None:
             out += [Message("head.site").render(lang), ""]
             out += ["- " + m.render(lang) for m in self.links] + [""]
-        if "pages" in which and (self.page_baselines or self.page_changes):
+        baselines = self.page_baselines if page_ids is None else []
+        changes = [c for c in self.page_changes if page_ids is None or c[0] in page_ids]
+        if "pages" in which and (baselines or changes):
             out += [Message("head.pages").render(lang), ""]
-            if self.page_baselines:
-                out += ["- " + m.render(lang) for m in self.page_baselines] + [""]
-            for _pid, title, url, hint, diff in self.page_changes:
+            if baselines:
+                out += ["- " + m.render(lang) for m in baselines] + [""]
+            for _pid, title, url, hint, diff in changes:
                 out.append("#### " + title.render(lang))
                 out.append("")
                 out.append(Message("page.changed", title=title, url=url, summary=P.summary_message(diff)).render(lang))
@@ -181,14 +214,28 @@ class Entry:
                     out.append("")
         return out
 
+    def render_fetch_status(self, lang: str) -> list:
+        out = []
+        short = [e for e in self.errors if e not in self.still_failing]
+        if short:
+            out += [Message("entry.fetch_errors", sources=_error_list(short, lang)).render(lang), ""]
+        if self.still_failing:
+            out += [Message("entry.still_failing", days=self.still_failing_days,
+                            sources=_error_list(self.still_failing, lang)).render(lang), ""]
+        if self.recovered:
+            sep = Message("word.sep").render(lang)
+            items = sep.join(Message("entry.recovered_item", source=lab, since=since).render(lang)
+                             for lab, since in self.recovered)
+            out += [Message("entry.recovered", sources=items).render(lang), ""]
+        return out
+
     def render(self, lang: str, date: str, time: str) -> str:
         out = [Message("entry.title", date=date, time=time).render(lang), ""]
         if self.first_run:
             out += [Message("entry.first_run").render(lang), ""]
         if self.rebaselined:
             out += [Message("entry.rebaseline").render(lang), ""]
-        if self.errors:
-            out += [Message("entry.fetch_errors", sources=_error_list(self.errors, lang)).render(lang), ""]
+        out += self.render_fetch_status(lang)
         out += self.render_sections(lang)
         while out and out[-1] == "":
             out.pop()
@@ -197,7 +244,48 @@ class Entry:
 
 def _error_list(errors, lang) -> str:
     sep = Message("word.sep").render(lang)
-    return sep.join(Message("entry.error_item", source=lab, error=err).render(lang) for lab, err in errors)
+    return sep.join((Message("entry.error_item_since", source=lab, error=err, since=since) if since
+                     else Message("entry.error_item", source=lab, error=err)).render(lang)
+                    for lab, err, since in errors)
+
+
+def _failing(rec) -> bool:
+    return isinstance(rec, dict) and not rec.get("ok", True) and bool(rec.get("error"))
+
+
+def _days_failing(since, date: str) -> int:
+    """Calendar days a source has been failing, both ends counted (failing since today = 1)."""
+    try:
+        return (datetime.strptime(date, "%Y-%m-%d") - datetime.strptime(str(since), "%Y-%m-%d")).days + 1
+    except ValueError:
+        return 1
+
+
+def _fetch_health(entry: Entry, sources: dict, old_sources: dict, labels: dict, date: str, page_sids: set) -> None:
+    """Fetch errors in the changelog: a source that starts failing, a source still failing after still_failing_days
+    days (said once; "alerted" in status.json) and a source fetched again. Without this, a day on which every source
+    is blocked would look like "no change"."""
+    alerted_now = set()
+    for sid, rec in sources.items():
+        if sid not in labels:
+            continue
+        prev = old_sources.get(sid)
+        if rec.get("ok", True):
+            if _failing(prev):
+                entry.recovered.append((labels[sid], prev.get("failing_since")))
+            continue
+        was_failing = _failing(prev)
+        err = (labels[sid], rec["error"], rec["failing_since"] if was_failing else None)
+        entry.errors.append(err)
+        if not was_failing:
+            entry.new_errors += 1
+        if not rec.get("alerted") and _days_failing(rec["failing_since"], date) >= entry.still_failing_days:
+            rec["alerted"] = True
+            entry.still_failing.append((labels[sid], rec["error"], rec["failing_since"]))
+            alerted_now.add(sid)
+    alerted = {sid for sid in labels if sources[sid].get("alerted")}
+    every_page = bool(page_sids) and page_sids <= alerted
+    entry.blind = bool(alerted_now & set(KEY_SOURCES)) or (every_page and bool(alerted_now & page_sids))
 
 
 def prepend_entry(path: Path, entry_text: str, lang: str) -> None:
@@ -215,8 +303,8 @@ def prepend_entry(path: Path, entry_text: str, lang: str) -> None:
 def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, config=None, only=None,
         log=print) -> dict:
     """Run every source once. Returns a dict: changed (files under out_dir changed), entry (a changelog entry was
-    written), high_signal (contract / phase / scorer changed, not on the first run), headline, errors, entry_en,
-    entry_zh, issue_body (or "")."""
+    written), high_signal (worth an issue, see Entry.high_signal; never on the first run), headline, errors,
+    entry_en, entry_zh, issue_body (or "")."""
     cfg = config or load_watchlist()
     state, out = Path(state_dir), Path(out_dir)
     now = now or datetime.now(timezone.utc)
@@ -233,17 +321,24 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
     entry = Entry()
     entry.first_run = not (out / "status.json").exists()
     entry.out_rel = _display_path(out)
+    entry.still_failing_days = max(1, int(cfg.get("still_failing_days", 2)))
     changed = False
     state_present = (state / "state.json").exists()
+    labels: dict = {}                            # source id -> label, for the sources run this time
+    page_sids: set = set()
 
-    def ok(source_id, url):
+    def ok(source_id, url, label):
         sources[source_id] = {"url": url, "ok": True}
+        labels[source_id] = label
 
     def fail(source_id, url, label, err):
-        prev = old_sources.get(source_id) or {}
-        since = prev.get("failing_since") if (not prev.get("ok", True) and prev.get("error")) else None
-        sources[source_id] = {"url": url, "ok": False, "error": err, "failing_since": since or date}
-        entry.errors.append((label, err))
+        prev = old_sources.get(source_id)
+        since = prev.get("failing_since") if _failing(prev) else None
+        rec = {"url": url, "ok": False, "error": err, "failing_since": since or date}
+        if since and prev.get("alerted"):
+            rec["alerted"] = True
+        sources[source_id] = rec
+        labels[source_id] = label
         log(f"[error] {source_id}: {err}")
 
     # -- board contract --
@@ -255,7 +350,7 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
         if err:
             fail("contract", url, Message("title.contract"), err)
         else:
-            ok("contract", url)
+            ok("contract", url, Message("title.contract"))
             pdir = out / "contract" / "panels"
             old_index = _read_json(pdir / "index.json")
             old_genes = {}
@@ -271,7 +366,7 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
             items = C.diff_index(old_index, snap["index"], old_genes, snap["genes"], _display_path(pdir))
             changed |= _write(pdir / "index.json", canonical_json(snap["index"]))
             for name, genes in snap["genes"].items():
-                ok("genes:" + name, ccfg["genes_base_url"] + name)
+                ok("genes:" + name, ccfg["genes_base_url"] + name, name)
                 changed |= _write(pdir / name, "\n".join(genes) + "\n")
             for name, gerr in snap["genes_errors"].items():
                 # the previous copy (if any) is kept; the validator refuses it if index.json moved on
@@ -291,7 +386,7 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
         if err:
             fail("phase", url, Message("title.phase"), err)
         else:
-            ok("phase", url)
+            ok("phase", url, Message("title.phase"))
             path = out / "contract" / "phase.json"
             old = _read_json(path)
             text = canonical_json(obj)
@@ -312,7 +407,7 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
         if err:
             fail("scorer", url, Message("title.scorer"), err)
         else:
-            ok("scorer", url)
+            ok("scorer", url, Message("title.scorer"))
             path = out / "scorer" / (repo.split("/")[-1] + ".json")
             old = _read_json(path)
             text = canonical_json(snap)
@@ -330,11 +425,12 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
         if not want(sid):
             continue
         title = Message(f"title.{pid}")
+        page_sids.add(sid)
         got, err = fetch_page(fetcher, url, min_chars)
         if err:
             fail(sid, url, title, err)
             continue
-        ok(sid, url)
+        ok(sid, url, title)
         sections = got["sections"]
         meta_path = out / "pages" / f"{pid}.json"
         txt_path = out / "pages" / f"{pid}.txt"
@@ -362,6 +458,8 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
                 entry.rebaselined = True
             if not P.is_empty(diff):
                 entry.page_changes.append((pid, title, url, page.get("hint", "none"), diff))
+                if page.get("issue"):
+                    entry.issue_pages.add(pid)
             last_changed = date
         meta = {"id": pid, "url": url, "sha256": new_sha, "last_changed": last_changed,
                 "full_text_in_repo": bool(full_text), "links": got["links"],
@@ -383,6 +481,8 @@ def run(state_dir, out_dir, *, fetcher=None, now=None, full_text: bool = False, 
                 changed |= _remove(p)
     if wanted is None:
         changed |= _site_links(cfg, out, entry)
+
+    _fetch_health(entry, sources, old_sources, labels, date, page_sids)
 
     # -- status: sources not run this time (--only) keep their previous record --
     for sid, rec in old_sources.items():
@@ -446,12 +546,27 @@ def _site_links(cfg: dict, out: Path, entry: Entry) -> bool:
 
 
 def render_issue(entry: Entry, date: str, hhmm: str) -> str:
+    """The issue body, English then Chinese: fetch problems, the contract, phase and scorer lines, and the changes of
+    the pages marked "issue". Site links and the other pages are in the changelog only."""
     server = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
     repo = os.environ.get("GITHUB_REPOSITORY", "")
     branch = os.environ.get("GITHUB_REF_NAME", "main")
     base = f"{server}/{repo}/blob/{branch}/" if repo else ""
-    lines = [Message("issue.intro", link=base + entry.out_rel + "/CHANGES.md").render("en"), ""]
-    lines += entry.render_sections("en", which=("contract", "phase", "scorer"))
-    lines += ["---", "", Message("issue.intro", link=base + entry.out_rel + "/CHANGES.zh.md").render("zh"), ""]
-    lines += entry.render_sections("zh", which=("contract", "phase", "scorer"))
-    return "\n".join(lines).rstrip() + "\n"
+    links = {lang: base + entry.out_rel + "/" + name for lang, name in (("en", "CHANGES.md"), ("zh", "CHANGES.zh.md"))}
+    lines = []
+    for lang in ("en", "zh"):
+        if lines:
+            lines += ["---", ""]
+        lines += [Message("issue.intro", link=links[lang]).render(lang), ""]
+        lines += entry.render_fetch_status(lang)
+        lines += entry.render_sections(lang, page_ids=entry.issue_pages)
+    body = "\n".join(lines).rstrip() + "\n"
+    if len(body) <= ISSUE_MAX_CHARS:
+        return body
+    cut = body[:ISSUE_MAX_CHARS].rsplit("\n", 1)[0].split("\n")
+    fence = "`" * 3
+    if sum(1 for x in cut if x.startswith(fence)) % 2:
+        cut.append(fence)                                  # close an open code block
+    cut += ["", Message("issue.cut", link=links["en"]).render("en"), "",
+            Message("issue.cut", link=links["zh"]).render("zh")]
+    return "\n".join(cut) + "\n"

@@ -400,15 +400,137 @@ def test_fetch_failure_is_recorded_not_fatal(tmp_path):
     assert "Could not fetch in this run" in res["entry_en"]                        # the contract did change
     assert zh("entry.fetch_errors", sources="X").split("X")[0] in res["entry_zh"]
     assert 'Removed: "' not in res["entry_en"] and "Phase p2" not in res["entry_en"]
-    # still failing the next day: failing_since does not move, status.json does not change
-    status_bytes = (out / "status.json").read_bytes()
+    # the second day: failing_since does not move; the entry says once that they are still failing, and the phase
+    # endpoint is a key source, so an issue is due
     res2 = do_run(tmp_path, 2, 3, extra=down)
-    assert (out / "status.json").read_bytes() == status_bytes and not res2["entry"]
-    # recovered: the changes show up
-    res3 = do_run(tmp_path, 2, 4)
-    assert res3["errors"] == [] and res3["high_signal"]
-    assert json.loads((out / "status.json").read_text())["sources"]["page:rules"]["ok"] is True
-    assert "three official" in res3["entry_en"] and "Phase p2 -> p3" in res3["entry_en"]
+    status = json.loads((out / "status.json").read_text())["sources"]
+    assert status["page:rules"] == {"url": f"{BASE}/rules", "ok": False, "error": "HTTP 503",
+                                    "failing_since": "2026-10-02", "alerted": True}
+    assert res2["entry"] and res2["high_signal"] and res2["headline"] == "fetch errors: 2, still failing: 2"
+    still = ("Still not fetched after 2 or more days: Phase endpoint (timeout, since 2026-10-02), Challenge Rules "
+             "(HTTP 503, since 2026-10-02).")
+    assert still in res2["entry_en"] and still in res2["issue_body"]
+    assert "Could not fetch in this run" not in res2["entry_en"]                  # not said twice
+    zh_still = zh("entry.still_failing", days=2, sources="X").split("X")[0]
+    assert zh_still in res2["entry_zh"] and zh_still in res2["issue_body"]
+    # the third day: nothing new to say, nothing written
+    status_bytes = (out / "status.json").read_bytes()
+    res3 = do_run(tmp_path, 2, 4, extra=down)
+    assert (out / "status.json").read_bytes() == status_bytes
+    assert not res3["entry"] and not res3["changed"] and not res3["high_signal"]
+    assert res3["headline"] == "fetch errors: 2"                                  # the commit message is not "no change"
+    # recovered: the changes show up, and the entry says the sources are back
+    res4 = do_run(tmp_path, 2, 5)
+    assert res4["errors"] == [] and res4["high_signal"]
+    assert json.loads((out / "status.json").read_text())["sources"]["page:rules"] == {"url": f"{BASE}/rules",
+                                                                                      "ok": True}
+    assert ("Fetched again after an error: Phase endpoint (failing since 2026-10-02), Challenge Rules (failing "
+            "since 2026-10-02).") in res4["entry_en"]
+    assert "three official" in res4["entry_en"] and "Phase p2 -> p3" in res4["entry_en"]
+
+
+def test_a_day_with_every_source_blocked_is_not_silent(tmp_path):
+    """The case a Cloudflare challenge on the runner would cause: nothing else changed, every source failed."""
+    do_run(tmp_path, 1, 1)
+    out = tmp_path / "out"
+    blocked = {u: "blocked by a bot challenge" for u in routes(1)}
+
+    def run_blocked(n):
+        return R.run(tmp_path / "state", out, fetcher=StubFetcher(blocked), now=day(n), config=config(),
+                     log=lambda *a: None)
+
+    res = run_blocked(2)
+    assert res["entry"] and res["changed"] and not res["high_signal"]            # one bad day: no issue yet
+    assert res["headline"] == "fetch errors: 4"
+    en = (out / "CHANGES.md").read_text(encoding="utf-8")
+    assert en.index("## 2026-10-02") < en.index("## 2026-10-01")
+    assert ("Could not fetch in this run: Board contract (index.json: blocked by a bot challenge), Phase endpoint "
+            "(blocked by a bot challenge)") in en
+    zh_item = zh("entry.error_item", source=Message("title.contract"), error="index.json: blocked by a bot challenge")
+    assert zh_item in (out / "CHANGES.zh.md").read_text(encoding="utf-8")
+    # the second day: the watch is blind on the contract, the phase endpoint and the scorer: an issue
+    res2 = run_blocked(3)
+    assert res2["high_signal"] and res2["entry"]
+    assert res2["headline"] == "fetch errors: 4, still failing: 4"
+    assert ("Still not fetched after 2 or more days: Board contract (index.json: blocked by a bot challenge, since "
+            "2026-10-02)") in res2["issue_body"]
+    assert "---" in res2["issue_body"] and zh("head.pages") not in res2["issue_body"]
+    # later days: said already, nothing written
+    before = snapshot(out)
+    res3 = run_blocked(4)
+    assert not res3["entry"] and not res3["changed"] and not res3["high_signal"] and snapshot(out) == before
+    # back again: one short entry, no issue
+    res4 = do_run(tmp_path, 1, 5)
+    assert res4["entry"] and not res4["high_signal"] and res4["headline"] == "fetched again: 4"
+    assert "Fetched again after an error: Board contract (failing since 2026-10-02)" in res4["entry_en"]
+    assert zh("entry.recovered_item", source=Message("title.contract"), since="2026-10-02") in res4["entry_zh"]
+
+
+def test_pages_alone_open_an_issue_only_when_every_page_is_blind(tmp_path):
+    cfg = config(pages=("rules", "faq"))
+    r = routes(1)
+    r[f"{BASE}/faq"] = fx("page_v1.html")
+
+    def run(n, extra):
+        rr = dict(r)
+        rr.update(extra)
+        return R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(rr), now=day(n), config=cfg,
+                     log=lambda *a: None)
+
+    run(1, {})
+    one_down = {f"{BASE}/rules": 503}
+    assert not run(2, one_down)["high_signal"]
+    res = run(3, one_down)
+    assert "Still not fetched after 2 or more days: Challenge Rules" in res["entry_en"] and not res["high_signal"]
+    both_down = {f"{BASE}/rules": 503, f"{BASE}/faq": 503}
+    assert not run(4, both_down)["high_signal"]                                   # faq: first day
+    res = run(5, both_down)
+    assert res["high_signal"] and "Still not fetched after 2 or more days: FAQ (HTTP 503, since 2026-10-04)" \
+        in res["issue_body"]
+
+
+def test_issue_rules_scorer_branches_and_issue_pages(tmp_path):
+    do_run(tmp_path, 1, 1)
+    # only a work-in-progress branch of the scorer moved: changelog, no issue
+    moved = [{"name": "main", "commit": {"sha": "a" * 40}}, {"name": "feat/x", "commit": {"sha": "d" * 40}}]
+    res = do_run(tmp_path, 1, 2, extra={f"{API}/repos/example/scorer/branches?per_page=100":
+                                        json.dumps(moved).encode()})
+    assert res["entry"] and not res["high_signal"] and res["issue_body"] == ""
+    assert res["headline"] == "scorer branches"
+    assert "Branch feat/x moved bbbbbbb -> ddddddd." in res["entry_en"]
+    # a page change: an issue only for a page marked "issue" in the watch list
+    cfg = config()
+    res2 = R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(dict(routes(1, "page_v2.html"), **{
+        f"{API}/repos/example/scorer/branches?per_page=100": json.dumps(moved).encode()})), now=day(3), config=cfg,
+        log=lambda *a: None)
+    assert res2["entry"] and not res2["high_signal"]
+    cfg["pages"][0]["issue"] = True
+    res3 = R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(dict(routes(1, "page_v1.html"), **{
+        f"{API}/repos/example/scorer/branches?per_page=100": json.dumps(moved).encode()})), now=day(4), config=cfg,
+        log=lambda *a: None)
+    assert res3["high_signal"]
+    body = res3["issue_body"]
+    assert 'Removed: "6. Appeals"' in body and "```diff" in body
+    assert zh("head.pages") in body and zh("hint.rules") in body
+    assert "New link" not in body and "Link no longer" not in body               # site links: changelog only
+    assert "Link no longer on the watched pages" in res3["entry_en"]
+    # the issue page list in the packaged watch list
+    marked = {p["id"] for p in R.load_watchlist()["pages"] if p.get("issue")}
+    assert marked == {"rules", "terms", "faq", "timeline", "prizes"}
+
+
+def test_issue_body_is_cut_below_the_github_limit(monkeypatch):
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+    entry = R.Entry()
+    diff = P.compare_full([{"heading": "", "level": 0, "lines": []}],
+                          [{"heading": "", "level": 0, "lines": [f"line {i} " + "x" * 190 for i in range(24)]}])
+    for i in range(40):
+        entry.page_changes.append((f"p{i}", Message("title.rules"), f"{BASE}/p{i}", "rules", diff))
+        entry.issue_pages.add(f"p{i}")
+    body = R.render_issue(entry, "2026-10-20", "06:17")
+    assert len(body) < 65536
+    assert body.rstrip().endswith(zh("issue.cut", link="rules-watch/CHANGES.zh.md"))
+    assert sum(1 for x in body.splitlines() if x.startswith("```")) % 2 == 0
 
 
 def test_gene_list_down_still_announces_the_board_change(tmp_path):

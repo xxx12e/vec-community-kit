@@ -3,8 +3,9 @@
 Once a day, a GitHub Action in this repository reads the Virtual Embryo Challenge's public pages, the board contract,
 the phase endpoint and the organisers' scorer on GitHub. When something changed, it commits a dated entry to
 [`rules-watch/CHANGES.md`](../rules-watch/CHANGES.md) (English) and
-[`rules-watch/CHANGES.zh.md`](../rules-watch/CHANGES.zh.md) (Chinese), and for a change of the contract, the phase or
-the scorer it also opens an issue with the label `rules-watch`. The aim: every team learns within a day when the
+[`rules-watch/CHANGES.zh.md`](../rules-watch/CHANGES.zh.md) (Chinese). For the changes that most often need action
+(the contract, the phase, the scorer's releases, the rules, terms, FAQ, timeline and prizes pages, and a watch that
+has gone blind) it also opens an issue with the label `rules-watch`. The aim: every team learns within a day when the
 rules, the dates, the file contract or the scorer move, above all around the final-phase switch on 2026-10-20
 (validation answers released, test boards open, two official submissions per board).
 
@@ -47,12 +48,21 @@ The Chinese file is written from fixed templates (`messages.json`, English and C
 machine-translated. The organisers' own words (board labels, excerpts, commit subjects) are quoted in English in both
 files.
 
+**Fetch problems** are in the changelog too, so a silent changelog means "nothing changed", not "could not look": an
+entry says when a source starts failing (with the error), says once more when it still fails after 2 days
+(`still_failing_days` in `watchlist.json`), and says when it can be fetched again (a change made in between is in that
+entry). The previous snapshot of a failing source is kept, and its record in `status.json` has the error and the
+date it began.
+
 ## How to subscribe
 
-* **Issues** (contract, phase and scorer changes): on the repository page, Watch > Custom > Issues. Each such change
-  opens an issue with the label `rules-watch`:
+* **Issues**: on the repository page, Watch > Custom > Issues. An issue with the label `rules-watch` is opened for
+  a change of the board contract or the phase endpoint; a new commit on the scorer's default branch, a new version,
+  tag or release (a push to one of its other branches is in the changelog only); a change of the rules, terms, FAQ,
+  timeline or prizes page (`"issue": true` in `watchlist.json`); and when the contract, the phase endpoint, the
+  scorer or every page could not be fetched for 2 days (the watch is blind there):
   https://github.com/xxx12e/vec-community-kit/issues?q=label%3Arules-watch
-* **RSS / Atom** of the changelog only (every change, pages included):
+* **RSS / Atom** of the changelog (every change, all pages and site links included; this is the complete feed):
   https://github.com/xxx12e/vec-community-kit/commits/main/rules-watch/CHANGES.md.atom
 * **Read it**: [`rules-watch/CHANGES.md`](../rules-watch/CHANGES.md), newest first.
 
@@ -80,8 +90,9 @@ python -m vec_rules_watch diff old/index.json new/index.json --lang zh          
 python -m vec_rules_watch diff old_out/ new_out/                                  # two --out directories
 ```
 
-`run` exits 0 even when a source cannot be fetched (the error goes into `status.json` and the entry; `--strict`
-exits 3 instead). `diff` exits 1 when it printed differences, 0 when there were none. A full run makes about 42
+`run` exits 0 even when a source cannot be fetched (the error goes into `status.json` and, as described above, into
+the changelog; `--strict` exits 3 instead). `diff` exits 1 when it printed differences, 0 when there were none, 2
+when an input is missing or cannot be read (for example a `.json` file that is not JSON). A full run makes about 42
 requests with a 1.5 s pause between two requests to the same host: about one minute.
 
 ## Output (`rules-watch/`, committed by the Action)
@@ -89,7 +100,7 @@ requests with a 1.5 s pause between two requests to the same host: about one min
 | file | content |
 |---|---|
 | `CHANGES.md`, `CHANGES.zh.md` | the changelog, newest first |
-| `status.json` | every source and its fetch status; an error is kept with the date it began (`failing_since`) |
+| `status.json` | every source and its fetch status; an error is kept with the date it began (`failing_since`) and `alerted` once the changelog has said it is still failing |
 | `pages/<id>.json` | per page: URL, sha256 of the normalised text, and per section: heading, sha256, line and character counts |
 | `contract/panels/index.json` + `*.genes.txt` | the board contract, in full |
 | `contract/phase.json` | the phase endpoint, in full |
@@ -116,7 +127,7 @@ Politeness: one scheduled run a day (06:17 UTC) plus manual runs; the User-Agent
 (`vec-community-kit-rules-watch/2026.10 (+https://github.com/xxx12e/vec-community-kit)`); 1.5 s between requests to
 the same host; one retry after 10 s on a timeout, 429 or 5xx; robots.txt is read for virtualembryo.ai and
 kg.virtualembryo.ai (on 2026-09-30 it had no Disallow rule and no content signal). GitHub API calls use the
-workflow's `GITHUB_TOKEN`, which is sent to api.github.com only.
+workflow's `GITHUB_TOKEN`, which is sent to api.github.com only (over https; a redirect to any other host drops it).
 
 ## Limits
 
@@ -133,13 +144,19 @@ workflow's `GITHUB_TOKEN`, which is sent to api.github.com only.
 * It is a text diff: it says which lines changed, not what they mean. "What this changes for your file" exists for
   the contract, the phase endpoint and the scorer only; for a page, read the page.
 * Once a day: a change made and reverted between two runs is missed, and GitHub may start a scheduled run late.
-  GitHub also disables scheduled workflows after 60 days without repository activity (the challenge ends
-  2026-12-11).
+  GitHub also disables scheduled workflows in a public repository after 60 days without repository activity. The
+  watch's own commits probably count as activity, but that is not verified, and a quiet stretch makes no commit; so
+  the repository owner checks the Actions tab before about 25 November (step 4 below). The challenge ends
+  2026-12-11.
+* Issues are opened only for the changes listed under "How to subscribe". A change of any other page (evaluation,
+  data, tasks, overview, ...) or a new site link is in the changelog and the Atom feed only.
 * Tested with synthetic fixtures (`python -m pytest tests/test_rules_watch.py -q` -> `31 passed`, no network) and by
   four live runs from a home connection on 2026-09-30, spread over about an hour (42 requests each, no fetch error,
   the same hash for every page in all four, so the normalised text does not move from one request to the next). **Not yet run inside GitHub Actions** at
   the time of writing: the runner's IP address could be challenged by Cloudflare; the fetcher recognises a challenge
-  page and records "blocked by a bot challenge" rather than a change.
+  page and records "blocked by a bot challenge" rather than a change, the changelog says so, and after 2 days an
+  issue says the watch is blind. It cannot get past the challenge: the watch would need another runner (for example
+  a self-hosted one) to see again.
 * The first Action run after the baseline commit has no cache yet: if nothing changed it seeds the cache silently;
   if a page changed in between, that entry names sections without excerpts.
 
@@ -152,6 +169,9 @@ workflow's `GITHUB_TOKEN`, which is sent to api.github.com only.
 3. Optional repository variables (Settings > Secrets and variables > Actions > Variables):
    `RULES_WATCH_FULL_TEXT=true` stores the full page text (only with the organisers' agreement);
    `RULES_WATCH_ISSUES=false` turns the issues off.
+4. Before about 25 November 2026, make any commit to the default branch (or run the workflow by hand) and look at
+   the Actions tab. If GitHub shows that the "rules-watch" workflow was disabled for inactivity, click "Enable
+   workflow".
 
 Related community work (filed for the Community Contribution Award before this one): VEC Evidence Check (Alex
 Solonsky), VecBench (Arjun Kode), Intuition Lab and External Data Catalog (Ivan Habib), h5ad Inspector and ScoreLens
@@ -164,8 +184,8 @@ the contract; the contract copy here can feed any validator that reads `index.js
 
 每天一次，本仓库的 GitHub Action 读取 Virtual Embryo Challenge 的公开页面、榜契约、阶段接口，以及主办方在 GitHub
 上的打分器。发现变化时，它把一条带日期的记录提交到 [`rules-watch/CHANGES.zh.md`](../rules-watch/CHANGES.zh.md)（中文）和
-[`rules-watch/CHANGES.md`](../rules-watch/CHANGES.md)（英文）；如果变的是榜契约、阶段或打分器，还会开一个带
-`rules-watch` 标签的 issue。目的：规则、日期、文件契约或打分器一有变动，每个队伍都能在一天之内知道，尤其是 2026-10-20
+[`rules-watch/CHANGES.md`](../rules-watch/CHANGES.md)（英文）。对最常需要行动的变化（榜契约、阶段、打分器的发布，规则、
+条款、FAQ、时间线和奖项页面，以及监测"失明"），还会开一个带 `rules-watch` 标签的 issue。目的：规则、日期、文件契约或打分器一有变动，每个队伍都能在一天之内知道，尤其是 2026-10-20
 进入最终阶段前后（验证集答案发布、测试榜开放、每个榜两次正式提交）。
 
 它只是一个监测工具，不是信息来源：以主办方页面为准，它也不解释规则。
@@ -202,11 +222,17 @@ JavaScript 加载）、数据文件本身、页面链接的其他 JSON 文件（
 中文记录由固定模板生成（`messages.json`，中英文并列），不做任何机器翻译。主办方的原话（榜标签、摘录、提交标题）在两个
 文件里都保留英文原文。
 
+**获取失败**也写进变更记录，所以变更记录没有新条目就表示"没有变化"，而不是"没能去看"：某个来源开始出错时写一条（附错误），
+连续 2 天仍然出错时再写一次（`watchlist.json` 里的 `still_failing_days`），恢复时再写一条（期间的变化也在那一条里）。出错
+来源的上一次快照会保留，`status.json` 里记着错误和开始出错的日期。
+
 ### 怎么订阅
 
-* **Issue**（榜契约、阶段、打分器的变化）：在仓库页面点 Watch > Custom > Issues。每次这类变化都会开一个带 `rules-watch`
-  标签的 issue：https://github.com/xxx12e/vec-community-kit/issues?q=label%3Arules-watch
-* **RSS / Atom**，只包含变更记录的提交（所有变化，包括页面）：
+* **Issue**：在仓库页面点 Watch > Custom > Issues。以下情况会开一个带 `rules-watch` 标签的 issue：榜契约或阶段接口有变化；
+  打分器默认分支有新提交、新版本、新标签或新发布（其他分支的推送只写进变更记录）；规则、条款、FAQ、时间线或奖项页面有变化
+  （`watchlist.json` 里标了 `"issue": true`）；以及榜契约、阶段接口、打分器或全部页面连续 2 天取不到（这时监测在那里是
+  "瞎"的）：https://github.com/xxx12e/vec-community-kit/issues?q=label%3Arules-watch
+* **RSS / Atom**，变更记录的提交（所有变化，包括全部页面和网站链接；这是最完整的订阅方式）：
   https://github.com/xxx12e/vec-community-kit/commits/main/rules-watch/CHANGES.md.atom
 * **直接看**：[`rules-watch/CHANGES.zh.md`](../rules-watch/CHANGES.zh.md)，最新的在最上面。
 
@@ -232,15 +258,15 @@ python -m vec_rules_watch diff old/index.json new/index.json --lang zh          
 python -m vec_rules_watch diff old_out/ new_out/                                  # 比较两个 --out 目录
 ```
 
-某个来源取不到时，`run` 仍然返回 0（错误写进 `status.json` 和记录；加 `--strict` 则返回 3）。`diff` 有差异时返回 1，
-没有差异返回 0。一次完整运行约 42 个请求，同一主机的两次请求之间停 1.5 秒，大约一分钟。
+某个来源取不到时，`run` 仍然返回 0（错误写进 `status.json`，并按上面说的写进变更记录；加 `--strict` 则返回 3）。`diff`
+有差异时返回 1，没有差异返回 0，输入不存在或读不了（例如 `.json` 文件不是 JSON）时返回 2。一次完整运行约 42 个请求，同一主机的两次请求之间停 1.5 秒，大约一分钟。
 
 ### 输出（`rules-watch/`，由 Action 提交）
 
 | 文件 | 内容 |
 |---|---|
 | `CHANGES.md`、`CHANGES.zh.md` | 变更记录，最新的在最上面 |
-| `status.json` | 每个来源及其获取状态；出错时记下开始出错的日期（`failing_since`） |
+| `status.json` | 每个来源及其获取状态；出错时记下开始出错的日期（`failing_since`），变更记录说过"仍在出错"后记 `alerted` |
 | `pages/<id>.json` | 每个页面：URL、规范化文本的 sha256，以及每个小节的标题、sha256、行数和字符数 |
 | `contract/panels/index.json` + `*.genes.txt` | 完整的榜契约 |
 | `contract/phase.json` | 完整的阶段接口返回 |
@@ -262,7 +288,8 @@ python -m vec_rules_watch diff old_out/ new_out/                                
 礼貌：每天定时运行一次（UTC 06:17），外加手动运行；User-Agent 写明本仓库
 （`vec-community-kit-rules-watch/2026.10 (+https://github.com/xxx12e/vec-community-kit)`）；同一主机的请求之间间隔 1.5 秒；
 超时、429 或 5xx 时 10 秒后重试一次；读取 virtualembryo.ai 和 kg.virtualembryo.ai 的 robots.txt（2026-09-30 时没有任何
-Disallow 规则，也没有 content signal）。GitHub API 调用使用工作流的 `GITHUB_TOKEN`，它只会发给 api.github.com。
+Disallow 规则，也没有 content signal）。GitHub API 调用使用工作流的 `GITHUB_TOKEN`，它只会通过 https 发给 api.github.com
+（重定向到其他主机时会被去掉）。
 
 ### 局限
 
@@ -274,12 +301,16 @@ Disallow 规则，也没有 content signal）。GitHub API 调用使用工作流
 * 取不到的基因列表（例如新榜已列出、但它的列表还没公开）记为获取错误；榜本身的变化照样报告，该列表的旧副本（如果有）会
   保留，所以在新列表到来之前，校验器用 `rules-watch/contract/panels/` 会拒绝这个榜。
 * 它做的是文本比较：只说哪些行变了，不说意味着什么。"对你的文件意味着什么"只针对榜契约、阶段接口和打分器；页面请自己读。
-* 每天一次：两次运行之间改了又改回去的变化会漏掉；GitHub 的定时运行也可能推迟。仓库 60 天没有活动时 GitHub 会停用定时
-  工作流（比赛在 2026-12-11 结束）。
+* 每天一次：两次运行之间改了又改回去的变化会漏掉；GitHub 的定时运行也可能推迟。公开仓库 60 天没有活动时 GitHub 会停用
+  定时工作流。监测自己的提交大概也算活动，但没有验证过，而且一段时间没变化就不会有提交；所以仓库所有者要在 11 月 25 日左右
+  之前看一下 Actions 页面（见下面第 4 步）。比赛在 2026-12-11 结束。
+* 只有"怎么订阅"里列出的变化才会开 issue。其他页面（评测、数据、任务、概览等）的变化和新的网站链接只写进变更记录和 Atom
+  订阅。
 * 测试：合成数据的单元测试（`python -m pytest tests/test_rules_watch.py -q` -> `31 passed`，不联网），以及 2026-09-30 从
   家里网络做的四次真实运行，前后约一小时（每次 42 个请求，没有获取错误，四次中每个页面的哈希都相同，说明规范化文本不会随请求变动）。
   撰写本文时**还没有在 GitHub Actions 里运行过**：运行器的 IP 可能被 Cloudflare 拦下做人机验证；获取器能认出验证页，会记为
-  "blocked by a bot challenge"，而不是记成变化。
+  "blocked by a bot challenge"，而不是记成变化，变更记录会写明，连续 2 天后还会开 issue 说明监测"瞎"了。它无法绕过验证：
+  要恢复，只能换一个运行器（例如自托管的运行器）。
 * 基线提交之后的第一次 Action 运行还没有缓存：如果没有变化，它会静默建立缓存；如果中间有页面改动，那条记录只列小节名、
   没有摘录。
 
@@ -290,6 +321,8 @@ Disallow 规则，也没有 content signal）。GitHub API 调用使用工作流
 2. 在 Actions 页面选 "rules-watch" > "Run workflow" 手动运行一次，确认运行器能访问网站。
 3. 可选的仓库变量（Settings > Secrets and variables > Actions > Variables）：`RULES_WATCH_FULL_TEXT=true` 保存页面全文
    （只在主办方同意后）；`RULES_WATCH_ISSUES=false` 关闭 issue。
+4. 2026 年 11 月 25 日左右之前，向默认分支做一次任意提交（或手动运行一次工作流），并看一下 Actions 页面。如果 GitHub 显示
+   "rules-watch" 工作流因为不活跃被停用，点 "Enable workflow"。
 
 相关的社区工作（在本工具之前已提交社区贡献奖）：VEC Evidence Check（Alex Solonsky）、VecBench（Arjun Kode）、Intuition Lab
 和 External Data Catalog（Ivan Habib）、h5ad Inspector 和 ScoreLens（Caden Tan）、Submission Viewer（Shashwat srivastava）、

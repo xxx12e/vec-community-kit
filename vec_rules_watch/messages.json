@@ -6,8 +6,8 @@
 
   "changes.title": {"en": "# VEC rules and contract watch: changelog", "zh": "# VEC 规则与契约监测：变更记录"},
   "changes.intro": {
-    "en": "Newest first. One entry per run that found a change. Written by `python -m vec_rules_watch run` (a daily GitHub Action of vec-community-kit) from the public pages of https://virtualembryo.ai/challenge, the board contract (panels/index.json and the gene lists), the phase endpoint and the organisers' scorer veckit on GitHub. Quoted lines are short excerpts (at most 200 characters each); the organisers' pages are the authoritative text. How it works and its limits: vec_rules_watch/README.md. Chinese version: CHANGES.zh.md.",
-    "zh": "最新的在最上面。每次运行发现变化就写一条。由 `python -m vec_rules_watch run`（vec-community-kit 的每日 GitHub Action）根据 https://virtualembryo.ai/challenge 的公开页面、榜契约（panels/index.json 和基因列表）、阶段接口以及 GitHub 上主办方的打分器 veckit 生成。引用的行是简短摘录（每条最多 200 个字符），保留英文原文；以主办方页面为准。原理和局限见 vec_rules_watch/README.md。英文版：CHANGES.md。"
+    "en": "Newest first. One entry per run that found a change or a fetch problem. Written by `python -m vec_rules_watch run` (a daily GitHub Action of vec-community-kit) from the public pages of https://virtualembryo.ai/challenge, the board contract (panels/index.json and the gene lists), the phase endpoint and the organisers' scorer veckit on GitHub. Quoted lines are short excerpts (at most 200 characters each); the organisers' pages are the authoritative text. How it works and its limits: vec_rules_watch/README.md. Chinese version: CHANGES.zh.md.",
+    "zh": "最新的在最上面。每次运行发现变化或获取问题就写一条。由 `python -m vec_rules_watch run`（vec-community-kit 的每日 GitHub Action）根据 https://virtualembryo.ai/challenge 的公开页面、榜契约（panels/index.json 和基因列表）、阶段接口以及 GitHub 上主办方的打分器 veckit 生成。引用的行是简短摘录（每条最多 200 个字符），保留英文原文；以主办方页面为准。原理和局限见 vec_rules_watch/README.md。英文版：CHANGES.md。"
   },
 
   "entry.title": {"en": "## {date} (run {time} UTC)", "zh": "## {date}（UTC {time} 运行）"},
@@ -23,8 +23,18 @@
     "en": "Could not fetch in this run: {sources}. Their previous snapshot is kept; a change there shows up on the next successful run.",
     "zh": "本次未能获取：{sources}。保留上一次的快照；那里如果有变化，会在下一次成功运行时出现。"
   },
+  "entry.still_failing": {
+    "en": "Still not fetched after {days} or more days: {sources}. Until they come back, this watch cannot see a change there: check them on the site yourself.",
+    "zh": "已经连续 {days} 天或更久取不到：{sources}。在它们恢复之前，本监测看不到那里的变化：请自己到网站上查看。"
+  },
+  "entry.recovered": {
+    "en": "Fetched again after an error: {sources}. A change made while they could not be fetched is listed in this entry.",
+    "zh": "出错之后又能取到了：{sources}。取不到期间如果有变化，已列在本条目里。"
+  },
+  "entry.recovered_item": {"en": "{source} (failing since {since})", "zh": "{source}（自 {since} 起出错）"},
   "entry.impact": {"en": "What this changes for your file: {text}", "zh": "对你的文件意味着什么：{text}"},
   "entry.error_item": {"en": "{source} ({error})", "zh": "{source}（{error}）"},
+  "entry.error_item_since": {"en": "{source} ({error}, since {since})", "zh": "{source}（{error}，自 {since} 起）"},
 
   "head.contract": {"en": "### Board contract ({url})", "zh": "### 榜契约（{url}）"},
   "head.phase": {"en": "### Phase endpoint ({url})", "zh": "### 阶段接口（{url}）"},
@@ -230,8 +240,12 @@
   "title.scorer": {"en": "Official scorer (veckit)", "zh": "官方打分器（veckit）"},
 
   "issue.intro": {
-    "en": "The daily rules watch found a change in the board contract, the phase endpoint or the official scorer. Full entry: {link}",
-    "zh": "每日规则监测发现榜契约、阶段接口或官方打分器有变化。完整条目：{link}"
+    "en": "The daily rules watch found a change in the board contract, the phase endpoint, the official scorer or the rules, terms, FAQ, timeline or prizes page, or it could not fetch an important source for several days. Full entry, with every change of this run: {link}",
+    "zh": "每日规则监测发现榜契约、阶段接口、官方打分器，或规则、条款、FAQ、时间线、奖项页面有变化，或者连续几天取不到重要的来源。本次运行的完整条目（含所有变化）：{link}"
+  },
+  "issue.cut": {
+    "en": "(The issue text was cut here because it is too long. The full entry: {link})",
+    "zh": "（issue 内容太长，在这里截断。完整条目：{link}）"
   },
 
   "summary.no_change": {"en": "No change in this run.", "zh": "本次运行没有发现变化。"},
