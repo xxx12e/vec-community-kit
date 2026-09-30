@@ -216,7 +216,8 @@ class Entry:
 
     def render_fetch_status(self, lang: str) -> list:
         out = []
-        short = [e for e in self.errors if e not in self.still_failing]
+        said_below = {id(lab) for lab, _err, _since in self.still_failing}
+        short = [e for e in self.errors if id(e[0]) not in said_below]
         if short:
             out += [Message("entry.fetch_errors", sources=_error_list(short, lang)).render(lang), ""]
         if self.still_failing:

@@ -150,10 +150,12 @@ workflow's `GITHUB_TOKEN`, which is sent to api.github.com only (over https; a r
   2026-12-11.
 * Issues are opened only for the changes listed under "How to subscribe". A change of any other page (evaluation,
   data, tasks, overview, ...) or a new site link is in the changelog and the Atom feed only.
-* Tested with synthetic fixtures (`python -m pytest tests/test_rules_watch.py -q` -> `38 passed`, no network) and by
-  four live runs from a home connection on 2026-09-30, spread over about an hour (42 requests each, no fetch error,
-  the same hash for every page in all four, so the normalised text does not move from one request to the next). **Not yet run inside GitHub Actions** at
-  the time of writing: the runner's IP address could be challenged by Cloudflare; the fetcher recognises a challenge
+* Tested with synthetic fixtures (`python -m pytest tests/test_rules_watch.py -q` -> `39 passed`, no network) and by
+  live runs from a home connection on 2026-09-30: four spread over about an hour, and one more at 17:42 UTC after
+  the last code change, from an empty cache into a copy of the committed `rules-watch/` (42 requests each, no fetch
+  error, the same hash for every page every time, so the normalised text does not move from one request to the
+  next; the last run left the copy byte for byte unchanged). **Not yet run inside GitHub Actions** at the time of
+  writing: the runner's IP address could be challenged by Cloudflare; the fetcher recognises a challenge
   page and records "blocked by a bot challenge" rather than a change, the changelog says so, and after 2 days an
   issue says the watch is blind. It cannot get past the challenge: the watch would need another runner (for example
   a self-hosted one) to see again.
@@ -306,8 +308,10 @@ Disallow 规则，也没有 content signal）。GitHub API 调用使用工作流
   之前看一下 Actions 页面（见下面第 4 步）。比赛在 2026-12-11 结束。
 * 只有"怎么订阅"里列出的变化才会开 issue。其他页面（评测、数据、任务、概览等）的变化和新的网站链接只写进变更记录和 Atom
   订阅。
-* 测试：合成数据的单元测试（`python -m pytest tests/test_rules_watch.py -q` -> `38 passed`，不联网），以及 2026-09-30 从
-  家里网络做的四次真实运行，前后约一小时（每次 42 个请求，没有获取错误，四次中每个页面的哈希都相同，说明规范化文本不会随请求变动）。
+* 测试：合成数据的单元测试（`python -m pytest tests/test_rules_watch.py -q` -> `39 passed`，不联网），以及 2026-09-30 从
+  家里网络做的真实运行：前后约一小时的四次，加上最后一次代码修改之后、UTC 17:42 的一次（缓存为空，输出到已提交的
+  `rules-watch/` 的副本）。每次 42 个请求，没有获取错误，每个页面的哈希每次都相同，说明规范化文本不会随请求变动；最后一次
+  运行后副本一个字节都没变。
   撰写本文时**还没有在 GitHub Actions 里运行过**：运行器的 IP 可能被 Cloudflare 拦下做人机验证；获取器能认出验证页，会记为
   "blocked by a bot challenge"，而不是记成变化，变更记录会写明，连续 2 天后还会开 issue 说明监测"瞎"了。它无法绕过验证：
   要恢复，只能换一个运行器（例如自托管的运行器）。

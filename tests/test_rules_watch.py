@@ -466,6 +466,18 @@ def test_a_day_with_every_source_blocked_is_not_silent(tmp_path):
     assert zh("entry.recovered_item", source=Message("title.contract"), since="2026-10-02") in res4["entry_zh"]
 
 
+def test_still_failing_days_1_reports_each_source_once(tmp_path):
+    cfg = dict(config(), still_failing_days=1)
+    R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(routes(1)), now=day(1), config=cfg,
+          log=lambda *a: None)
+    r = dict(routes(1), **{"https://api.example.test/challenge/phase": "timeout"})
+    res = R.run(tmp_path / "state", tmp_path / "out", fetcher=StubFetcher(r), now=day(2), config=cfg,
+                log=lambda *a: None)
+    assert res["high_signal"] and "Could not fetch in this run" not in res["entry_en"]
+    assert res["entry_en"].count("Phase endpoint (timeout") == 1
+    assert "Still not fetched after 1 or more days: Phase endpoint (timeout, since 2026-10-02)." in res["entry_en"]
+
+
 def test_pages_alone_open_an_issue_only_when_every_page_is_blind(tmp_path):
     cfg = config(pages=("rules", "faq"))
     r = routes(1)

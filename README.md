@@ -167,7 +167,7 @@ on each submission.
 stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
 against the real release inside this repository; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `99 passed` (synthetic data; the scorer tests are skipped without veckit).
+*Test line:* `python -m pytest -q` -> `100 passed` (synthetic data; the scorer tests are skipped without veckit).
 
 ## Install
 
@@ -294,7 +294,7 @@ leaderboard order.
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交
   （当场打分、不可撤回）、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）；关于打分器的抽样种子只写一句：主办方在对本工具包的评审中说，抽样种子将随每次提交而定。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `99 passed`。
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `100 passed`。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
 五个命令以及规则监测的 `vec-community-rules-watch`，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
