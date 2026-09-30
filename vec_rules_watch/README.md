@@ -129,7 +129,7 @@ workflow's `GITHUB_TOKEN`, which is sent to api.github.com only.
 * Once a day: a change made and reverted between two runs is missed, and GitHub may start a scheduled run late.
   GitHub also disables scheduled workflows after 60 days without repository activity (the challenge ends
   2026-12-11).
-* Tested with synthetic fixtures (`python -m pytest tests/test_rules_watch.py -q` -> `27 passed`, no network) and by
+* Tested with synthetic fixtures (`python -m pytest tests/test_rules_watch.py -q` -> `29 passed`, no network) and by
   two live runs from a home connection on 2026-09-30 (42 requests each, no fetch error, the second run found no
   change, so the normalised text is stable from one request to the next). **Not yet run inside GitHub Actions** at
   the time of writing: the runner's IP address could be challenged by Cloudflare; the fetcher recognises a challenge
@@ -265,7 +265,7 @@ Disallow 规则，也没有 content signal）。GitHub API 调用使用工作流
 * 它做的是文本比较：只说哪些行变了，不说意味着什么。"对你的文件意味着什么"只针对榜契约、阶段接口和打分器；页面请自己读。
 * 每天一次：两次运行之间改了又改回去的变化会漏掉；GitHub 的定时运行也可能推迟。仓库 60 天没有活动时 GitHub 会停用定时
   工作流（比赛在 2026-12-11 结束）。
-* 测试：合成数据的单元测试（`python -m pytest tests/test_rules_watch.py -q` -> `27 passed`，不联网），以及 2026-09-30 从
+* 测试：合成数据的单元测试（`python -m pytest tests/test_rules_watch.py -q` -> `29 passed`，不联网），以及 2026-09-30 从
   家里网络做的两次真实运行（每次 42 个请求，没有获取错误，第二次没有发现变化，说明规范化文本在两次请求之间是稳定的）。
   撰写本文时**还没有在 GitHub Actions 里运行过**：运行器的 IP 可能被 Cloudflare 拦下做人机验证；获取器能认出验证页，会记为
   "blocked by a bot challenge"，而不是记成变化。

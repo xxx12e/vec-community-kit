@@ -326,6 +326,8 @@ requests/urllib 一行程序、任何 URL……）、读取 CLI 配置目录、�
 https://virtualembryo.ai/challenge/rules（第 10、11、13、14 节和 Agent Team 部分）、数据页 https://virtualembryo.ai/challenge/data
 以及 FAQ。以官方页面为准；10 月 20 日请重新读一遍。
 
+不想每天重读所有页面，可以关注工具包的每日规则监测：[`rules-watch/CHANGES.zh.md`](../rules-watch/CHANGES.zh.md)（页面、榜契约、阶段接口、打分器；订阅方法见 [`vec_rules_watch/README.md`](../vec_rules_watch/README.md)）。
+
 | 日期（2026） | 发生什么（时间线页） |
 |---|---|
 | 10-20 | P3 测试阶段开始：每个任务的验证集数据发布，测试输入不带标签发布，测试榜开放 |

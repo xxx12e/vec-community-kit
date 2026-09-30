@@ -15,6 +15,8 @@ The organisers publish the board contracts (`panels/index.json` + gene lists), t
 veckit, a local validator/scorer in the starter kit (`score_h5ad.py`) and the portal's own format check. What each
 part here adds beyond those is stated below; official sources are cited with the date they were read.
 
+**Rules and contract watch (new, 2026-09-30):** a daily GitHub Action checks the challenge pages, the board contract, the phase endpoint and the scorer, and writes [`rules-watch/CHANGES.md`](rules-watch/CHANGES.md) when something changes; how it works and how to subscribe: [`vec_rules_watch/README.md`](vec_rules_watch/README.md).
+
 ## What changed in 2026.10.0 (2026-09-30, after the organisers' review)
 
 From this release on the kit's versions are calendar-based (year.month.patch; the previous release was 0.1.0), so
@@ -159,7 +161,7 @@ on each submission.
 stages laid out like the real data directory (re-run 2026-09-30 after this revision; log and environment in `scratchpad/dryrun_log.txt`), not
 against the real release inside this repository; the cell-count bound is stated next to each command.
 
-*Test line:* `python -m pytest -q` -> `61 passed` (synthetic data; the scorer tests are skipped without veckit).
+*Test line:* `python -m pytest -q` -> `90 passed` (synthetic data; the scorer tests are skipped without veckit).
 
 ## Install
 
@@ -170,8 +172,8 @@ python -m pytest -q               # synthetic data only
 ```
 
 `pip install -e .` (or `pip install .`, or `pip install "git+https://github.com/xxx12e/vec-community-kit"`) installs the
-four packages - `vec_submit_check`, `vec_community_baselines`, `vec_local_score`, `vec_agent_evidence` - and five
-commands, each the same as its `python -m` form:
+packages - `vec_submit_check`, `vec_community_baselines`, `vec_local_score`, `vec_agent_evidence` and (since the
+rules watch) `vec_rules_watch` - and these commands, each the same as its `python -m` form:
 
 | command | same as |
 |---|---|
@@ -180,6 +182,7 @@ commands, each the same as its `python -m` form:
 | `vec-community-score` | `python -m vec_local_score` |
 | `vec-community-split` | `python -m vec_local_score.make_pseudo_split` |
 | `vec-community-evidence` | `python -m vec_agent_evidence` |
+| `vec-community-rules-watch` | `python -m vec_rules_watch` |
 
 The command names carry a `vec-community-` prefix so they cannot collide with the organisers' tools or other community
 packages. The module names can: a future pip-installable `vec-submit-check` by another author that ships a
@@ -232,6 +235,8 @@ leaderboard order.
 全部是通用工具，不含任何建模思路。MIT 许可。面向两个赛道的首次参赛者、想在自己构造的伪切分上比较自己几种方法的队伍（只是该切分上的比较，
 不预测隐藏目标上的名次），以及需要配置锁定和证据包的 Agent 赛道队伍。
 
+**规则与契约监测（2026-09-30 新增）**：每日运行的 GitHub Action 检查比赛页面、榜契约、阶段接口和打分器，有变化就写入 [`rules-watch/CHANGES.zh.md`](rules-watch/CHANGES.zh.md)；说明和订阅方法见 [`vec_rules_watch/README.md`](vec_rules_watch/README.md)。
+
 * [`vec_submit_check/`](vec_submit_check/)：`python -m vec_submit_check --board <榜> pred.h5ad` 对照已公布的榜契约做本地上传前
   检查（基因面板与顺序、细胞数范围、数值有限/非负/可转 float32、坐标、文件大小）；每条规则标明是 portal（门户会拒）、stricter（常数矩阵）
   还是 advisory（疑似原始计数、带标签）。细胞数必须落在 `index.json` 的 `[min_cells, max_cells]` 内，不再有豁免开关：评测页曾写
@@ -280,10 +285,10 @@ leaderboard order.
   第 11 节（2026-09-30 新增）列出 2026-10-20 起最终阶段的变化：验证集答案作为训练材料发布、每个榜整个阶段只有两次正式提交
   （当场打分、不可撤回）、测试输入不带标签和新的榜契约、最终排名用隐藏测试集、提名与证据规则，均注明官方时间线页和规则页
   的读取日期（2026-09-30）；关于打分器的抽样种子只写一句：主办方在对本工具包的评审中说，抽样种子将随每次提交而定。
-  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `61 passed`。
+  [`docs/metrics_overview.md`](docs/metrics_overview.md)：每个指标度量什么。测试行：`python -m pytest -q` -> `90 passed`。
 
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
-五个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
+五个命令以及规则监测的 `vec-community-rules-watch`，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
 然后 `python -m pytest -q`（合成数据测试，不需要比赛数据；没有 veckit 时打分器测试被跳过）。安装后的副本把榜契约放在
 `vec_submit_check/panels/` 里，在任何目录下都能用。命令名都带 `vec-community-` 前缀，不会与别的工具冲突；模块名可能冲突：
 将来若有别的作者发布可 pip 安装、并带 `vec_submit_check` 包的 `vec-submit-check`，装进同一环境会与本工具包的校验器互相覆盖

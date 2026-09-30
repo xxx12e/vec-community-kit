@@ -399,6 +399,8 @@ Sources, all read on 2026-09-30: the timeline (https://virtualembryo.ai/challeng
 Agent Team section), the Data page (https://virtualembryo.ai/challenge/data) and the FAQ. The pages win over this
 section; re-read them on 20 October.
 
+To hear about a change without re-reading every page, follow the kit's daily rules watch: [`rules-watch/CHANGES.md`](../rules-watch/CHANGES.md) (pages, board contract, phase endpoint, scorer; how to subscribe in [`vec_rules_watch/README.md`](../vec_rules_watch/README.md)).
+
 | date (2026) | what happens (timeline) |
 |---|---|
 | 20 Oct | P3, the test phase: the validation data is released for every task, the test inputs are released without labels, the test leaderboard opens |
