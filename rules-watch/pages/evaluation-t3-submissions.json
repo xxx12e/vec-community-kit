@@ -1,0 +1,58 @@
+{
+  "full_text_in_repo": false,
+  "id": "evaluation-t3-submissions",
+  "last_changed": "2026-09-30",
+  "sections": [
+    {
+      "chars": 103,
+      "heading": "Evaluation",
+      "level": 1,
+      "lines": 1,
+      "sha256": "6b0276a9a0b1fe83036c311bf476e48d0197227cb2e3993a8a0ff80777bdfa92"
+    },
+    {
+      "chars": 328,
+      "heading": "Submissions",
+      "level": 2,
+      "lines": 1,
+      "sha256": "f41c355e3a6aee0401763aecf278845936dcdd838ad4e2826de19b00b158aa89"
+    },
+    {
+      "chars": 2920,
+      "heading": "Requirements for a valid file \u00b7 Task 3",
+      "level": 3,
+      "lines": 10,
+      "sha256": "3de12e343e4634a5412ff957d277820f971a0aa1adda12fb9db8e571991b93c0"
+    },
+    {
+      "chars": 185,
+      "heading": "File contract \u00b7 Task 3",
+      "level": 3,
+      "lines": 10,
+      "sha256": "847a3c411e84dff6eefd83a016cd7594c0d61e8a8a938cd62b7c99ad247c0f91"
+    },
+    {
+      "chars": 369,
+      "heading": "What the scorer reads",
+      "level": 3,
+      "lines": 6,
+      "sha256": "ca4f9302801cac99ee76258a3bf3deaca18808fbe0839248051993437def30d5"
+    },
+    {
+      "chars": 580,
+      "heading": "What is deliberately not constrained",
+      "level": 3,
+      "lines": 3,
+      "sha256": "c825fc9fd54d91a0937458918c2bbe95eaa1b18c0c449321fb4e6c87325c17a9"
+    },
+    {
+      "chars": 631,
+      "heading": "Score a file locally",
+      "level": 3,
+      "lines": 4,
+      "sha256": "61d3dd2bdc6c6bd4976da56d7ae23ff147ef105dbc76da1615b9de89ff8665c4"
+    }
+  ],
+  "sha256": "4bb09cec792e6fc5cd6827b1c2826d78c28ccfe4890cd0d4359a1e2d984f1015",
+  "url": "https://virtualembryo.ai/challenge/evaluation?section=submissions&task=3"
+}

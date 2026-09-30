@@ -1,0 +1,252 @@
+{
+  "T1:val": {
+    "anchors": {
+      "de_direction": {
+        "ceiling": 0.7901,
+        "floor": 0.0
+      },
+      "de_score": {
+        "ceiling": 0.8464,
+        "floor": 0.0
+      },
+      "mmd_u": {
+        "ceiling": 0.00406,
+        "floor": 0.08359
+      },
+      "variogram": {
+        "ceiling": 0.000158,
+        "floor": 0.005219
+      }
+    },
+    "floor_model": "copy_last",
+    "genes_file": "T1__val.genes.txt",
+    "genes_sha256": "807549e15be01989",
+    "key": "T1:val",
+    "label": "T1 \u00b7 validation (E10.5)",
+    "max_cells": 5118,
+    "min_cells": 1000,
+    "n_genes": 32285,
+    "needs_coords": false,
+    "obs_required": [],
+    "obsm_required": [],
+    "public": true,
+    "ref_cells": 1706,
+    "setting": null,
+    "split": "val",
+    "target_ko": null,
+    "task": "T1",
+    "truth_cells": 1249
+  },
+  "T2:embryo:val_interp": {
+    "anchors": {
+      "d2_shape": {
+        "ceiling": 0.00268,
+        "floor": 0.05306
+      },
+      "de_direction": {
+        "ceiling": 0.9185,
+        "floor": 0.0
+      },
+      "de_score": {
+        "ceiling": 0.8413,
+        "floor": 0.0
+      },
+      "mmd_u": {
+        "ceiling": 0.00307,
+        "floor": 0.08571
+      },
+      "neighborhood_mmd": {
+        "ceiling": 0.01128,
+        "floor": 0.21105
+      },
+      "occupancy_dice": {
+        "ceiling": 0.7661,
+        "floor": 0.7047
+      },
+      "scale_log_ratio": {
+        "ceiling": 0.0053,
+        "floor": -0.3063
+      },
+      "variogram": {
+        "ceiling": 0.001264,
+        "floor": 0.053533
+      }
+    },
+    "floor_model": "copy_last",
+    "genes_file": "T2__embryo__val_interp.genes.txt",
+    "genes_sha256": "f8a2aaa79bf32cfb",
+    "key": "T2:embryo:val_interp",
+    "label": "T2 embryo \u00b7 interpolation, validation (E7.5)",
+    "max_cells": 5000,
+    "min_cells": 583,
+    "n_genes": 498,
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "public": true,
+    "ref_cells": 1330,
+    "setting": "embryo",
+    "split": "val_interp",
+    "target_ko": null,
+    "task": "T2",
+    "truth_cells": 583
+  },
+  "T2:heart:val_extrap": {
+    "anchors": {
+      "d2_shape": {
+        "ceiling": 0.00342,
+        "floor": 0.00933
+      },
+      "de_direction": {
+        "ceiling": 0.9915,
+        "floor": 0.0
+      },
+      "de_score": {
+        "ceiling": 0.942,
+        "floor": 0.0
+      },
+      "mmd_u": {
+        "ceiling": 0.00011,
+        "floor": 0.02455
+      },
+      "neighborhood_mmd": {
+        "ceiling": 0.0004,
+        "floor": 0.07184
+      },
+      "occupancy_dice": {
+        "ceiling": 0.9465,
+        "floor": 0.7747
+      },
+      "scale_log_ratio": {
+        "ceiling": 0.0074,
+        "floor": -0.268
+      },
+      "variogram": {
+        "ceiling": 0.000696,
+        "floor": 0.031712
+      }
+    },
+    "floor_model": "copy_last",
+    "genes_file": "T2__heart__val_extrap.genes.txt",
+    "genes_sha256": "a9a553108e19acb6",
+    "key": "T2:heart:val_extrap",
+    "label": "T2 heart \u00b7 extrapolation, validation (E10.5)",
+    "max_cells": 25179,
+    "min_cells": 1000,
+    "n_genes": 500,
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "public": true,
+    "ref_cells": 5374,
+    "setting": "heart",
+    "split": "val_extrap",
+    "target_ko": null,
+    "task": "T2",
+    "truth_cells": 8393
+  },
+  "T2:heart:val_interp": {
+    "anchors": {
+      "d2_shape": {
+        "ceiling": 0.00412,
+        "floor": 0.03079
+      },
+      "de_direction": {
+        "ceiling": 0.9553,
+        "floor": 0.0
+      },
+      "de_score": {
+        "ceiling": 0.8182,
+        "floor": 0.0
+      },
+      "mmd_u": {
+        "ceiling": 0.00087,
+        "floor": 0.0207
+      },
+      "neighborhood_mmd": {
+        "ceiling": 0.00432,
+        "floor": 0.05728
+      },
+      "occupancy_dice": {
+        "ceiling": 0.8796,
+        "floor": 0.6748
+      },
+      "scale_log_ratio": {
+        "ceiling": -0.0119,
+        "floor": 0.3284
+      },
+      "variogram": {
+        "ceiling": 0.001021,
+        "floor": 0.023828
+      }
+    },
+    "floor_model": "copy_last",
+    "genes_file": "T2__heart__val_interp.genes.txt",
+    "genes_sha256": "a9a553108e19acb6",
+    "key": "T2:heart:val_interp",
+    "label": "T2 heart \u00b7 interpolation, validation (E8.5)",
+    "max_cells": 17616,
+    "min_cells": 1000,
+    "n_genes": 500,
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "public": true,
+    "ref_cells": 5872,
+    "setting": "heart",
+    "split": "val_interp",
+    "target_ko": null,
+    "task": "T2",
+    "truth_cells": 1185
+  },
+  "T3:gata4": {
+    "anchors": {
+      "de_direction": {
+        "ceiling": 0.9247,
+        "floor": 0.0
+      },
+      "de_score": {
+        "ceiling": 0.8696,
+        "floor": 0.0
+      },
+      "mmd_u": {
+        "ceiling": 0.00039,
+        "floor": 0.03141
+      },
+      "severity_slope": {
+        "ceiling": -0.0088,
+        "floor": -6.9078
+      },
+      "variogram": {
+        "ceiling": 0.000737,
+        "floor": 0.032212
+      }
+    },
+    "floor_model": "wt_identity",
+    "genes_file": "T3__gata4.genes.txt",
+    "genes_sha256": "a9a553108e19acb6",
+    "key": "T3:gata4",
+    "label": "T3 \u00b7 validation (Gata4 KO)",
+    "max_cells": 7449,
+    "min_cells": 1000,
+    "n_genes": 500,
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "public": true,
+    "ref_cells": 2483,
+    "setting": null,
+    "split": "val",
+    "target_ko": "gata4",
+    "task": "T3",
+    "truth_cells": 2320
+  }
+}

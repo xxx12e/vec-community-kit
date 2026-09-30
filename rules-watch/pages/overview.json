@@ -1,0 +1,58 @@
+{
+  "full_text_in_repo": false,
+  "id": "overview",
+  "last_changed": "2026-09-30",
+  "sections": [
+    {
+      "chars": 257,
+      "heading": "",
+      "level": 0,
+      "lines": 4,
+      "sha256": "f72c197defcbd0783f346ac450d8e7d2af393cd6b89fe86888d49a6f782a4055"
+    },
+    {
+      "chars": 256,
+      "heading": "Virtual Embryo Challenge",
+      "level": 1,
+      "lines": 11,
+      "sha256": "fa3fd6f07e5d6b00111e6cf85c78d5d9010debbad05bf35b95e8af6c38ce8c6a"
+    },
+    {
+      "chars": 2555,
+      "heading": "How life emerges from a single zygote remains largely unknown and unmodelled",
+      "level": 2,
+      "lines": 4,
+      "sha256": "3a368be5f24d285ed8f7c193141cd36b614c6c8ba4e35a004fb103265564526e"
+    },
+    {
+      "chars": 1876,
+      "heading": "Three tasks, one shared atlas",
+      "level": 2,
+      "lines": 13,
+      "sha256": "763915162f60eaad0ac4b59e9257244605f9988610672c7cc04e2307e1b5e411"
+    },
+    {
+      "chars": 918,
+      "heading": "Human-designed vs agent-designed, scored side by side",
+      "level": 2,
+      "lines": 7,
+      "sha256": "aa178ab0781b18a7a328770217796020fcdc683bb7b4f6f1dd9abf546bcbe45b"
+    },
+    {
+      "chars": 666,
+      "heading": "Launch \u2192 development \u2192 final",
+      "level": 2,
+      "lines": 23,
+      "sha256": "a7c1f3565d0ea98cb6336f5bb66b39b106188be99f7311bb9908811f0349f814"
+    },
+    {
+      "chars": 1041,
+      "heading": "$112K in prizes and awards",
+      "level": 2,
+      "lines": 14,
+      "sha256": "70bdb7c043466f1ad960d623378541965ac913edf77b4445ef64fbc345008710"
+    }
+  ],
+  "sha256": "21f41188ee7353f3811659f745d1d8e4eac79364dad1b2167e436ef7d3028e78",
+  "url": "https://virtualembryo.ai/challenge"
+}

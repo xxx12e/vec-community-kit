@@ -1,0 +1,149 @@
+{
+  "full_text_in_repo": false,
+  "id": "rules",
+  "last_changed": "2026-09-30",
+  "sections": [
+    {
+      "chars": 30,
+      "heading": "",
+      "level": 0,
+      "lines": 1,
+      "sha256": "7d4f84165bbc4169ad0cc595d619f001fe1241f0cf48b4cb002567040ae28258"
+    },
+    {
+      "chars": 0,
+      "heading": "Official Rules",
+      "level": 1,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "chars": 519,
+      "heading": "1. Agreement",
+      "level": 2,
+      "lines": 2,
+      "sha256": "9247e115613dc2519b0c0a144a62c39c2922dac5f8415032596979b675511c7c"
+    },
+    {
+      "chars": 1434,
+      "heading": "2. Who Is Eligible To Enter",
+      "level": 2,
+      "lines": 9,
+      "sha256": "c4f9f76484ea0fe8da4418f8cb3368f30e69bab932a7908276ac08b386295578"
+    },
+    {
+      "chars": 785,
+      "heading": "3. Participating As An Employee Or University Representative",
+      "level": 2,
+      "lines": 5,
+      "sha256": "ba96cdcfffc7b13270f1b5d3441478585c9126cb04ef7edcf5188ddd55d8265e"
+    },
+    {
+      "chars": 449,
+      "heading": "4. Your Responsibility To Others",
+      "level": 2,
+      "lines": 3,
+      "sha256": "c1839ed7a0feb419cc2bb95aaf37f29971917e9ec852603fb2f05f513a8f9506"
+    },
+    {
+      "chars": 81,
+      "heading": "5. Fees",
+      "level": 2,
+      "lines": 1,
+      "sha256": "7ad5a2d63f995b6cf2b7723984d2efb5e85bbd0bf8990e7924f91c70f7b529e2"
+    },
+    {
+      "chars": 539,
+      "heading": "6. Registering",
+      "level": 2,
+      "lines": 3,
+      "sha256": "fa379fbefc509646b26f321daa301d53896dbb2d5c3d5b1b634a8d01ad1bec57"
+    },
+    {
+      "chars": 727,
+      "heading": "7. Teams",
+      "level": 2,
+      "lines": 5,
+      "sha256": "844f5d5ab1fe9514ef6d9a0bc47a0d6bcb61f7e03157575a49ded7eaccfbdda7"
+    },
+    {
+      "chars": 721,
+      "heading": "8. Tracks",
+      "level": 2,
+      "lines": 4,
+      "sha256": "233f78028c1d39be421bb9f7f04064941d9a46e28f9b2a204a6d73cc23b81a1b"
+    },
+    {
+      "chars": 5360,
+      "heading": "9. Agent Team Entries",
+      "level": 2,
+      "lines": 17,
+      "sha256": "927214765c315cb99e9db3474752a437b01f63add828945f8d0abf5c93d9a6bc"
+    },
+    {
+      "chars": 5309,
+      "heading": "10. Data and What You May Use",
+      "level": 2,
+      "lines": 16,
+      "sha256": "b5f19f8df92f24482bf4614c39e5faa9fff7024e98ecc8ff085322a1af2794d6"
+    },
+    {
+      "chars": 1069,
+      "heading": "11. Leaderboard Entries and Final Entries",
+      "level": 2,
+      "lines": 8,
+      "sha256": "ca839c3ed8814860758d4a7448e0984353b983ab74caac5bb097b67acd38c083"
+    },
+    {
+      "chars": 1124,
+      "heading": "12. Service Availability",
+      "level": 2,
+      "lines": 4,
+      "sha256": "a5d8640a8d970a66580894be5f0bd1ce5a616f741055d68df2abf10349ddf94e"
+    },
+    {
+      "chars": 605,
+      "heading": "13. Evaluation and Ranking",
+      "level": 2,
+      "lines": 5,
+      "sha256": "1348af458753e53f03af7037aae46c3e3af4f72175a37ad726921c0c6ed4c071"
+    },
+    {
+      "chars": 3498,
+      "heading": "14. Finalists, Winners and Prizes",
+      "level": 2,
+      "lines": 12,
+      "sha256": "4e89dddb1e66270b187d48c9a731e2708c0be5690de1c757e46f827c6fbcb326"
+    },
+    {
+      "chars": 1733,
+      "heading": "15. Ownership, Licence and Publication",
+      "level": 2,
+      "lines": 8,
+      "sha256": "044849f9143c6f226d4969ccc702663c0d4e30d10fd93c174430ca09c1844932"
+    },
+    {
+      "chars": 530,
+      "heading": "16. Conduct and Disqualification",
+      "level": 2,
+      "lines": 7,
+      "sha256": "6a871585a4551cf606f814cbd5fcd69ec5e995a2c540fcea7a7823126f2f279c"
+    },
+    {
+      "chars": 291,
+      "heading": "17. Schedule",
+      "level": 2,
+      "lines": 2,
+      "sha256": "bf2f65df3fa2206aaa89d49d7feed778428483feffe197143fe5e41e6ae24a0f"
+    },
+    {
+      "chars": 336,
+      "heading": "18. Compliance, Liability and Governing Law",
+      "level": 2,
+      "lines": 2,
+      "sha256": "cbf00412975238283010c80a830178adc7e765d9dbdae62bda5f5e9c6677ab29"
+    }
+  ],
+  "sha256": "e8eb002dd0a3d5c28f150e2ea080c5e9487d0c5ee0c909fc0fae78ebe7c06207",
+  "url": "https://virtualembryo.ai/challenge/rules"
+}

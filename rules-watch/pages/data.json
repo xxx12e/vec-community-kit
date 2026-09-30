@@ -1,0 +1,121 @@
+{
+  "full_text_in_repo": false,
+  "id": "data",
+  "last_changed": "2026-09-30",
+  "sections": [
+    {
+      "chars": 343,
+      "heading": "One embryo resource, two modalities",
+      "level": 1,
+      "lines": 2,
+      "sha256": "2eebcb2d3b0167cdd1d21becf489d05f3ad48980f6dca6952bf4c7d07a2fb4d8"
+    },
+    {
+      "chars": 852,
+      "heading": "Download",
+      "level": 2,
+      "lines": 5,
+      "sha256": "1f1eda127ac07c5a732087259354d640a04ad14a8986dca370d959652a47b88e"
+    },
+    {
+      "chars": 1414,
+      "heading": "Gene panel, per board",
+      "level": 2,
+      "lines": 9,
+      "sha256": "f81c02522496e9a2a38a72a056e28175d8c684f62c78b39ed39469dac60cc628"
+    },
+    {
+      "chars": 1869,
+      "heading": "How many cells to submit",
+      "level": 3,
+      "lines": 4,
+      "sha256": "e37ada9286047d33670fee8046f7af4550574abc747effca7f1d7bbcebb2aea1"
+    },
+    {
+      "chars": 1341,
+      "heading": "What the Task 1 dissection covers",
+      "level": 3,
+      "lines": 4,
+      "sha256": "76cd4e38137a290b0a4c837450760ba6796707a167e2358a359487ac23298336"
+    },
+    {
+      "chars": 716,
+      "heading": "Modalities",
+      "level": 2,
+      "lines": 8,
+      "sha256": "a6cdd60287418825b6a46668cbd4abc8373eda54447908a52ceb6916c744c7a2"
+    },
+    {
+      "chars": 906,
+      "heading": "Task 1: single-cell RNA",
+      "level": 2,
+      "lines": 20,
+      "sha256": "82025f3fa643bf7fd4cac9a5d4f169e84794f77e9ce76c1e683368d13e82db2d"
+    },
+    {
+      "chars": 1503,
+      "heading": "File format",
+      "level": 3,
+      "lines": 20,
+      "sha256": "41d65595a878d4101bd5e29f33de7d5bb182afa453f63ed109c9fea7b86e9b27"
+    },
+    {
+      "chars": 1577,
+      "heading": "Task 2: 3D MERFISH (embryo setting)",
+      "level": 2,
+      "lines": 20,
+      "sha256": "23b47f569aa878ab4aaa3afd3b5754adbbddaa4e57613fdc8425f78e8d9c70e5"
+    },
+    {
+      "chars": 1461,
+      "heading": "File format (2)",
+      "level": 3,
+      "lines": 18,
+      "sha256": "8e737c3e813492cbe50c303beb1db4d3d6f3de6bbddffac728c67d91e8923ab8"
+    },
+    {
+      "chars": 1443,
+      "heading": "Task 2: 3D MERFISH (heart setting)",
+      "level": 2,
+      "lines": 24,
+      "sha256": "44577765ae1738e84fe2c908e63235daf48e5af84f135317a957849b817b8456"
+    },
+    {
+      "chars": 1039,
+      "heading": "Task 3: conditional knock-outs",
+      "level": 2,
+      "lines": 17,
+      "sha256": "8c90a1bf260c520b484e5c74f8c9c55199439341d416e2083f4db1f8c3443953"
+    },
+    {
+      "chars": 1760,
+      "heading": "File format (3)",
+      "level": 3,
+      "lines": 21,
+      "sha256": "1cac5659be985413540a59e6fb2a4bcfacbdab9666ebe8efd943b2cb7972e9d9"
+    },
+    {
+      "chars": 918,
+      "heading": "Where the data comes from",
+      "level": 2,
+      "lines": 2,
+      "sha256": "5eeea211a809e4d2d0f3938a2079330798c368b31090b6a883f1fe59ec0e14d9"
+    },
+    {
+      "chars": 3358,
+      "heading": "Access and reproducibility",
+      "level": 2,
+      "lines": 3,
+      "sha256": "c62881281e0411783a0be416e2a9236bfd5ead02c08c564715fde26d069dd8f5"
+    },
+    {
+      "chars": 936,
+      "heading": "A related resource",
+      "level": 2,
+      "lines": 3,
+      "sha256": "0930ef1931f9369ffb79dc6e75ddc001a45d9ffda2ef0d7e2e8812ce1a3c81be"
+    }
+  ],
+  "sha256": "455c2c64de89ae1d6a0ba86129bd75752941c435b99c14955d4821594eb5ae4b",
+  "url": "https://virtualembryo.ai/challenge/data"
+}

@@ -1,0 +1,121 @@
+{
+  "full_text_in_repo": false,
+  "id": "terms",
+  "last_changed": "2026-09-30",
+  "sections": [
+    {
+      "chars": 30,
+      "heading": "",
+      "level": 0,
+      "lines": 1,
+      "sha256": "7d4f84165bbc4169ad0cc595d619f001fe1241f0cf48b4cb002567040ae28258"
+    },
+    {
+      "chars": 274,
+      "heading": "Website Terms of Use",
+      "level": 1,
+      "lines": 2,
+      "sha256": "43967c1cb4710d96f6ce0da46c67e17efc994566096c9ee784a3f079737bff8d"
+    },
+    {
+      "chars": 328,
+      "heading": "1. Purpose",
+      "level": 2,
+      "lines": 2,
+      "sha256": "3ac9fff84ac55d3c57a50166121cb51ba6dd0539a98031b959728827f6ef3ed8"
+    },
+    {
+      "chars": 315,
+      "heading": "2. Eligibility and Accounts",
+      "level": 2,
+      "lines": 6,
+      "sha256": "e92669c8558afb5945c8c34ba96b5a14e6136412e655ab47e0bdcadc56d06531"
+    },
+    {
+      "chars": 500,
+      "heading": "3. Competition Submissions",
+      "level": 2,
+      "lines": 4,
+      "sha256": "b71558373dcffc34b48642a80b3619f785d6118e5a19863c2465d97eee76dc24"
+    },
+    {
+      "chars": 284,
+      "heading": "4. Community Content",
+      "level": 2,
+      "lines": 2,
+      "sha256": "7d0e5fba28607de80a7b935dc174c05195351dc0e3c1811dfe410b8808126753"
+    },
+    {
+      "chars": 426,
+      "heading": "5. Acceptable Use",
+      "level": 2,
+      "lines": 9,
+      "sha256": "9d8e271dd2042d29cb9ff506231c78aaed48efcc2e6e4cde805abba4a929b5b7"
+    },
+    {
+      "chars": 224,
+      "heading": "6. Evaluation and Enforcement",
+      "level": 2,
+      "lines": 1,
+      "sha256": "d1694aa22fc30c9b94636412370d51f3a9fbc8dc670c71829de67e1d3f4d8975"
+    },
+    {
+      "chars": 266,
+      "heading": "7. Intellectual Property",
+      "level": 2,
+      "lines": 2,
+      "sha256": "3667eecbd9ec93323613642bf5fbf333a68110ed0827bd8f0f22240ae11baa9d"
+    },
+    {
+      "chars": 85,
+      "heading": "8. Privacy",
+      "level": 2,
+      "lines": 1,
+      "sha256": "4219e13529f8b05bc81ce75e4ce15557ca96c1ff6be40cfadec3869d08691226"
+    },
+    {
+      "chars": 387,
+      "heading": "9. Disclaimer",
+      "level": 2,
+      "lines": 1,
+      "sha256": "a657051ef39dea7cc8eab063d1caa7e6b900972d28499fa0eb4fa59c062d5094"
+    },
+    {
+      "chars": 234,
+      "heading": "10. Limitation of Liability",
+      "level": 2,
+      "lines": 1,
+      "sha256": "f5215781e477ae5c3bbd4bcc213ebc6f034c308fef39a6cc00b75fbec3e51cf2"
+    },
+    {
+      "chars": 189,
+      "heading": "11. Changes",
+      "level": 2,
+      "lines": 1,
+      "sha256": "3a0fe016bad33adfe24de8fa535951ef688c52eff371d155fbdd5853c348e34e"
+    },
+    {
+      "chars": 110,
+      "heading": "12. Governing Law",
+      "level": 2,
+      "lines": 1,
+      "sha256": "214b366e7f3f77533213dbf2047036e9c6d88431637c55e9d65af2a75843ecbd"
+    },
+    {
+      "chars": 175,
+      "heading": "13. Contact",
+      "level": 2,
+      "lines": 3,
+      "sha256": "4640be04d01e6906c08fb0f98c98d940cdf01c043121fb35d7570746761c8f7b"
+    },
+    {
+      "chars": 1466,
+      "heading": "14. Research Use and Scientific Integrity",
+      "level": 2,
+      "lines": 6,
+      "sha256": "b299dd32f739409f0b7648acee1ffc048a8432527c42ed2b6b260299e571b40b"
+    }
+  ],
+  "sha256": "221f17256a1d8fd49bf2a2077a4b9b33fc6ac786079ddb7ce841e1490f5defe8",
+  "url": "https://virtualembryo.ai/challenge/terms"
+}

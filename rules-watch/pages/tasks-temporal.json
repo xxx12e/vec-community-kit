@@ -1,0 +1,79 @@
+{
+  "full_text_in_repo": false,
+  "id": "tasks-temporal",
+  "last_changed": "2026-09-30",
+  "sections": [
+    {
+      "chars": 156,
+      "heading": "Temporal gene-expression distribution prediction",
+      "level": 1,
+      "lines": 1,
+      "sha256": "78bf01009e17e35d6bc72dadf1b3de9f0fd2308e079090b987eaefc66c9c75bf"
+    },
+    {
+      "chars": 1381,
+      "heading": "The question",
+      "level": 2,
+      "lines": 4,
+      "sha256": "d911ace6f545915e68aefdb2f5e815e22c386d02248c36e1f5d3a109e77bc990"
+    },
+    {
+      "chars": 277,
+      "heading": "Modality",
+      "level": 2,
+      "lines": 1,
+      "sha256": "20f8e790c2e0ac5f32b751148ce04c01da012e2d3c9b80394395428494a73e30"
+    },
+    {
+      "chars": 1035,
+      "heading": "Splits",
+      "level": 2,
+      "lines": 13,
+      "sha256": "9fa302ff9a539a0a6c0b0c8ebbbcfc08cc2e7880185e28289e257379510ed257"
+    },
+    {
+      "chars": 636,
+      "heading": "Input and output",
+      "level": 2,
+      "lines": 5,
+      "sha256": "7d36e1c8f3186c8b2caa46f1cadef0a9ed9e9b379c2fe42d4fa48e8e67323fe8"
+    },
+    {
+      "chars": 535,
+      "heading": "How it is scored",
+      "level": 2,
+      "lines": 14,
+      "sha256": "50647642a989f4d934b475a0e3c0064b650a8e3fda8c6e9044d4a8677030dd36"
+    },
+    {
+      "chars": 512,
+      "heading": "What the starter kit ships",
+      "level": 2,
+      "lines": 6,
+      "sha256": "29ef5cc4b45bd0a3920a476cba2e451e08191152f6051c1d1ab4a1f1218e18d4"
+    },
+    {
+      "chars": 1224,
+      "heading": "Why it\u2019s hard",
+      "level": 2,
+      "lines": 4,
+      "sha256": "d289509a844220900950fa13b1758563af477963dca9d088c7d5bac5bc4910b1"
+    },
+    {
+      "chars": 465,
+      "heading": "Common pitfalls",
+      "level": 2,
+      "lines": 4,
+      "sha256": "8decc10355c2d0a8456cc306af793ca9571251dfbfcfa4cdcbc8dc1909072d7a"
+    },
+    {
+      "chars": 397,
+      "heading": "Other tasks",
+      "level": 2,
+      "lines": 5,
+      "sha256": "43f5a2f1d6e66ea16716746a00d850590ace18b767a9482292ed7191ebddf7cd"
+    }
+  ],
+  "sha256": "b861a462ee64784410926bb6e231ca975077fc5a8ac0150dfc05e8cad89e2129",
+  "url": "https://virtualembryo.ai/challenge/tasks/temporal"
+}

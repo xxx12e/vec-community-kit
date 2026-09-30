@@ -1,0 +1,30 @@
+{
+  "full_text_in_repo": false,
+  "id": "evaluation-t1-resources",
+  "last_changed": "2026-09-30",
+  "sections": [
+    {
+      "chars": 92,
+      "heading": "Evaluation",
+      "level": 1,
+      "lines": 1,
+      "sha256": "2ec348b6468ae9a5795a8f18afb5e5972ab07f272ad688823b07843b6be13552"
+    },
+    {
+      "chars": 977,
+      "heading": "Resources",
+      "level": 2,
+      "lines": 3,
+      "sha256": "7bfa7765f4881aecd43d73f0fb2b07f16360ea9ce6aa83b3df2c8e6d991ad3e2"
+    },
+    {
+      "chars": 58,
+      "heading": "Questions",
+      "level": 4,
+      "lines": 1,
+      "sha256": "a863a1e283c1ea5d3895ca29986550d22345e51289317e3920b5d0e48a0593da"
+    }
+  ],
+  "sha256": "a3b22e8085761d7c89d93fd5467bac24bb15cef977936643cdd71304dbe8b575",
+  "url": "https://virtualembryo.ai/challenge/evaluation?section=resources&task=1"
+}

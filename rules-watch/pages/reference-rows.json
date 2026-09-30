@@ -1,0 +1,142 @@
+{
+  "full_text_in_repo": false,
+  "id": "reference-rows",
+  "last_changed": "2026-09-30",
+  "sections": [
+    {
+      "chars": 680,
+      "heading": "Reference rows",
+      "level": 1,
+      "lines": 4,
+      "sha256": "3790baaea7d3c3272211996be2737974089aeecf55ac7173e011336fa14602ea"
+    },
+    {
+      "chars": 251,
+      "heading": "The floor",
+      "level": 2,
+      "lines": 1,
+      "sha256": "15fa9107c74f2a4b44e72ca9b8ab5303a85ecbcb4fa19dfbe0ee8a7f36c4dd6c"
+    },
+    {
+      "chars": 734,
+      "heading": "copy_last",
+      "level": 3,
+      "lines": 7,
+      "sha256": "dc394cfc69f1e48a19a9d3f41b243d60f75abb8a7e8700e8b2304ac081a30e91"
+    },
+    {
+      "chars": 573,
+      "heading": "wt_identity",
+      "level": 3,
+      "lines": 7,
+      "sha256": "bb7fab9d42807cf736eb3ddbfa84333231e1b464ebfce5c90bcde8f685d36120"
+    },
+    {
+      "chars": 190,
+      "heading": "The ceiling",
+      "level": 2,
+      "lines": 1,
+      "sha256": "21e7170370a707432e33e3f0cbb75c25f3471af6a1879924963792641e345f0b"
+    },
+    {
+      "chars": 671,
+      "heading": "ceiling",
+      "level": 3,
+      "lines": 7,
+      "sha256": "2697df6e6239e4ff5c5aac11f7bb4e9c0c9dde71d21a3ab6d39a331818bc9206"
+    },
+    {
+      "chars": 255,
+      "heading": "Published baselines",
+      "level": 2,
+      "lines": 1,
+      "sha256": "eb67f802f2eb22c46e8f56159e17c0e78663bab319d019fbafaf565c82f89096"
+    },
+    {
+      "chars": 897,
+      "heading": "pseudobulk_shift",
+      "level": 3,
+      "lines": 7,
+      "sha256": "631e352fc112a44c007446c1ce4d7ed25f96ecfbaebf4732d2216fa3124524ad"
+    },
+    {
+      "chars": 677,
+      "heading": "shift_transfer",
+      "level": 3,
+      "lines": 7,
+      "sha256": "0903b4e2e24e692050562429517fc03812376c792929a7b29c1b8a19a262365d"
+    },
+    {
+      "chars": 493,
+      "heading": "gene_ko",
+      "level": 3,
+      "lines": 7,
+      "sha256": "8fd86522c6e4b1d4b4b5d22c51fb9750d491b347b48bc23ab5c4917e1a1d462d"
+    },
+    {
+      "chars": 365,
+      "heading": "Adversarial controls",
+      "level": 2,
+      "lines": 1,
+      "sha256": "c90abf012e981ec7ca7b0976d3a453554407181311b70f0a4cc933f564a2787f"
+    },
+    {
+      "chars": 341,
+      "heading": "ctrl_scale_ref",
+      "level": 3,
+      "lines": 7,
+      "sha256": "736ad2f287aa46f8c39205ffb0739a51003a37a8ed7017f568561fe55cf7874c"
+    },
+    {
+      "chars": 275,
+      "heading": "ctrl_shrink_ref",
+      "level": 3,
+      "lines": 7,
+      "sha256": "369b28c0753ad4bbcfa6f58e5be2d61210fa49acd95012186fde3bf0c6c53584"
+    },
+    {
+      "chars": 437,
+      "heading": "ctrl_one_cell",
+      "level": 3,
+      "lines": 7,
+      "sha256": "5129eb9ff7a27b8e13d2e3e13bfd6237ef9bae15dae1f58b01efc3854a7dd28a"
+    },
+    {
+      "chars": 619,
+      "heading": "ctrl_random_cube",
+      "level": 3,
+      "lines": 7,
+      "sha256": "4b8e8541cabd7644a12d5d28494c62f931552f4a95dc8897cfbd6cc76860def9"
+    },
+    {
+      "chars": 386,
+      "heading": "ctrl_squashed_ref",
+      "level": 3,
+      "lines": 7,
+      "sha256": "4eff779bc82dac2a4981a74dfb9ae77c56e8bb4fdce8181d72dd3279faa76b3e"
+    },
+    {
+      "chars": 299,
+      "heading": "ctrl_scale_wt",
+      "level": 3,
+      "lines": 7,
+      "sha256": "b53f6d1f78f02480fd72e7f0c8cd6cbd4eac969b9ec12dbe1b41bd48c58293b6"
+    },
+    {
+      "chars": 227,
+      "heading": "ctrl_shrink_wt",
+      "level": 3,
+      "lines": 7,
+      "sha256": "7b195638bb633a6270aa31c1d8d7d3b50f3b2c19ebbaddc0e452bdcddbd4e333"
+    },
+    {
+      "chars": 700,
+      "heading": "ctrl_random_dir",
+      "level": 3,
+      "lines": 8,
+      "sha256": "1fbefad115a12a1fbb89321a126b78ab55fb32d122278c3f158dd3d9adbbaf9f"
+    }
+  ],
+  "sha256": "cd1dae097e7ee6f9897255b5b43cee4dbca783483ffe73e8f3ebb96f1e0bf310",
+  "url": "https://virtualembryo.ai/challenge/baselines"
+}

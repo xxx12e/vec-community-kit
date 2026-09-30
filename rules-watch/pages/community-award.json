@@ -1,0 +1,44 @@
+{
+  "full_text_in_repo": false,
+  "id": "community-award",
+  "last_changed": "2026-09-30",
+  "sections": [
+    {
+      "chars": 283,
+      "heading": "Community Contribution Award",
+      "level": 1,
+      "lines": 1,
+      "sha256": "25572c3d9ac9e5d3457261096251575bbec2abf4398cffd0a59abf1f6b9ec4b4"
+    },
+    {
+      "chars": 1043,
+      "heading": "What it is",
+      "level": 2,
+      "lines": 12,
+      "sha256": "9d2288d40ef2f6bb11262d3f126356dc5363c7dd52f040c4a7cef30bd7f2e29b"
+    },
+    {
+      "chars": 1328,
+      "heading": "What counts",
+      "level": 2,
+      "lines": 13,
+      "sha256": "27250e92e526ea78d4141f0e8a92835dbf9fa3e3f2bced6ff527ccd8acb00657"
+    },
+    {
+      "chars": 828,
+      "heading": "How to apply",
+      "level": 2,
+      "lines": 4,
+      "sha256": "0dfef3adf49734e65faacecaaf8b894a26198d8ddf09e24690b76718cb643e3c"
+    },
+    {
+      "chars": 287,
+      "heading": "Community resources",
+      "level": 2,
+      "lines": 2,
+      "sha256": "7e9228fba03109596a7ca0ccfda1cdbb88b477e5568e8ff9f1dc97c8bd3e424f"
+    }
+  ],
+  "sha256": "4615fdc385e0d7bf61ecb6d8d36c61d1d0c196f59a73b719f5968924390fa9b9",
+  "url": "https://virtualembryo.ai/challenge/community"
+}
