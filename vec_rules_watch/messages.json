@@ -1,0 +1,232 @@
+{
+  "_about": {
+    "en": "Fixed message templates of the rules watch, English and Chinese side by side. The Chinese text is written here by hand; the watcher never machine-translates the organisers' pages. Placeholders in braces must be the same in both languages (tests/test_rules_watch.py checks it).",
+    "zh": "规则监测使用的固定消息模板，中英文并列。中文是人工写好的模板，监测程序从不机器翻译主办方页面。两种语言的花括号占位符必须一致（tests/test_rules_watch.py 会检查）。"
+  },
+
+  "changes.title": {"en": "# VEC rules and contract watch: changelog", "zh": "# VEC 规则与契约监测：变更记录"},
+  "changes.intro": {
+    "en": "Newest first. One entry per run that found a change. Written by `python -m vec_rules_watch run` (a daily GitHub Action of vec-community-kit) from the public pages of https://virtualembryo.ai/challenge, the board contract (panels/index.json and the gene lists), the phase endpoint and the organisers' scorer veckit on GitHub. Quoted lines are short excerpts (at most 200 characters each); the organisers' pages are the authoritative text. How it works and its limits: vec_rules_watch/README.md. Chinese version: CHANGES.zh.md.",
+    "zh": "最新的在最上面。每次运行发现变化就写一条。由 `python -m vec_rules_watch run`（vec-community-kit 的每日 GitHub Action）根据 https://virtualembryo.ai/challenge 的公开页面、榜契约（panels/index.json 和基因列表）、阶段接口以及 GitHub 上主办方的打分器 veckit 生成。引用的行是简短摘录（每条最多 200 个字符），保留英文原文；以主办方页面为准。原理和局限见 vec_rules_watch/README.md。英文版：CHANGES.md。"
+  },
+
+  "entry.title": {"en": "## {date} (run {time} UTC)", "zh": "## {date}（UTC {time} 运行）"},
+  "entry.first_run": {
+    "en": "First run: this entry records the starting point. Later entries list what changed against it.",
+    "zh": "首次运行：本条记录起点，之后的条目列出相对它的变化。"
+  },
+  "entry.rebaseline": {
+    "en": "The cache holding the previous full page text was missing or out of step with this repository, so pages were compared by section hash only: changed sections are named, no lines are quoted. The pages were re-baselined.",
+    "zh": "保存上次完整页面文本的缓存丢失，或与本仓库对不上，所以这次只按小节哈希比较页面：只列出改动的小节名，不引用具体行。页面已重新建立基线。"
+  },
+  "entry.fetch_errors": {
+    "en": "Could not fetch in this run: {sources}. Their previous snapshot is kept; a change there shows up on the next successful run.",
+    "zh": "本次未能获取：{sources}。保留上一次的快照；那里如果有变化，会在下一次成功运行时出现。"
+  },
+  "entry.impact": {"en": "What this changes for your file: {text}", "zh": "对你的文件意味着什么：{text}"},
+  "entry.error_item": {"en": "{source} ({error})", "zh": "{source}（{error}）"},
+
+  "head.contract": {"en": "### Board contract ({url})", "zh": "### 榜契约（{url}）"},
+  "head.phase": {"en": "### Phase endpoint ({url})", "zh": "### 阶段接口（{url}）"},
+  "head.scorer": {"en": "### Official scorer ({url})", "zh": "### 官方打分器（{url}）"},
+  "head.pages": {"en": "### Pages", "zh": "### 页面"},
+
+  "word.none": {"en": "none", "zh": "无"},
+  "word.yes": {"en": "yes", "zh": "是"},
+  "word.no": {"en": "no", "zh": "否"},
+  "word.sep": {"en": ", ", "zh": "，"},
+  "word.prerelease": {"en": ", pre-release", "zh": "，预发布"},
+  "coords.required": {"en": "required in .obsm {keys}", "zh": "必须放在 .obsm {keys}"},
+  "coords.none": {"en": "not used", "zh": "不需要"},
+
+  "contract.baseline": {"en": "Baseline: {n} boards in index.json.", "zh": "基线：index.json 中共有 {n} 个榜。"},
+  "contract.board_summary": {
+    "en": "{board}: {n_genes} genes ({genes_file}, genes_sha256 {genes_sha256}), cells {min_cells}-{max_cells}, coordinates: {coords}.",
+    "zh": "{board}：{n_genes} 个基因（{genes_file}，genes_sha256 {genes_sha256}），细胞数 {min_cells}-{max_cells}，坐标：{coords}。"
+  },
+  "contract.board_added": {
+    "en": "New board {board} ({label}): task {task}, split {split}, {n_genes} genes ({genes_file}), cells {min_cells}-{max_cells}, coordinates: {coords}.",
+    "zh": "新增榜 {board}（{label}）：任务 {task}，切分 {split}，{n_genes} 个基因（{genes_file}），细胞数 {min_cells}-{max_cells}，坐标：{coords}。"
+  },
+  "impact.board_added": {
+    "en": "A file for {board} needs exactly this board's gene list in its order ({n_genes} genes) and {min_cells} to {max_cells} cells; coordinates: {coords}. The kit's validator reads the new contract with VEC_PANELS_DIR={panels_dir}.",
+    "zh": "{board} 的文件必须严格使用该榜的基因列表及其顺序（{n_genes} 个基因），细胞数在 {min_cells} 到 {max_cells} 之间；坐标：{coords}。设置 VEC_PANELS_DIR={panels_dir} 即可让工具包的校验器读取新契约。"
+  },
+  "contract.board_removed": {"en": "Board {board} ({label}) is no longer in index.json.", "zh": "榜 {board}（{label}）已不在 index.json 中。"},
+  "impact.board_removed": {
+    "en": "Check the submit page before you upload to {board}: the portal may no longer accept files for it.",
+    "zh": "上传到 {board} 之前先看提交页：门户可能已不再接受这个榜的文件。"
+  },
+  "contract.genes_changed": {
+    "en": "{board}: gene panel changed: {old_n} -> {new_n} genes, {added} added, {removed} removed{order_note}; genes_sha256 {old_sha} -> {new_sha}.",
+    "zh": "{board}：基因面板变了：{old_n} -> {new_n} 个基因，新增 {added} 个，移除 {removed} 个{order_note}；genes_sha256 {old_sha} -> {new_sha}。"
+  },
+  "genes.order_changed": {"en": ", the order of the kept genes changed", "zh": "，保留下来的基因顺序也变了"},
+  "genes.order_same": {"en": "", "zh": ""},
+  "contract.genes_examples": {"en": "Added: {added_list}. Removed: {removed_list}.", "zh": "新增：{added_list}。移除：{removed_list}。"},
+  "impact.genes_changed": {
+    "en": "Rebuild your {board} file with the new gene list in the new order (var_names must match element by element); a file with the old panel is rejected.",
+    "zh": "请用新的基因列表、按新的顺序重新生成 {board} 的文件（var_names 必须逐个对上）；用旧面板的文件会被拒。"
+  },
+  "contract.genes_file_changed": {"en": "{board}: genes_file {old} -> {new}.", "zh": "{board}：genes_file 由 {old} 改为 {new}。"},
+  "contract.cells_changed": {
+    "en": "{board}: cell bounds [{old_min}, {old_max}] -> [{new_min}, {new_max}].",
+    "zh": "{board}：细胞数范围 [{old_min}, {old_max}] -> [{new_min}, {new_max}]。"
+  },
+  "impact.cells_changed": {
+    "en": "A {board} file must now have between {new_min} and {new_max} cells; the portal rejects a file outside the bounds.",
+    "zh": "{board} 的文件现在必须有 {new_min} 到 {new_max} 个细胞；超出范围的文件会被门户拒绝。"
+  },
+  "contract.obsm_changed": {"en": "{board}: required .obsm keys {old} -> {new}.", "zh": "{board}：必需的 .obsm 键 {old} -> {new}。"},
+  "impact.obsm_required": {"en": "Your {board} file must carry {keys} in .obsm.", "zh": "{board} 的文件必须在 .obsm 中带上 {keys}。"},
+  "impact.obsm_none": {"en": "No .obsm key is required for {board} any more.", "zh": "{board} 不再要求任何 .obsm 键。"},
+  "contract.obs_changed": {"en": "{board}: required .obs columns {old} -> {new}.", "zh": "{board}：必需的 .obs 列 {old} -> {new}。"},
+  "impact.obs_changed": {"en": "Check the .obs columns of your {board} file against the new list.", "zh": "请按新列表检查 {board} 文件的 .obs 列。"},
+  "contract.coords_changed": {"en": "{board}: needs_coords {old} -> {new}.", "zh": "{board}：needs_coords 由 {old} 改为 {new}。"},
+  "impact.coords_on": {"en": "{board} now needs 3D coordinates in your file.", "zh": "{board} 现在要求文件里有三维坐标。"},
+  "impact.coords_off": {"en": "{board} no longer reads coordinates.", "zh": "{board} 不再读取坐标。"},
+  "contract.anchors_changed": {
+    "en": "{board}: anchors of {metric}: floor {old_floor} -> {new_floor}, ceiling {old_ceiling} -> {new_ceiling}.",
+    "zh": "{board}：{metric} 的锚点：地板 {old_floor} -> {new_floor}，天花板 {old_ceiling} -> {new_ceiling}。"
+  },
+  "impact.anchors_changed": {
+    "en": "The 0-100 scale of {board} moves for {metric}: scores made with the old anchors (local ones too) are not comparable with new ones.",
+    "zh": "{board} 在 {metric} 上的 0-100 分尺度变了：用旧锚点算出的分数（包括本地分数）不能和新分数直接比较。"
+  },
+  "contract.anchor_added": {
+    "en": "{board}: {metric} added to the anchors (floor {floor}, ceiling {ceiling}).",
+    "zh": "{board}：锚点中新增 {metric}（地板 {floor}，天花板 {ceiling}）。"
+  },
+  "contract.anchor_removed": {"en": "{board}: {metric} removed from the anchors.", "zh": "{board}：锚点中移除了 {metric}。"},
+  "impact.anchor_set": {
+    "en": "The metric panel of {board} may have changed; read the scoring section of the evaluation page.",
+    "zh": "{board} 的指标组合可能变了；请阅读评测页的打分部分。"
+  },
+  "contract.stage_changed": {"en": "{board}: stage in the label {old} -> {new}.", "zh": "{board}：标签中的发育阶段 {old} -> {new}。"},
+  "impact.stage_changed": {
+    "en": "The target stage of {board} changed: re-check which released stages you predict from.",
+    "zh": "{board} 的目标阶段变了：请重新确认你用哪些已发布的阶段来预测。"
+  },
+  "contract.field_changed": {"en": "{board}: {field} {old} -> {new}.", "zh": "{board}：{field} 由 {old} 改为 {new}。"},
+  "contract.field_added": {"en": "{board}: new field {field} = {new}.", "zh": "{board}：新增字段 {field} = {new}。"},
+  "contract.field_removed": {"en": "{board}: field {field} removed (was {old}).", "zh": "{board}：字段 {field} 被移除（原为 {old}）。"},
+  "contract.sha_mismatch": {
+    "en": "{board}: the published {genes_file} does not match index.json (genes_sha256 {expected}, the list gives {got}; {n} genes, n_genes {expected_n}). The kit's validator refuses such a panel; tell the organisers.",
+    "zh": "{board}：发布的 {genes_file} 与 index.json 对不上（genes_sha256 为 {expected}，列表算出 {got}；列表 {n} 个基因，n_genes 为 {expected_n}）。工具包的校验器会拒绝这样的面板；请告知主办方。"
+  },
+
+  "phase.baseline": {
+    "en": "Baseline: phase {phase} ({label}), board {board}, split {split}, daily_quota {daily_quota}, accepts_submissions {accepts_submissions}, nominations_open {nominations_open}.",
+    "zh": "基线：阶段 {phase}（{label}），榜 {board}，切分 {split}，daily_quota {daily_quota}，accepts_submissions {accepts_submissions}，nominations_open {nominations_open}。"
+  },
+  "phase.phase_changed": {"en": "Phase {old} -> {new} ({label}).", "zh": "阶段 {old} -> {new}（{label}）。"},
+  "impact.phase_changed": {
+    "en": "The challenge is in a new phase: re-read the timeline and the rules before your next upload.",
+    "zh": "比赛进入了新阶段：下次上传前请重读时间线和规则。"
+  },
+  "phase.board_changed": {"en": "Scored board {old} -> {new}.", "zh": "计分榜 {old} -> {new}。"},
+  "impact.board_changed": {
+    "en": "New submissions are scored on the {new} board: check the keys and cell bounds of its boards (board contract above).",
+    "zh": "新提交在 {new} 榜上计分：请核对这些榜的 key 和细胞数范围（见上面的榜契约）。"
+  },
+  "phase.quota_changed": {"en": "daily_quota {old} -> {new}.", "zh": "daily_quota（每日配额）{old} -> {new}。"},
+  "impact.quota_changed": {"en": "Plan your uploads for the new quota.", "zh": "请按新配额安排上传。"},
+  "phase.accepts_submissions.true": {"en": "The portal accepts submissions (accepts_submissions true).", "zh": "门户接受提交（accepts_submissions 为 true）。"},
+  "phase.accepts_submissions.false": {"en": "The portal stopped accepting submissions (accepts_submissions false).", "zh": "门户停止接受提交（accepts_submissions 为 false）。"},
+  "phase.shows_scores.true": {"en": "Scores are shown (shows_scores true).", "zh": "显示分数（shows_scores 为 true）。"},
+  "phase.shows_scores.false": {"en": "Scores are hidden (shows_scores false).", "zh": "不显示分数（shows_scores 为 false）。"},
+  "phase.nominations_open.true": {"en": "Nominations are open: a final entry can be nominated now (nominations_open true).", "zh": "提名已开放：现在可以提名最终参赛作品（nominations_open 为 true）。"},
+  "phase.nominations_open.false": {"en": "Nominations are closed (nominations_open false).", "zh": "提名已关闭（nominations_open 为 false）。"},
+  "phase.data_open.true": {"en": "Data downloads are open (data_open true).", "zh": "数据下载已开放（data_open 为 true）。"},
+  "phase.data_open.false": {"en": "Data downloads are closed (data_open false).", "zh": "数据下载已关闭（data_open 为 false）。"},
+  "phase.split_changed": {"en": "split {old} -> {new}.", "zh": "切分 {old} -> {new}。"},
+  "phase.label_changed": {"en": "Label {old} -> {new}.", "zh": "标签 {old} -> {new}。"},
+  "phase.note_changed": {"en": "Note on the phase endpoint: {new}", "zh": "阶段接口的备注：{new}"},
+  "phase.field_changed": {"en": "{field} {old} -> {new}.", "zh": "{field} 由 {old} 改为 {new}。"},
+
+  "scorer.baseline": {
+    "en": "Baseline: {repo} {branch} at {sha} ({date}), version {version}; tags: {tags}; releases: {releases}; branches: {branches}.",
+    "zh": "基线：{repo} 的 {branch} 分支位于 {sha}（{date}），版本 {version}；标签：{tags}；发布：{releases}；分支：{branches}。"
+  },
+  "scorer.head_moved": {"en": "{branch} moved {old} -> {new} ({date}: \"{subject}\").", "zh": "{branch} 分支从 {old} 移到 {new}（{date}：\"{subject}\"）。"},
+  "impact.head_moved": {
+    "en": "The organisers' scorer changed. Read the commit before you trust local scores; this kit's vec_local_score pins veckit {pinned}.",
+    "zh": "主办方的打分器变了。相信本地分数之前先看这次提交；本工具包的 vec_local_score 固定使用 veckit {pinned}。"
+  },
+  "scorer.version_changed": {"en": "Version on {branch}: {old} -> {new}.", "zh": "{branch} 分支上的版本：{old} -> {new}。"},
+  "scorer.tag_added": {"en": "New tag {tag} at {sha}.", "zh": "新标签 {tag}，位于 {sha}。"},
+  "scorer.tag_removed": {"en": "Tag {tag} removed (was at {sha}).", "zh": "标签 {tag} 被删除（原位于 {sha}）。"},
+  "scorer.tag_moved": {"en": "Tag {tag} moved {old} -> {new}.", "zh": "标签 {tag} 从 {old} 移到 {new}。"},
+  "scorer.release_added": {"en": "New release {tag}: {name} ({published}{pre}).", "zh": "新发布 {tag}：{name}（{published}{pre}）。"},
+  "scorer.release_removed": {"en": "Release {tag} removed.", "zh": "发布 {tag} 被删除。"},
+  "scorer.branch_added": {"en": "New branch {branch} at {sha}.", "zh": "新分支 {branch}，位于 {sha}。"},
+  "scorer.branch_removed": {"en": "Branch {branch} removed (was at {sha}).", "zh": "分支 {branch} 被删除（原位于 {sha}）。"},
+  "scorer.branch_moved": {"en": "Branch {branch} moved {old} -> {new}.", "zh": "分支 {branch} 从 {old} 移到 {new}。"},
+  "scorer.default_branch_changed": {"en": "Default branch {old} -> {new}.", "zh": "默认分支 {old} -> {new}。"},
+
+  "pages.baseline": {"en": "Baseline recorded for {n} pages.", "zh": "已为 {n} 个页面记录基线。"},
+  "page.baseline": {"en": "{title} ({url}): baseline recorded, {n} section(s).", "zh": "{title}（{url}）：已记录基线，{n} 个小节。"},
+  "page.changed": {"en": "{title} ({url}): {summary}.", "zh": "{title}（{url}）：{summary}。"},
+  "page.sum_changed": {"en": "{n} section(s) changed", "zh": "{n} 个小节有改动"},
+  "page.sum_added": {"en": "{n} added", "zh": "新增 {n} 个"},
+  "page.sum_removed": {"en": "{n} removed", "zh": "移除 {n} 个"},
+  "page.sum_renamed": {"en": "{n} renamed", "zh": "改名 {n} 个"},
+  "page.sum_lines": {"en": "+{added} / -{removed} lines", "zh": "+{added} / -{removed} 行"},
+  "page.section_changed": {"en": "Changed: \"{heading}\" (+{added} / -{removed} lines)", "zh": "改动：“{heading}”（+{added} / -{removed} 行）"},
+  "page.section_added": {"en": "Added: \"{heading}\" ({lines} line(s))", "zh": "新增：“{heading}”（{lines} 行）"},
+  "page.section_removed": {"en": "Removed: \"{heading}\" ({lines} line(s))", "zh": "移除：“{heading}”（{lines} 行）"},
+  "page.section_renamed": {"en": "Renamed: \"{old}\" -> \"{new}\"", "zh": "改名：“{old}” -> “{new}”"},
+  "page.section_changed_hash": {"en": "Changed (by hash, no line detail): \"{heading}\"", "zh": "有改动（只按哈希判断，没有逐行细节）：“{heading}”"},
+  "page.order_changed": {"en": "The order of the sections changed.", "zh": "小节的顺序变了。"},
+  "page.more_lines": {"en": "({n} more changed lines not quoted)", "zh": "（另有 {n} 行改动没有引用）"},
+  "page.top": {"en": "(top of page)", "zh": "（页首）"},
+  "page.excerpt_label": {"en": "Changed lines (short excerpts):", "zh": "改动的行（英文原文的简短摘录）："},
+
+  "hint.rules": {"en": "The rules decide what is allowed and what is prize-eligible: read the changed sections on the page in full.", "zh": "规则决定什么允许、什么有获奖资格：请到原页面完整阅读改动的小节。"},
+  "hint.terms": {"en": "The terms of use changed: read the changed sections on the page.", "zh": "使用条款变了：请到原页面阅读改动的小节。"},
+  "hint.timeline": {"en": "Dates may have moved: check your plan against the new schedule.", "zh": "日期可能变了：请按新的日程核对你的计划。"},
+  "hint.faq": {"en": "The FAQ often carries rulings on edge cases: read the changed answers.", "zh": "FAQ 里常有对边界情况的裁定：请阅读改动的回答。"},
+  "hint.evaluation": {"en": "The evaluation pages define the file contract and the metrics: check whether your file or your local scoring is affected.", "zh": "评测页规定文件契约和指标：请检查你的文件或本地打分是否受影响。"},
+  "hint.data": {"en": "The Data page lists stages, downloads and per-board cell counts: compare it with the board contract.", "zh": "数据页列出阶段、下载和各榜细胞数：请与榜契约对照。"},
+  "hint.prizes": {"en": "Prize or eligibility text changed.", "zh": "奖项或获奖资格的文字变了。"},
+  "hint.tasks": {"en": "A task description changed: check the splits and the input and output.", "zh": "任务说明变了：请检查切分以及输入和输出。"},
+  "hint.none": {"en": "", "zh": ""},
+
+  "title.overview": {"en": "Overview", "zh": "概览页"},
+  "title.rules": {"en": "Challenge Rules", "zh": "比赛规则"},
+  "title.terms": {"en": "Terms of Use", "zh": "使用条款"},
+  "title.faq": {"en": "FAQ", "zh": "常见问题（FAQ）"},
+  "title.timeline": {"en": "Timeline", "zh": "时间线"},
+  "title.prizes": {"en": "Prizes", "zh": "奖项"},
+  "title.community-award": {"en": "Community award", "zh": "社区贡献奖"},
+  "title.publish": {"en": "Publish with us", "zh": "合作发表"},
+  "title.data": {"en": "Data", "zh": "数据页"},
+  "title.tasks": {"en": "Tasks", "zh": "任务总览"},
+  "title.tasks-temporal": {"en": "Task 1 (temporal)", "zh": "任务 1（时间）"},
+  "title.tasks-spatial": {"en": "Task 2 (spatial-temporal)", "zh": "任务 2（时空）"},
+  "title.tasks-perturbation": {"en": "Task 3 (perturbation)", "zh": "任务 3（扰动）"},
+  "title.reference-rows": {"en": "Reference rows", "zh": "参考行（基线）"},
+  "title.resources": {"en": "Community resources", "zh": "社区资源"},
+  "title.evaluation-t1-task": {"en": "Evaluation, Task 1: task", "zh": "评测页，任务 1：任务说明"},
+  "title.evaluation-t1-submissions": {"en": "Evaluation, Task 1: submissions", "zh": "评测页，任务 1：提交"},
+  "title.evaluation-t1-scoring": {"en": "Evaluation, Task 1: scoring", "zh": "评测页，任务 1：打分"},
+  "title.evaluation-t1-resources": {"en": "Evaluation, Task 1: resources", "zh": "评测页，任务 1：资源"},
+  "title.evaluation-t2-task": {"en": "Evaluation, Task 2: task", "zh": "评测页，任务 2：任务说明"},
+  "title.evaluation-t2-submissions": {"en": "Evaluation, Task 2: submissions", "zh": "评测页，任务 2：提交"},
+  "title.evaluation-t2-scoring": {"en": "Evaluation, Task 2: scoring", "zh": "评测页，任务 2：打分"},
+  "title.evaluation-t2-resources": {"en": "Evaluation, Task 2: resources", "zh": "评测页，任务 2：资源"},
+  "title.evaluation-t3-task": {"en": "Evaluation, Task 3: task", "zh": "评测页，任务 3：任务说明"},
+  "title.evaluation-t3-submissions": {"en": "Evaluation, Task 3: submissions", "zh": "评测页，任务 3：提交"},
+  "title.evaluation-t3-scoring": {"en": "Evaluation, Task 3: scoring", "zh": "评测页，任务 3：打分"},
+  "title.evaluation-t3-resources": {"en": "Evaluation, Task 3: resources", "zh": "评测页，任务 3：资源"},
+  "title.contract": {"en": "Board contract", "zh": "榜契约"},
+  "title.phase": {"en": "Phase endpoint", "zh": "阶段接口"},
+  "title.scorer": {"en": "Official scorer (veckit)", "zh": "官方打分器（veckit）"},
+
+  "issue.intro": {
+    "en": "The daily rules watch found a change in the board contract, the phase endpoint or the official scorer. Full entry: {link}",
+    "zh": "每日规则监测发现榜契约、阶段接口或官方打分器有变化。完整条目：{link}"
+  },
+
+  "summary.no_change": {"en": "No change in this run.", "zh": "本次运行没有发现变化。"}
+}

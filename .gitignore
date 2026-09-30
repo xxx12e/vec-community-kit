@@ -6,6 +6,8 @@ venv/
 # run directories (evidence) and data are never committed
 runs/
 data/raw/
+# the rules watch's private working state (the Actions cache holds it in CI)
+.rules-watch-state/
 *.h5ad
 out/
 pseudo/

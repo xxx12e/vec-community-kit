@@ -1,12 +1,15 @@
-"""Source files are ASCII-only (the docs/ tutorials and the top-level README may contain Chinese)."""
+"""Source files are ASCII-only (the docs/ tutorials and the top-level README may contain Chinese; so may the rules
+watch's bilingual README and its message catalogue, and the watcher's generated output in rules-watch/, which quotes
+the organisers' pages)."""
 from __future__ import annotations
 
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", "runs", "third_party", ".venv", "data", "out", "pseudo", "scratchpad"}
+SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", "runs", "third_party", ".venv", "data", "out", "pseudo", "scratchpad",
+             "rules-watch", ".rules-watch-state"}
 SUFFIXES = {".py", ".json", ".txt", ".ini", ".cfg", ".toml", ".md"}
-ALLOWED_NON_ASCII = {ROOT / "README.md"}
+ALLOWED_NON_ASCII = {ROOT / "README.md", ROOT / "vec_rules_watch" / "README.md", ROOT / "vec_rules_watch" / "messages.json"}
 
 
 def source_files():

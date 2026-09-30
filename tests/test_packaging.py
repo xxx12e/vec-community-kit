@@ -39,7 +39,8 @@ def test_versions_and_packages_agree():
     version = proj["project"]["version"]
     packages = proj["tool"]["setuptools"]["packages"]
     top = sorted({p.split(".")[0] for p in packages})
-    assert top == ["vec_agent_evidence", "vec_community_baselines", "vec_local_score", "vec_submit_check"]
+    assert top == ["vec_agent_evidence", "vec_community_baselines", "vec_local_score", "vec_rules_watch",
+                   "vec_submit_check"]
     assert "vec_baselines" not in " ".join(packages)
     for name in top:
         assert importlib.import_module(name).__version__ == version, name
@@ -49,7 +50,7 @@ def test_versions_and_packages_agree():
 def test_console_scripts_resolve():
     scripts = pyproject()["project"]["scripts"]
     assert set(scripts) == {"vec-community-check", "vec-community-baseline", "vec-community-score",
-                            "vec-community-split", "vec-community-evidence"}
+                            "vec-community-split", "vec-community-evidence", "vec-community-rules-watch"}
     for target in scripts.values():
         mod, func = target.split(":")
         assert callable(getattr(importlib.import_module(mod), func)), target
@@ -77,7 +78,8 @@ def test_wheel_installs_and_finds_its_panels(tmp_path):
     from a directory that has no data/panels: the validator must find the copy installed with the package."""
     src = tmp_path / "src"                           # build from a copy: setuptools writes build/ and *.egg-info
     ignore = shutil.ignore_patterns("__pycache__", "*.pyc")
-    for d in ("vec_submit_check", "vec_community_baselines", "vec_local_score", "vec_agent_evidence", "data/panels"):
+    for d in ("vec_submit_check", "vec_community_baselines", "vec_local_score", "vec_agent_evidence", "vec_rules_watch",
+              "data/panels"):
         shutil.copytree(ROOT / d, src / d, ignore=ignore)
     for f in ("pyproject.toml", "README.md", "LICENSE"):
         shutil.copy2(ROOT / f, src / f)
@@ -91,9 +93,10 @@ def test_wheel_installs_and_finds_its_panels(tmp_path):
     for n in ("vec_submit_check/panels/index.json", "vec_submit_check/panels/T1__val.genes.txt",
               "vec_submit_check/panels/T3__gata4.genes.txt", "vec_community_baselines/make_baseline.py",
               "vec_local_score/local_score.py", "vec_agent_evidence/hooks/guard.py",
-              "vec_agent_evidence/example_prompt.md", "vec_agent_evidence/example_settings.json"):
+              "vec_agent_evidence/example_prompt.md", "vec_agent_evidence/example_settings.json",
+              "vec_rules_watch/messages.json", "vec_rules_watch/watchlist.json", "vec_rules_watch/runner.py"):
         assert n in names, n
-    assert not any(n.startswith(("vec_baselines/", "tests/", "data/", "scratchpad/")) for n in names)
+    assert not any(n.startswith(("vec_baselines/", "tests/", "data/", "scratchpad/", "rules-watch/")) for n in names)
     entry_points = [n for n in names if n.endswith(".dist-info/entry_points.txt")]
     ep = zipfile.ZipFile(whl[0]).read(entry_points[0]).decode("utf-8")
     assert "vec-community-check = vec_submit_check.checker:main" in ep
