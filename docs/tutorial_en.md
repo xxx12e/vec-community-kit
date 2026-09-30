@@ -124,9 +124,10 @@ Rules of a valid file (`vec_submit_check` tests these locally, labelling each ru
 2. `var_names` equal to the board's gene list, element by element, **in the same order**. The portal does not
    reorder for you.
 3. `n_obs` inside the board's `[min_cells, max_cells]` from `panels/index.json` (the table above; also on the Data
-   page). An upload outside them is rejected before scoring and does not spend a scored attempt. (Until the
-   organisers corrected them on 2026-09-22, the evaluation pages said "no cap" above 1,000 cells; `index.json` is
-   authoritative, and the checker has no opt-out.) The cell count is a sample size, not a scored quantity; a few thousand cells is plenty (the scorer's own draws use at
+   page). An upload outside them is rejected before scoring and does not spend a scored attempt. (Until they were
+   corrected after the organisers reviewed this kit (2026-09-22), the evaluation pages said "no cap" above 1,000
+   cells; one paragraph of the evaluation pages still says 1,000 cells, so the checker warns on 583-999 cells on the
+   embryo board. `index.json` is authoritative, and the checker has no opt-out.) The cell count is a sample size, not a scored quantity; a few thousand cells is plenty (the scorer's own draws use at
    most 2000 cells for some metrics and 1500 for others).
 4. `.X` finite, **non-negative on every board**, log-normalised like the released data; sparse or dense (the scorer
    densifies and casts to float32 itself). Validation cannot see a wrong scale: a raw-count file passes every

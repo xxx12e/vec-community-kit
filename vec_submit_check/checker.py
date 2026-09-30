@@ -14,10 +14,10 @@ advisory:
   * [portal]   obsm["spatial_3D"] present, shape (n, >=3), finite, when the board needs coordinates (the scorer
                reads the first three columns)
   * [portal]   a single .h5ad of at most 1200 MB (MAX_FILE_MB)
-  * [portal]   min_cells <= n_obs <= max_cells of index.json. The evaluation pages (corrected on 2026-09-22; they
-               had said "no cap" above 1,000 cells) now state that both bounds differ by board, are listed on the
-               Data page and in index.json, and that an upload outside them is rejected before scoring. There is no
-               opt-out: index.json is authoritative.
+  * [portal]   min_cells <= n_obs <= max_cells of index.json. The evaluation pages (corrected after the
+               organisers reviewed this kit, 2026-09-22; they had said "no cap" above 1,000 cells) now state that
+               both bounds differ by board, are listed on the Data page and in index.json, and that an upload
+               outside them is rejected before scoring. There is no opt-out: index.json is authoritative.
   * [advisory] a count between index.json's min_cells and 1,000 (the embryo board allows 583) is warned about,
                because a paragraph of the evaluation pages still mentions a 1,000-cell minimum (PAGE_MIN_CELLS)
   * [stricter] a constant .X is an error (it cannot be a prediction)

@@ -23,7 +23,8 @@ they cannot be mistaken for the version numbers of the organisers' scorer veckit
 * `vec_baselines` is now **`vec_community_baselines`** (the old name is the organisers' official package; no alias).
 * **`pyproject.toml`**: `pip install -e ".[test]"` installs the four packages and five `vec-community-*` commands.
 * **`max_cells` is authoritative**: `--ignore-max-cells` (validator) and `--allow-over-max` (writer) are gone; the
-  evaluation pages were corrected on 2026-09-22.
+  evaluation pages were corrected after the organisers reviewed this kit (2026-09-22); one paragraph of the
+  evaluation pages still says 1,000 cells (the validator warns between 583 and 999 on the embryo board).
 * **Local scoring prints the multi-seed band by default** (`--single-seed` for the old table): the organisers, in
   their review of this kit, said the subsample seed will depend on each submission. The `--json` key of the default
   output is therefore **`task_score_mean`** (with `_sd`, `_min`, `_max`, `band`); `task_score` is the key of the
@@ -46,8 +47,9 @@ contract: gene panel and order, cell bounds, finite / non-negative / float32-cas
 labels present) in [`vec_submit_check/README.md`](vec_submit_check/README.md). Exit codes and a `--json` report.
 The cell count must lie inside `index.json`'s `[min_cells, max_cells]`, with no opt-out: the evaluation pages used
 to say "no cap" above 1,000 cells, which contradicted `index.json` and the portal (it rejected uploads above
-`max_cells`); the organisers corrected the pages on 2026-09-22, and the `--ignore-max-cells` escape hatch of earlier
-versions is gone.
+`max_cells`); the pages were corrected after the organisers reviewed this kit (2026-09-22) - one paragraph of the
+evaluation pages still says 1,000 cells, so the validator warns on 583-999 cells on the embryo board - and the
+`--ignore-max-cells` escape hatch of earlier versions is gone.
 
 *Adds:* the contract check in a dependency-light tool (anndata, numpy, scipy; no scorer, no target data) with the
 first failing rule in plain words, and warnings for what the portal's validation does not catch (a raw-count file
@@ -178,8 +180,11 @@ commands, each the same as its `python -m` form:
 | `vec-community-evidence` | `python -m vec_agent_evidence` |
 
 The command names carry a `vec-community-` prefix so they cannot collide with the organisers' tools or other community
-packages. An installed copy carries the board contracts inside the validator package (`vec_submit_check/panels/`), so
-it works from any directory; `VEC_PANELS_DIR` still overrides them. Extras: `.[test]` adds pytest, `.[score]` adds the
+packages. The module names can: a future pip-installable `vec-submit-check` by another author that ships a
+`vec_submit_check` package would overwrite this kit's validator in the same environment (none exists on PyPI as of
+2026-09-30; see [`vec_submit_check/README.md`](vec_submit_check/README.md#name-check-another-vec-submit-check)).
+An installed copy carries the board contracts inside the validator package (`vec_submit_check/panels/`), so it
+works from any directory; `VEC_PANELS_DIR` still overrides them. Extras: `.[test]` adds pytest, `.[score]` adds the
 organisers' scorer veckit pinned to the tested commit (needs git). `pip install -r requirements.txt` still works for
 people who run the tools from a clone without installing it; the two dependency lists are kept identical (a test
 checks it).
@@ -228,7 +233,8 @@ leaderboard order.
 * [`vec_submit_check/`](vec_submit_check/)：`python -m vec_submit_check --board <榜> pred.h5ad` 对照已公布的榜契约做本地上传前
   检查（基因面板与顺序、细胞数范围、数值有限/非负/可转 float32、坐标、文件大小）；每条规则标明是 portal（门户会拒）、stricter（常数矩阵）
   还是 advisory（疑似原始计数、带标签）。细胞数必须落在 `index.json` 的 `[min_cells, max_cells]` 内，不再有豁免开关：评测页曾写
-  "1,000 个以上无上限"，与 `index.json` 和门户的实际行为（超过 `max_cells` 的上传被拒）矛盾，主办方已于 2026-09-22 更正，旧版的
+  "1,000 个以上无上限"，与 `index.json` 和门户的实际行为（超过 `max_cells` 的上传被拒）矛盾，主办方评审本工具包后已更正（2026-09-22；
+  评测页仍有一段写着 1,000 个细胞，所以全胚胎榜上 583-999 个细胞时校验器给警告），旧版的
   `--ignore-max-cells` 已删除。比主办方多出来的：
   轻依赖（不装打分器、不需要目标数据）、第一条失败规则说人话、对门户校验查不出来的问题给警告（原始计数文件能过校验但会被打错分）。
   PASS 只表示本地格式检查通过，不代表归一化正确、数据来源合规或参赛资格。示例输出：`[PASS] out/heart_interp_copy_last.h5ad @ T2:heart:val_interp  n_obs=5000 n_vars=500`。
@@ -276,4 +282,7 @@ leaderboard order.
 安装：`pip install -e ".[test]"`（工具包本身、依赖和 pytest；另有 `vec-community-check` / `-baseline` / `-score` / `-split` / `-evidence`
 五个命令，与对应的 `python -m` 用法相同；`.[score]` 额外安装固定到已测试 commit 的 veckit），或只装依赖 `pip install -r requirements.txt`；
 然后 `python -m pytest -q`（合成数据测试，不需要比赛数据；没有 veckit 时打分器测试被跳过）。安装后的副本把榜契约放在
-`vec_submit_check/panels/` 里，在任何目录下都能用。
+`vec_submit_check/panels/` 里，在任何目录下都能用。命令名都带 `vec-community-` 前缀，不会与别的工具冲突；模块名可能冲突：
+将来若有别的作者发布可 pip 安装、并带 `vec_submit_check` 包的 `vec-submit-check`，装进同一环境会与本工具包的校验器互相覆盖
+（截至 2026-09-30 PyPI 上没有；另一位作者的 github.com/gh-dv-openclaw/vec-submit-check 是在克隆目录里运行的单个脚本，
+不能 pip 安装，也没有 `vec_submit_check` 模块），详见 `vec_submit_check/README.md`。

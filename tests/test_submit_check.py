@@ -94,7 +94,8 @@ def test_cell_bounds(tmp_path, heart_panel):
     big.write_h5ad(g)
     rep = check(g, "T3:gata4")
     assert "> max_cells=7449" in errors(rep) and "rejects" in errors(rep)
-    # index.json's max_cells is authoritative since the evaluation pages were corrected (2026-09-22): no opt-out
+    # index.json's max_cells is authoritative since the evaluation pages were corrected after the organisers
+    # reviewed this kit (2026-09-22): no opt-out
     with pytest.raises(TypeError):
         check(g, "T3:gata4", ignore_max_cells=True)
     with pytest.raises(SystemExit) as exc:

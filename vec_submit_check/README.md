@@ -26,9 +26,10 @@ ship in `data/panels/` (`index.json` unchanged between the two reads):
 
 Until 2026-09-22 the two disagreed on the cell-count upper bound: the evaluation pages said "no cap" above 1,000
 cells while `index.json` carried a `max_cells` per board, so earlier versions of this checker treated `max_cells` as
-a "stricter" rule with an `--ignore-max-cells` opt-out. The organisers corrected the pages on 2026-09-22 (uploads
-above `max_cells` had been rejected by the portal all along); they now say that both bounds "differ by board and
-are listed on the Data page and in index.json" and that an upload outside them "is rejected before scoring".
+a "stricter" rule with an `--ignore-max-cells` opt-out. The pages were corrected after the organisers reviewed this
+kit (2026-09-22); one paragraph of the evaluation pages still says 1,000 cells. Uploads above `max_cells` had been
+rejected by the portal all along; the requirements section now says that both bounds "differ by board and are
+listed on the Data page and in index.json" and that an upload outside them "is rejected before scoring".
 `index.json` is authoritative, and the opt-out was removed in 2026.10.0. Every rule below says where it comes from and
 what the checker does with it. **portal** = the portal's validator rejects on it (a file that fails here would fail
 there); **stricter** = the checker is stricter than the pages; **advisory** = a warning for something no validator
@@ -42,7 +43,7 @@ catches.
 | `obsm["spatial_3D"]` present with shape (n, >= 3), finite (T2/T3) | portal ("cells x 3 or more ... only the first three columns are read") | error; only the first three columns are inspected |
 | one `.h5ad` of at most 1200 MB | portal (rules page) | error, measured as 1e6-byte MB (the stricter reading) |
 | at least `min_cells` cells | portal (`index.json`, the Data page and the pages' requirements section; 583 on the embryo board, 1,000 elsewhere) | error below `min_cells`; an advisory warning between 583 and 1,000, because the pages' "not constrained" paragraph still mentions a 1,000-cell minimum (read 2026-09-30) |
-| at most `max_cells` cells | portal (`index.json` and the Data page; the pages' requirements section since the 2026-09-22 correction) | error; no opt-out |
+| at most `max_cells` cells | portal (`index.json` and the Data page; the pages' requirements section since it was corrected after the organisers reviewed this kit, 2026-09-22) | error; no opt-out |
 | `.X` not constant | not a portal rule | stricter: error (a constant matrix cannot be a prediction) |
 | values look like raw counts (`.X` max > 30) | the pages: "a raw count matrix ... passes every check and is then scored as though it were on the log scale" | advisory warning; the checker cannot see a normalised-but-not-log file |
 | `obs["celltype"]` present | ignored by the scorer | advisory warning |
@@ -51,6 +52,27 @@ catches.
 The panel file itself is verified against `index.json`'s `genes_sha256` before it is trusted. The organisers'
 starter kit (`score_h5ad.py`) also validates a local file and, given the target, scores it; this checker is the
 dependency-light subset for people who only want the format question answered.
+
+## Name check: another `vec-submit-check`
+
+Checked on 2026-09-30: PyPI has no project called `vec-submit-check` (PyPI treats `vec_submit_check` as the same
+name) and none called `vec-community-kit`. Another author's community validator lives at
+https://github.com/gh-dv-openclaw/vec-submit-check (MIT); as of that date it is a single script,
+`validate_submission.py`, run from its clone - it has no `pyproject.toml` / `setup.py`, so pip cannot install it,
+and it ships no `vec_submit_check` module and no console command. It cannot shadow this package today.
+
+If a distribution named `vec-submit-check` ever does ship a top-level `vec_submit_check` package, installing it into
+the same environment as this kit would make the two overwrite each other's files (pip does not stop two
+distributions from writing the same top-level package), and `python -m vec_submit_check` would run whichever was
+installed last. Keep such a tool in a separate environment, or check which one Python imports:
+
+```
+python -c "import vec_submit_check as m; print(m.__file__, m.__version__)"   # this kit: version 2026.10.0 or later
+pip show -f vec-community-kit                                                  # lists the files this kit installed
+```
+
+The console commands do not collide with such a tool: this kit's are all named `vec-community-*`. The module name
+stays `vec_submit_check` (renaming it would break every documented command).
 
 ## What PASS means
 

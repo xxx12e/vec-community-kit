@@ -77,7 +77,8 @@ bio.write_submission(X, C, panel, "pred.h5ad", board)                 # ValueErr
   states the bound (e.g. `the source has 17057 cells and the board allows at most max_cells=5118; pass an explicit
   n_cells inside [1000, 5118]`). The released stages hold more cells than most boards allow, so in practice you
   pass a number. `index.json`'s `max_cells` is authoritative - the portal rejects an upload above it before scoring
-  (the evaluation pages were corrected to say so on 2026-09-22) - so the former `allow_over_max` /
+  (the evaluation pages were corrected to say so after the organisers reviewed this kit, 2026-09-22) - so the
+  former `allow_over_max` /
   `--allow-over-max` escape hatch was removed in 2026.10.0.
 
 `report["write_info"]` records `n_available`, `target`, `n_written` and `n_cells_mode` (`all` / `explicit`).
