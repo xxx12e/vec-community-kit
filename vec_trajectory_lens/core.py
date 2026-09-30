@@ -3,8 +3,10 @@ Stdlib only. Nothing is sent anywhere; the input files are only read.
 """
 from __future__ import annotations
 
+import heapq
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -47,6 +49,33 @@ def _raw_scan(named, extra_values) -> dict:
     return {"clean": not hits, "hits": hits}
 
 
+def order_events(events) -> list:
+    """Interleave by time the events of several files (a Claude Code session and its subagent files, a Codex rollout
+    and stream) and of several sessions in one file (OpenCode subagent sessions). Inside one (file, session) group
+    the order of the log is kept; groups are merged on the latest timestamp seen so far in each group (an event
+    without a timestamp stays with the one before it). A group with no timestamp at all (the Codex exec stream) stays
+    where it was read, after the group before it. The source field still names the file and line of every event."""
+    groups: dict = {}
+    for e in events:
+        key = (re.sub(r"[:#]\d+$", "", e.source or ""), e.session)
+        groups.setdefault(key, []).append(e)
+    if len(groups) < 2:
+        return list(events)
+    streams, carry = [], ""
+    for rank, evs in enumerate(groups.values()):
+        first = next((e.ts for e in evs if e.ts), None)
+        if first is None:                              # no timestamp at all: keep its place after the group before
+            streams.append([(carry, rank, i, e) for i, e in enumerate(evs)])
+            continue
+        run, rows = first, []
+        for i, e in enumerate(evs):
+            run = max(run, e.ts) if e.ts else run
+            rows.append((run, rank, i, e))
+        carry = max(carry, run)
+        streams.append(rows)
+    return [row[3] for row in heapq.merge(*streams, key=lambda r: r[:3])]
+
+
 def analyse(path, framework="auto", session=None, subagents=True, extra_values=()):
     """(summary dict, [Event]) for one run. Raises inputs.InputError on an input this tool cannot read."""
     tmp = None
@@ -60,7 +89,7 @@ def analyse(path, framework="auto", session=None, subagents=True, extra_values=(
             result = P.PARSERS[fw].parse(files, {"session": session})
         except SystemExit as e:
             raise inputs.InputError(str(e).replace("REFUSED: ", "", 1)) from None
-        events = result.events
+        events = result.events = order_events(result.events)
         network = S.flag_network(events)                  # on the original command text
         red = Redactor(extra_values)
         for e in events:

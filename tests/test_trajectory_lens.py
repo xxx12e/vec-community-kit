@@ -156,6 +156,10 @@ def test_claude_session_jsonl_with_subagents(tmp_path):
         assert [e.actor for e in events if e.kind == "user"] == ["user", "system"]
         assert any(e.actor == "subagent" for e in events)
         assert any(e.kind == "system" and e.is_error for e in events)
+        # the subagent file (01:10) is merged in before the main session's last answer (01:30)
+        order = [e.text for e in events if e.kind == "assistant"]
+        assert order.index("subagent says hi") < order.index("Done.")
+        assert [e.ts for e in events if e.ts] == sorted(e.ts for e in events if e.ts)
         assert summ["network_flags"][0]["reason"] == "matched 'pip install'"
     summ, _ = core.analyse(main, subagents=False)
     assert not summ["multiple_models"]
