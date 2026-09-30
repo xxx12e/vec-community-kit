@@ -5,6 +5,7 @@ what your Codex version writes."""
 from __future__ import annotations
 
 import json
+import os
 import zipfile
 from pathlib import Path
 
@@ -200,6 +201,136 @@ def test_package_refusals(codex_run, tmp_path, heart_panel):
         codex.package_codex(r["stream"], r["prompt"], tmp_path / "p5", predictions={"T3:gata4": tmp_path / "bad.h5ad"})
     with pytest.raises(SystemExit, match="BOARD=PATH"):
         codex.parse_prediction_args(["pred.h5ad"])
+
+
+def _long_rollout(home: Path, prompt_text: str) -> Path:
+    """A rollout with the records that repeat the stream (event_msg, tool calls and output, reasoning, assistant
+    messages) next to the ones it lacks (session metadata, turn context, user message, an unknown record)."""
+    path = rollout(home, prompt_text)
+    extra = [
+        {"type": "response_item", "payload": {"type": "reasoning", "summary": [{"text": "Plan: floor first."}]}},
+        {"type": "response_item", "payload": {"type": "function_call", "name": "shell", "arguments": "{\"command\": [\"ls\"]}"}},
+        {"type": "response_item", "payload": {"type": "function_call_output", "output": "raw panels\n" * 50}},
+        {"type": "event_msg", "payload": {"type": "exec_command_end", "exit_code": 0, "stdout": "raw panels\n" * 50}},
+        {"type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": {"input_tokens": 9}}}},
+        {"type": "compacted", "payload": {"message": "unknown record kinds are kept"}},
+    ]
+    with open(path, "a", encoding="utf-8", newline="\n") as f:
+        f.write("".join(json.dumps(r) + "\n" for r in extra))
+    return path
+
+
+def test_rollout_modes(codex_run, tmp_path, monkeypatch):
+    r = codex_run
+    home = tmp_path / "home_long"
+    home.mkdir()
+    full = _long_rollout(home, r["prompt"].read_text(encoding="utf-8"))
+    full_lines = full.read_bytes().splitlines(keepends=True)
+    rel = f"trajectory/rollout/{full.name}"
+
+    def pkg(name, mode):
+        return codex.package_codex(r["stream"], r["prompt"], tmp_path / name, workspace=r["ws"], home=home,
+                                   rollout_mode=mode)
+
+    def manifest(out):
+        return json.loads((out / "evidence" / "harness" / "codex_manifest.json").read_text(encoding="utf-8"))
+
+    # copy (default): byte copy; a large rollout warns and names the alternatives
+    monkeypatch.setattr(codex, "ROLLOUT_WARN_MB", 0.0)
+    out = pkg("copy", "copy")
+    assert zipfile.ZipFile(out / "trajectory.zip").read(rel) == full.read_bytes()
+    ro = manifest(out)["rollouts"][0]
+    assert ro["included"] == "copy" and ro["sha256"] == C.sha256_file(full) and ro["bytes"] == full.stat().st_size
+    assert any("--rollout dedup" in w for w in manifest(out)["warnings"])
+    # dedup: only the records the stream lacks, each an unchanged line of the original; no size warning
+    out = pkg("dedup", "dedup")
+    names = zipfile.ZipFile(out / "trajectory.zip").namelist()
+    dedup_rel = f"trajectory/rollout/{full.stem}.dedup.jsonl"
+    assert rel not in names and dedup_rel in names
+    kept = zipfile.ZipFile(out / "trajectory.zip").read(dedup_rel).splitlines(keepends=True)
+    assert kept and all(line in full_lines for line in kept)
+    kinds = sorted((json.loads(x)["type"], json.loads(x)["payload"].get("role")) for x in kept)
+    assert kinds == [("compacted", None), ("response_item", "user"), ("session_meta", None), ("turn_context", None)]
+    m = manifest(out)
+    ro = m["rollouts"][0]
+    assert ro["included"] == "dedup" and ro["sha256"] == C.sha256_file(full)
+    assert ro["dedup"]["kept_lines"] == 4 and ro["dedup"]["dropped_lines"] == 6
+    assert ro["dedup"]["dropped_by_type"]["event_msg:exec_command_end"] == 1
+    assert not any("--rollout" in w for w in m["warnings"]) and m["model_string"] == "gpt-test-model"
+    assert "records kept" in (out / "README.md").read_text(encoding="utf-8")
+    # omit: nothing of the rollout in the trajectory, its hash in the manifest, its user messages still in prompts
+    out = pkg("omit", "omit")
+    assert not any(n.startswith("trajectory/rollout/") for n in zipfile.ZipFile(out / "trajectory.zip").namelist())
+    assert manifest(out)["rollouts"][0]["sha256"] == C.sha256_file(full)
+    assert "prompts/user_messages.jsonl" in zipfile.ZipFile(out / "prompts.zip").namelist()
+    # the same bytes are never packaged twice (a second copy of the rollout found for the same thread)
+    twin = full.parent / full.name.replace("rollout-", "rollout-copy-")
+    twin.write_bytes(full.read_bytes())
+    out = pkg("twin", "copy")
+    ros = manifest(out)["rollouts"]
+    assert sorted(x["included"] for x in ros)[0] == "copy" and "same bytes as rollout/" in sorted(x["included"] for x in ros)[1]
+    assert len([n for n in zipfile.ZipFile(out / "trajectory.zip").namelist() if n.startswith("trajectory/rollout/")]) == 1
+    with pytest.raises(SystemExit, match="rollout mode must be one of"):
+        pkg("bad", "slim")
+
+
+def test_cli_rollout_option(codex_run, tmp_path):
+    r = codex_run
+    rc = cli_main(["codex-package", "--stream", str(r["stream"]), "--prompt", str(r["prompt"]), "--out",
+                   str(tmp_path / "cli_omit"), "--codex-home", str(r["home"]), "--rollout", "omit"])
+    assert rc == 0
+    names = zipfile.ZipFile(tmp_path / "cli_omit" / "trajectory.zip").namelist()
+    assert not any(n.startswith("trajectory/rollout/") for n in names)
+
+
+def test_credential_files_are_never_collected(codex_run, tmp_path):
+    r = codex_run
+    auth = r["home"] / "auth.json"
+    auth.write_text(json.dumps({"OPENAI_API_KEY": None, "tokens": {"id" + "_token": "eyJ.a.b", "access" + "_token": "x",
+                                                                   "refresh" + "_token": "y", "account_id": "z"},
+                                "last_refresh": "2026-09-30T00:00:00Z"}), encoding="utf-8")
+    (r["ws"] / "auth.json").write_bytes(auth.read_bytes())               # stray copies in the workspace
+    (r["ws"] / ".codex").mkdir()
+    (r["ws"] / ".codex" / "auth.json").write_bytes(auth.read_bytes())
+    (r["ws"] / ".env").write_text("OPENAI_API_KEY=placeholder\n", encoding="utf-8")
+    secret = auth.read_bytes()
+    # 1. a normal package: nothing from CODEX_HOME but rollouts and AGENTS.md, no member with auth.json's bytes
+    out = codex.package_codex(r["stream"], r["prompt"], tmp_path / "ok", workspace=r["ws"], home=r["home"],
+                              harness=[r["loop"]], command_file=r["cmd"])
+    for z in ("trajectory", "prompts", "harness", "evidence_bundle"):
+        with zipfile.ZipFile(out / f"{z}.zip") as zf:
+            for n in zf.namelist():
+                assert not codex.CREDENTIAL_FILE_RE.match(n.rsplit("/", 1)[-1]), n
+                assert zf.read(n) != secret, n
+    assert not any(p.name in ("auth.json", ".env") for p in out.rglob("*"))
+    # 2. named on the command line, under any route: refused before anything is written
+    routes = [dict(harness=[auth]), dict(stderr=auth), dict(command_file=r["ws"] / ".env"),
+              dict(harness=[r["ws"] / ".codex" / "auth.json"])]
+    for i, kw in enumerate(routes):
+        with pytest.raises(SystemExit, match="is a credential file"):
+            codex.package_codex(r["stream"], r["prompt"], tmp_path / f"no{i}", home=r["home"], **kw)
+        assert not (tmp_path / f"no{i}").exists()
+    # 3. a renamed copy of CODEX_HOME/auth.json is refused by its bytes
+    renamed = tmp_path / "notes.txt"
+    renamed.write_bytes(secret)
+    with pytest.raises(SystemExit, match="same bytes as a credential file"):
+        codex.package_codex(r["stream"], r["prompt"], tmp_path / "renamed", home=r["home"], harness=[renamed])
+    # 4. a link to it, under a harmless name, is refused by the target's name (where links can be made)
+    link = tmp_path / "settings_link.json"
+    try:
+        os.symlink(auth, link)
+    except (OSError, NotImplementedError):
+        link = None
+    if link is not None:
+        with pytest.raises(SystemExit, match="is a credential file"):
+            codex.package_codex(r["stream"], r["prompt"], tmp_path / "link", home=r["home"], harness=[link])
+    # the name rule itself
+    for name in ("auth.json", "AUTH.JSON", "auth.json.bak", "credentials.json", ".credentials.json", "gcp-credentials.json",
+                 ".env", ".env.local", ".netrc", ".pypirc", "id_rsa", "id_ed25519", "server.pem", "api.key"):
+        assert codex.is_credential_file(tmp_path / name), name
+    for name in ("config.toml", "my_loop.py", "tokenizer.py", "AGENTS.md", "id_rsa.pub", "authors.json",
+                 f"rollout-2026-09-30T01-02-03-{THREAD}.jsonl", "codex_stream.jsonl", "keys.txt"):
+        assert not codex.is_credential_file(tmp_path / name), name
 
 
 def _secret_hits(data: bytes) -> list:

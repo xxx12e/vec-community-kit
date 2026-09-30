@@ -123,12 +123,12 @@ codex exec --json --model <model> --sandbox workspace-write --skip-git-repo-chec
 
 python -m vec_agent_evidence codex-package --stream codex_stream.jsonl --stderr codex_stderr.log \
     --prompt prompt.md --workspace <workspace> --prediction T3:gata4=<workspace>/out/pred.h5ad \
-    --command-file cmd.txt --harness my_loop.py --model <model> --out runs/_upload_codex/run1
+    --command-file cmd.txt --harness my_loop.py --model <model> --out runs/_upload_codex/run1 [--rollout dedup]
 ```
 
 | kind | what goes in |
 |---|---|
-| trajectory | `codex_stream.jsonl` (byte copy), `codex_stderr.log`, the session rollout(s) found by thread id under `$CODEX_HOME/sessions` (default `~/.codex`), `trajectory_summary.json` (turns, usage, commands, files changed, errors) |
+| trajectory | `codex_stream.jsonl` (byte copy), `codex_stderr.log`, the session rollout(s) found by thread id under `$CODEX_HOME/sessions` (default `~/.codex`) as chosen by `--rollout` (below), `trajectory_summary.json` (turns, usage, commands, files changed, errors) |
 | prompts | `initial_prompt.md` (byte copy of `--prompt`), every `AGENTS.md` / `AGENTS.override.md` Codex reads from the workspace and from `$CODEX_HOME` (global instructions), `user_messages.jsonl` (every user-role message found in the rollout) |
 | harness | the `--harness` files, `command.txt` (`--command-file`), `codex_manifest.json` (framework and model string, hashes of every evidence file, the summary, warnings) |
 
@@ -137,8 +137,29 @@ python -m vec_agent_evidence codex-package --stream codex_stream.jsonl --stderr 
 fields), a file or zip over 200 MB, a stream with no JSON events, or a prediction that fails its board contract.
 It **warns** (in `README.md` and the manifest) when no rollout is found, the model string is unknown or differs from
 what Codex recorded, no turn completed, the prediction's file name never appears in the stream (no visible
-provenance), or the prompt is not among the rollout's user messages. Never copy `$CODEX_HOME/auth.json` into a
-harness: it holds credentials (the scan would refuse it anyway).
+provenance), the prompt is not among the rollout's user messages, or the copied rollout(s) add more than 10 MB.
+
+**The session rollout and the 600 MB team cap.** The rollout largely repeats the stream (the same commands, outputs
+and messages in another format), so a long run can pay for its trajectory twice. `--rollout` chooses:
+
+| `--rollout` | what goes into the trajectory |
+|---|---|
+| `copy` (default) | a byte copy of every rollout file |
+| `dedup` | `rollout/<name>.dedup.jsonl`: only the records the stream does not carry - session metadata, turn context, user / developer messages and any record type the adapter does not know - each an unchanged line of the original; `event_msg` records and the `response_item` records of assistant messages, reasoning and tool calls with their output are dropped |
+| `omit` | nothing |
+
+In every mode the manifest and the package README record each rollout's name, size and sha256 (and, for `dedup`,
+the records kept and dropped by type), the rollout's model, CLI version and user messages still reach the manifest
+and `prompts/user_messages.jsonl`, and the same bytes are never packaged twice. Keep the original rollout file: it is
+what the recorded sha256 verifies if the full session is asked for.
+
+**Credential files are never collected.** `$CODEX_HOME/auth.json` holds your login tokens. The adapter only reads
+rollouts under `$CODEX_HOME/sessions` and `AGENTS.md` / `AGENTS.override.md` from `$CODEX_HOME`, and it refuses,
+before anything is written, any input - `--stream`, `--prompt`, `--stderr`, `--command-file`, `--harness` - that is a
+credential file by name (`auth.json*`, `.env`, `.env.*`, `*credential*.json`, `.credentials*`, `.netrc`, `.pypirc`,
+`.npmrc`, `id_rsa` / `id_ed25519` / ..., `*.pem`, `*.key`, `*.p12`, `*.pfx`), by the name of the file a link points to,
+or that has the same bytes as a credential file in `$CODEX_HOME` (a renamed copy). The finished evidence set is
+checked the same way once more, and the credential-shaped content scan below applies on top.
 
 ## The hooks
 

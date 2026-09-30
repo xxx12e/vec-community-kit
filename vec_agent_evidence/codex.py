@@ -13,7 +13,12 @@ authors' understanding of the session files, and is tested only on synthetic tra
   * Codex also writes a session "rollout" file (not with --ephemeral), as far as we know under
     $CODEX_HOME/sessions/YYYY/MM/DD/rollout-<time>-<thread id>.jsonl (CODEX_HOME defaults to ~/.codex), with
     session_meta / turn_context / response_item / event_msg records; it is looked up by the thread id and copied
-    byte for byte when found. The rollout layout is NOT from the page above: treat that part as a best guess.
+    byte for byte when found (--rollout copy, the default). It largely repeats the stream, so --rollout dedup keeps
+    only its records the stream lacks and --rollout omit leaves it out; its sha256 is recorded in every mode. The
+    rollout layout is NOT from the page above: treat that part as a best guess.
+  * Credential files are never collected: $CODEX_HOME/auth.json (and any file named like auth.json, .env,
+    credentials*.json, *.pem, *.key, ...) is refused by name, by the name of a link's target, and - for the
+    credential files in $CODEX_HOME - by content hash, besides the credential-shaped content scan.
   * Codex reads instruction files named AGENTS.md (and AGENTS.override.md) from the working tree and from
     $CODEX_HOME; those are prompts in the rules' sense and go into the prompts kind.
 
@@ -35,7 +40,7 @@ Package it:
   python -m vec_agent_evidence codex-package --stream codex_stream.jsonl --prompt prompt.md --workspace <workspace> \\
       --prediction T3:gata4=<workspace>/out/pred.h5ad --out runs/_upload_codex/<name> [--stderr codex_stderr.log]
       [--codex-home ~/.codex] [--harness my_loop.py ...] [--command-file cmd.txt] [--model <model string>]
-      [--team-uploaded-mb N]
+      [--team-uploaded-mb N] [--rollout copy|dedup|omit]
 """
 from __future__ import annotations
 
@@ -55,6 +60,25 @@ NEW_SHAPE_TYPES = {"thread.started", "turn.started", "turn.completed", "turn.fai
                    "item.completed"}
 INSTRUCTION_NAMES = ("AGENTS.md", "AGENTS.override.md")
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "data", "scratch"}
+
+# What happens to the session rollout file(s), which largely repeat the stream and count against the 600 MB team cap:
+#   copy  - byte copy (default);
+#   dedup - keep only the records the `--json` stream does not already carry (session_meta, turn_context, user /
+#           developer messages and any record type not listed below), each kept line byte for byte;
+#   omit  - no copy.
+# In every mode the full file's name, size and sha256 are recorded in the manifest, so keep the original.
+ROLLOUT_MODES = ("copy", "dedup", "omit")
+ROLLOUT_WARN_MB = 10.0
+# rollout records that repeat what the stream shows (assistant output, reasoning, tool calls and their output, and
+# the event_msg mirror of the exec events); anything else is kept by `dedup`
+ROLLOUT_DUPLICATE_PAYLOADS = {"reasoning", "function_call", "function_call_output", "local_shell_call",
+                              "custom_tool_call", "custom_tool_call_output", "web_search_call"}
+
+# Credential files are never collected, whatever route they come by: refused by name (and by the name of a link's
+# target), and the credential files in $CODEX_HOME (auth.json, ...) also by content (a renamed copy is refused).
+CREDENTIAL_FILE_RE = re.compile(
+    r"(?i)^(?:auth\.json(?:\..*)?|\.?credentials(?:\..*)?|.*credential.*\.json|\.env|\.env\..*|\.netrc|_netrc"
+    r"|\.pypirc|\.npmrc|id_(?:rsa|dsa|ecdsa|ed25519)|.*\.(?:pem|key|p12|pfx))$")
 
 
 # ------------------------------------------------------------------------------------------ reading
@@ -244,10 +268,94 @@ def find_instruction_files(workspace=None, home=None) -> list:
     return sorted(found)
 
 
-# ------------------------------------------------------------------------------------------ packaging
-def _copy(src: Path, dst: Path) -> Path:
+def rollout_record_is_duplicate(ev) -> bool:
+    """True for a rollout record that repeats what the `codex exec --json` stream already shows: every event_msg
+    (the mirror of the exec events) and the response_item records of assistant messages, reasoning and tool calls
+    with their output. Session metadata, turn context, user / developer messages and unknown records are kept."""
+    if not isinstance(ev, dict):
+        return False
+    typ = ev.get("type")
+    if typ == "event_msg":
+        return True
+    payload = ev.get("payload") if isinstance(ev.get("payload"), dict) else {}
+    if typ == "response_item":
+        if payload.get("type") == "message":
+            return payload.get("role") == "assistant"
+        return payload.get("type") in ROLLOUT_DUPLICATE_PAYLOADS
+    return False
+
+
+def dedup_rollout(src, dst) -> dict:
+    """Write the records of rollout `src` that the stream does not carry to `dst`, each line byte for byte."""
+    src, dst = Path(src), Path(dst)
     dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_bytes(Path(src).read_bytes())
+    kept, dropped = 0, {}
+    with open(src, "rb") as f, open(dst, "wb") as g:
+        for raw in f:
+            if not raw.strip():
+                continue
+            try:
+                ev = json.loads(str(raw, "utf-8", "replace"))
+            except ValueError:
+                ev = None
+            if rollout_record_is_duplicate(ev):
+                payload = ev.get("payload") if isinstance(ev.get("payload"), dict) else {}
+                key = f"{ev['type']}:{payload.get('type')}"
+                dropped[key] = dropped.get(key, 0) + 1
+                continue
+            g.write(raw if raw.endswith(b"\n") else raw + b"\n")
+            kept += 1
+    return {"file": dst.name, "bytes": dst.stat().st_size, "kept_lines": kept,
+            "dropped_lines": sum(dropped.values()), "dropped_by_type": dict(sorted(dropped.items()))}
+
+
+# ------------------------------------------------------------------------------------------ packaging
+def is_credential_file(path) -> bool:
+    """A credential file by its name or by the name of the file a link points to (auth.json, .env, *.pem, ...)."""
+    p = Path(path)
+    names = [p.name]
+    try:
+        names.append(p.resolve().name)
+    except OSError:
+        pass
+    return any(CREDENTIAL_FILE_RE.match(n) for n in names)
+
+
+def credential_fingerprints(home) -> dict:
+    """{size: {sha256, ...}} of the credential-named files directly inside CODEX_HOME (auth.json, ...)."""
+    out: dict = {}
+    try:
+        entries = list(os.scandir(home))
+    except OSError:
+        return out
+    for e in entries:
+        if CREDENTIAL_FILE_RE.match(e.name) and e.is_file():
+            try:
+                out.setdefault(e.stat().st_size, set()).add(C.sha256_file(e.path))
+            except OSError:
+                continue
+    return out
+
+
+def refuse_credential(src, fingerprints=None, data=None) -> None:
+    """SystemExit("REFUSED: ...") if `src` is a credential file by name, or has the bytes of one in CODEX_HOME."""
+    src, fingerprints = Path(src), fingerprints or {}
+    if is_credential_file(src):
+        raise SystemExit(f"REFUSED: {src} is a credential file ({src.name}); credential files are never collected")
+    size = len(data) if data is not None else src.stat().st_size
+    if size in fingerprints:
+        sha = C.sha256_bytes(data) if data is not None else C.sha256_file(src)
+        if sha in fingerprints[size]:
+            raise SystemExit(f"REFUSED: {src} has the same bytes as a credential file in CODEX_HOME (e.g. auth.json); "
+                             "credential files are never collected")
+
+
+def _copy(src: Path, dst: Path, fingerprints=None) -> Path:
+    src = Path(src)
+    data = src.read_bytes()
+    refuse_credential(src, fingerprints, data)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_bytes(data)
     return dst
 
 
@@ -286,12 +394,15 @@ def parse_prediction_args(items) -> dict:
 
 def package_codex(stream, prompt, out, workspace=None, home=None, stderr=None, predictions=None, harness=(),
                   command_file=None, model=None, team_uploaded_mb: float = 0.0, extra_secret_values=(),
-                  panels=None) -> Path:
+                  panels=None, rollout_mode: str = "copy") -> Path:
     """Build <out>/{predictions/, evidence/{trajectory,prompts,harness}/, trajectory.zip, prompts.zip, harness.zip,
-    evidence_bundle.zip, README.md}. Raises SystemExit("REFUSED: ...") when the package must not be uploaded."""
+    evidence_bundle.zip, README.md}. Raises SystemExit("REFUSED: ...") when the package must not be uploaded.
+    `rollout_mode` (copy / dedup / omit) says what happens to the session rollout file(s); see ROLLOUT_MODES."""
     from vec_submit_check import check as check_file
 
     stream, prompt, out = Path(stream), Path(prompt), Path(out)
+    if rollout_mode not in ROLLOUT_MODES:
+        raise SystemExit(f"REFUSED: rollout mode must be one of {', '.join(ROLLOUT_MODES)}, got {rollout_mode!r}")
     for p, what in ((stream, "--stream"), (prompt, "--prompt")):
         if not p.is_file():
             raise SystemExit(f"REFUSED: {what} {p} not found")
@@ -313,24 +424,47 @@ def package_codex(stream, prompt, out, workspace=None, home=None, stderr=None, p
     elif not rollouts:
         warnings.append(f"no rollout file for thread {summary['thread_id']} under {home / 'sessions'}")
     rollout_info = [summarise_rollout(r) for r in rollouts]
+    # credential files are refused before anything is written (and again on every copy, and on the finished set)
+    creds = credential_fingerprints(home)
+    for h in harness or ():
+        if not Path(h).is_file():
+            raise SystemExit(f"REFUSED: --harness {h} not found")
+    for p in [stream, prompt] + [Path(x) for x in (stderr, command_file) if x] + [Path(h) for h in harness or ()]:
+        refuse_credential(p, creds)
 
     if out.exists() and any(out.iterdir()):
         raise SystemExit(f"REFUSED: {out} exists and is not empty; choose a new --out directory")
     ev = out / "evidence"
     kinds = {"trajectory": [], "prompts": [], "harness": []}
 
-    # trajectory: byte copies of what Codex wrote
-    kinds["trajectory"].append(_copy(stream, ev / "trajectory" / "codex_stream.jsonl"))
+    # trajectory: byte copies of what Codex wrote; the rollout(s) as chosen by rollout_mode (never twice the same bytes)
+    kinds["trajectory"].append(_copy(stream, ev / "trajectory" / "codex_stream.jsonl", creds))
     if stderr:
-        kinds["trajectory"].append(_copy(Path(stderr), ev / "trajectory" / "codex_stderr.log"))
-    for r in rollouts:
-        kinds["trajectory"].append(_copy(r, ev / "trajectory" / "rollout" / r.name))
+        kinds["trajectory"].append(_copy(Path(stderr), ev / "trajectory" / "codex_stderr.log", creds))
+    seen = {C.sha256_file(stream): "codex_stream.jsonl"}
+    for r, ri in zip(rollouts, rollout_info):
+        sha = C.sha256_file(r)
+        ri.update({"bytes": r.stat().st_size, "sha256": sha, "included": rollout_mode})
+        if sha in seen:
+            ri["included"] = f"not copied: same bytes as {seen[sha]}"
+        elif rollout_mode == "copy":
+            kinds["trajectory"].append(_copy(r, ev / "trajectory" / "rollout" / r.name, creds))
+        elif rollout_mode == "dedup":
+            refuse_credential(r, creds)
+            ri["dedup"] = dedup_rollout(r, ev / "trajectory" / "rollout" / f"{Path(r.name).stem}.dedup.jsonl")
+            kinds["trajectory"].append(ev / "trajectory" / "rollout" / ri["dedup"]["file"])
+        seen.setdefault(sha, f"rollout/{r.name}")
+    rollout_mb = sum(ri["bytes"] for ri in rollout_info if ri["included"] == "copy") / 1e6
+    if rollout_mb > ROLLOUT_WARN_MB:
+        warnings.append(f"the rollout file(s) add {rollout_mb:.1f} MB to the trajectory and largely repeat the stream "
+                        "(team cap: 600 MB); --rollout dedup keeps only the records the stream lacks, --rollout omit "
+                        "leaves them out (their sha256 is recorded either way)")
 
     # prompts: the initial prompt, the instruction files Codex reads, every user message found in the rollout(s)
-    kinds["prompts"].append(_copy(prompt, ev / "prompts" / "initial_prompt.md"))
+    kinds["prompts"].append(_copy(prompt, ev / "prompts" / "initial_prompt.md", creds))
     instr = find_instruction_files(workspace, home)
     for label, p in instr:
-        kinds["prompts"].append(_copy(p, ev / "prompts" / "instructions" / label))
+        kinds["prompts"].append(_copy(p, ev / "prompts" / "instructions" / label, creds))
     user_msgs = [dict(m, rollout=ri["file"]) for ri in rollout_info for m in ri["user_messages"]]
     if user_msgs:
         um = ev / "prompts" / "user_messages.jsonl"
@@ -343,12 +477,9 @@ def package_codex(stream, prompt, out, workspace=None, home=None, stderr=None, p
 
     # harness: the files that drove the run, the exact command, and this adapter's manifest
     for h in harness or ():
-        h = Path(h)
-        if not h.is_file():
-            raise SystemExit(f"REFUSED: --harness {h} not found")
-        kinds["harness"].append(_copy(h, ev / "harness" / "files" / h.name))
+        kinds["harness"].append(_copy(Path(h), ev / "harness" / "files" / Path(h).name, creds))
     if command_file:
-        kinds["harness"].append(_copy(Path(command_file), ev / "harness" / "command.txt"))
+        kinds["harness"].append(_copy(Path(command_file), ev / "harness" / "command.txt", creds))
     else:
         warnings.append("no --command-file: the exact `codex exec` command line is not part of the harness evidence")
 
@@ -363,7 +494,7 @@ def package_codex(stream, prompt, out, workspace=None, home=None, stderr=None, p
             raise SystemExit(f"REFUSED: {e}") from None
         if not rep["ok"]:
             raise SystemExit(f"REFUSED: {src} fails the {board} contract: {rep['errors']}")
-        dst = _copy(src, out / "predictions" / f"pred_{C.board_sanitised(board)}.h5ad")
+        dst = _copy(src, out / "predictions" / f"pred_{C.board_sanitised(board)}.h5ad", creds)
         sha = C.sha256_file(src)
         if C.sha256_file(dst) != sha:
             raise SystemExit(f"REFUSED: copy of {src} does not match its sha256")
@@ -403,6 +534,9 @@ def package_codex(stream, prompt, out, workspace=None, home=None, stderr=None, p
     kinds["harness"].append(man_path)
     files.append(man_path)
 
+    # the finished set once more: no credential file under any name, and no copy of one from CODEX_HOME
+    for p in files + [out / "predictions" / r["file"] for r in pred_rows]:
+        refuse_credential(p, creds)
     hits = _scan(files, extra_secret_values)
     if hits:
         raise SystemExit("REFUSED: credential-shaped content in evidence (nothing to upload; review and remove it): "
@@ -428,6 +562,16 @@ def package_codex(stream, prompt, out, workspace=None, home=None, stderr=None, p
              f"Framework: {manifest['framework']}", f"Model string: {model_string or 'UNKNOWN - state the model you ran'}",
              f"Thread id: {summary['thread_id']}; stream shape: {summary['shape']}; turns completed: "
              f"{summary['turns_completed']}; commands: {summary['commands']}; usage: {json.dumps(summary['usage'])}", ""]
+    if rollout_info:
+        lines += [f"Session rollout(s), `--rollout {rollout_mode}` (the full file's sha256 is recorded in every mode; "
+                  "keep the original):", ""]
+        for ri in rollout_info:
+            how = ri["included"]
+            if "dedup" in ri:
+                how += (f": {ri['dedup']['kept_lines']} records kept, {ri['dedup']['dropped_lines']} that repeat the "
+                        "stream dropped")
+            lines.append(f"* {ri['file']}: {ri['bytes'] / 1e6:.1f} MB, sha256 {ri['sha256']}, {how}")
+        lines.append("")
     if pred_rows:
         lines += ["| board | file | MB | sha256 | cells | stream mentions |", "|---|---|---|---|---|---|"]
         for r in pred_rows:
@@ -476,6 +620,11 @@ def add_args(ap) -> None:
     ap.add_argument("--command-file", default=None, help="text file with the exact codex command line you ran")
     ap.add_argument("--model", default=None, help="the model string you ran (checked against what Codex recorded)")
     ap.add_argument("--team-uploaded-mb", type=float, default=0.0)
+    ap.add_argument("--rollout", choices=ROLLOUT_MODES, default="copy",
+                    help="the session rollout file(s), which largely repeat the stream and count against the 600 MB "
+                         "team cap: copy (default, byte copy), dedup (only the records the stream lacks: session "
+                         "metadata, turn context, user messages), omit (left out); the sha256 of the full file is "
+                         "recorded in every mode")
     ap.add_argument("--panels", default=None, help="directory with index.json + *.genes.txt (default: the kit's)")
 
 
@@ -484,7 +633,7 @@ def run_from_args(args) -> int:
         package_codex(args.stream, args.prompt, args.out, workspace=args.workspace, home=args.codex_home,
                       stderr=args.stderr, predictions=parse_prediction_args(args.prediction), harness=args.harness,
                       command_file=args.command_file, model=args.model, team_uploaded_mb=args.team_uploaded_mb,
-                      panels=args.panels)
+                      panels=args.panels, rollout_mode=args.rollout)
     except SystemExit as e:
         if str(e).startswith("REFUSED"):
             print(str(e))
