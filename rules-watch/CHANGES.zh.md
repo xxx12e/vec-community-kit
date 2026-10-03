@@ -4,6 +4,13 @@
 
 <!-- entries below, newest first -->
 
+## 2026-10-03（UTC 11:45 运行）
+
+### 官方打分器（https://github.com/aristoteleo/veckit）
+
+- main 分支从 46d41e6 移到 cc3859a（2026-10-02："Merge pull request #9 from Shashwat-srivastav/fix-issue7-right-handed-frame"）。
+  - 对你的文件意味着什么：主办方的打分器变了。相信本地分数之前先看这次提交；本工具包的 vec_local_score 固定使用 veckit 46d41e6 (0.1.1)。
+
 ## 2026-09-30（UTC 17:03 运行）
 
 首次运行：本条记录起点，之后的条目列出相对它的变化。

@@ -4,6 +4,13 @@ Newest first. One entry per run that found a change or a fetch problem. Written 
 
 <!-- entries below, newest first -->
 
+## 2026-10-03 (run 11:45 UTC)
+
+### Official scorer (https://github.com/aristoteleo/veckit)
+
+- main moved 46d41e6 -> cc3859a (2026-10-02: "Merge pull request #9 from Shashwat-srivastav/fix-issue7-right-handed-frame").
+  - What this changes for your file: The organisers' scorer changed. Read the commit before you trust local scores; this kit's vec_local_score pins veckit 46d41e6 (0.1.1).
+
 ## 2026-09-30 (run 17:03 UTC)
 
 First run: this entry records the starting point. Later entries list what changed against it.

@@ -1,13 +1,13 @@
 {
   "branches": {
     "feat/metric-hardening-0.2.0": "22a4055362f094b59c5323f253fdf44ba5a98ff6",
-    "main": "46d41e63f42a9aab815db20b742feeccd249cb17"
+    "main": "cc3859ab2a2305efc4544815d3f44f660efa77d4"
   },
   "default_branch": "main",
   "head": {
-    "date": "2026-08-10",
-    "sha": "46d41e63f42a9aab815db20b742feeccd249cb17",
-    "subject": "Execute the tutorial notebook for real"
+    "date": "2026-10-02",
+    "sha": "cc3859ab2a2305efc4544815d3f44f660efa77d4",
+    "subject": "Merge pull request #9 from Shashwat-srivastav/fix-issue7-right-handed-frame"
   },
   "releases": {},
   "repo": "aristoteleo/veckit",
