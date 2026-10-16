@@ -4,6 +4,89 @@
 
 <!-- entries below, newest first -->
 
+## 2026-10-16（UTC 11:31 运行）
+
+### 官方打分器（https://github.com/aristoteleo/veckit）
+
+- 新分支 docs/library-size-ratio-no-renormalisation，位于 f56a6e3。
+
+### 页面
+
+#### 常见问题（FAQ）
+
+常见问题（FAQ）（https://virtualembryo.ai/challenge/faq）：1 个小节有改动，+1 / -1 行。
+FAQ 里常有对边界情况的裁定：请阅读改动的回答。
+
+- 改动：“Data”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Data
+- ...t labelled by somite count or Theiler stage that lands in the same window. For the Task 1 extrapolation targets the window is stated outright rather than derived, and it relaxes the midpoint rul...
++ ...te count or Theiler stage that lands in the same window. For the extrapolation targets (Task 1, and Task 2 in the heart setting) the window is stated outright rather than derived, and it relaxes...
+```
+
+#### 数据页
+
+数据页（https://virtualembryo.ai/challenge/data）：1 个小节有改动，+1 / -1 行。
+数据页列出阶段、下载和各榜细胞数：请与榜契约对照。
+
+- 改动：“Access and reproducibility”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Access and reproducibility
+- ...t labelled by somite count or Theiler stage that lands in the same window. For the Task 1 extrapolation targets the window is stated outright rather than derived, and it relaxes the midpoint rul...
++ ...te count or Theiler stage that lands in the same window. For the extrapolation targets (Task 1, and Task 2 in the heart setting) the window is stated outright rather than derived, and it relaxes...
+```
+
+#### 评测页，任务 1：提交
+
+评测页，任务 1：提交（https://virtualembryo.ai/challenge/evaluation?section=submissions&task=1）：1 个小节有改动，+1 / -1 行。
+评测页规定文件契约和指标：请检查你的文件或本地打分是否受影响。
+
+- 改动：“What is deliberately not constrained”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ What is deliberately not constrained
+- ...above the floor. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the 1,000-cell minimum is enforce...
++ ...within the board’s limits. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the board’s own minimum...
+```
+
+#### 评测页，任务 2：提交
+
+评测页，任务 2：提交（https://virtualembryo.ai/challenge/evaluation?section=submissions&task=2）：1 个小节有改动，+1 / -1 行。
+评测页规定文件契约和指标：请检查你的文件或本地打分是否受影响。
+
+- 改动：“What is deliberately not constrained”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ What is deliberately not constrained
+- ...above the floor. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the 1,000-cell minimum is enforce...
++ ...within the board’s limits. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the board’s own minimum...
+```
+
+#### 评测页，任务 3：提交
+
+评测页，任务 3：提交（https://virtualembryo.ai/challenge/evaluation?section=submissions&task=3）：1 个小节有改动，+1 / -1 行。
+评测页规定文件契约和指标：请检查你的文件或本地打分是否受影响。
+
+- 改动：“What is deliberately not constrained”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ What is deliberately not constrained
+- ...above the floor. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the 1,000-cell minimum is enforce...
++ ...within the board’s limits. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the board’s own minimum...
+```
+
 ## 2026-10-03（UTC 11:45 运行）
 
 ### 官方打分器（https://github.com/aristoteleo/veckit）

@@ -4,6 +4,89 @@ Newest first. One entry per run that found a change or a fetch problem. Written 
 
 <!-- entries below, newest first -->
 
+## 2026-10-16 (run 11:31 UTC)
+
+### Official scorer (https://github.com/aristoteleo/veckit)
+
+- New branch docs/library-size-ratio-no-renormalisation at f56a6e3.
+
+### Pages
+
+#### FAQ
+
+FAQ (https://virtualembryo.ai/challenge/faq): 1 section(s) changed, +1 / -1 lines.
+The FAQ often carries rulings on edge cases: read the changed answers.
+
+- Changed: "Data" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Data
+- ...t labelled by somite count or Theiler stage that lands in the same window. For the Task 1 extrapolation targets the window is stated outright rather than derived, and it relaxes the midpoint rul...
++ ...te count or Theiler stage that lands in the same window. For the extrapolation targets (Task 1, and Task 2 in the heart setting) the window is stated outright rather than derived, and it relaxes...
+```
+
+#### Data
+
+Data (https://virtualembryo.ai/challenge/data): 1 section(s) changed, +1 / -1 lines.
+The Data page lists stages, downloads and per-board cell counts: compare it with the board contract.
+
+- Changed: "Access and reproducibility" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Access and reproducibility
+- ...t labelled by somite count or Theiler stage that lands in the same window. For the Task 1 extrapolation targets the window is stated outright rather than derived, and it relaxes the midpoint rul...
++ ...te count or Theiler stage that lands in the same window. For the extrapolation targets (Task 1, and Task 2 in the heart setting) the window is stated outright rather than derived, and it relaxes...
+```
+
+#### Evaluation, Task 1: submissions
+
+Evaluation, Task 1: submissions (https://virtualembryo.ai/challenge/evaluation?section=submissions&task=1): 1 section(s) changed, +1 / -1 lines.
+The evaluation pages define the file contract and the metrics: check whether your file or your local scoring is affected.
+
+- Changed: "What is deliberately not constrained" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ What is deliberately not constrained
+- ...above the floor. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the 1,000-cell minimum is enforce...
++ ...within the board’s limits. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the board’s own minimum...
+```
+
+#### Evaluation, Task 2: submissions
+
+Evaluation, Task 2: submissions (https://virtualembryo.ai/challenge/evaluation?section=submissions&task=2): 1 section(s) changed, +1 / -1 lines.
+The evaluation pages define the file contract and the metrics: check whether your file or your local scoring is affected.
+
+- Changed: "What is deliberately not constrained" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ What is deliberately not constrained
+- ...above the floor. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the 1,000-cell minimum is enforce...
++ ...within the board’s limits. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the board’s own minimum...
+```
+
+#### Evaluation, Task 3: submissions
+
+Evaluation, Task 3: submissions (https://virtualembryo.ai/challenge/evaluation?section=submissions&task=3): 1 section(s) changed, +1 / -1 lines.
+The evaluation pages define the file contract and the metrics: check whether your file or your local scoring is affected.
+
+- Changed: "What is deliberately not constrained" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ What is deliberately not constrained
+- ...above the floor. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the 1,000-cell minimum is enforce...
++ ...within the board’s limits. Nothing requires n_pred = n_true. A genuine growth or proliferation model may predict a different number of cells than the target has, and only the board’s own minimum...
+```
+
 ## 2026-10-03 (run 11:45 UTC)
 
 ### Official scorer (https://github.com/aristoteleo/veckit)

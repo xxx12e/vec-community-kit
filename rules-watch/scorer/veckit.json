@@ -1,5 +1,6 @@
 {
   "branches": {
+    "docs/library-size-ratio-no-renormalisation": "f56a6e3932b830955d5b9b2c8cf095b80e5fb101",
     "feat/metric-hardening-0.2.0": "22a4055362f094b59c5323f253fdf44ba5a98ff6",
     "main": "cc3859ab2a2305efc4544815d3f44f660efa77d4"
   },
