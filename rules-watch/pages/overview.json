@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "overview",
-  "last_changed": "2026-09-30",
+  "last_changed": "2026-10-20",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -32,7 +32,7 @@
       "heading": "",
       "level": 0,
       "lines": 4,
-      "sha256": "f72c197defcbd0783f346ac450d8e7d2af393cd6b89fe86888d49a6f782a4055"
+      "sha256": "27993dfe65711274788e1c9f8901b14a4b9b44a63f79e7a21f6a3a54ce225fca"
     },
     {
       "chars": 256,
@@ -67,7 +67,7 @@
       "heading": "Launch \u2192 development \u2192 final",
       "level": 2,
       "lines": 23,
-      "sha256": "a7c1f3565d0ea98cb6336f5bb66b39b106188be99f7311bb9908811f0349f814"
+      "sha256": "0f1747e13f12b2499f0cff097261fc75937792529242c903fe15f43e7b6109c4"
     },
     {
       "chars": 1041,
@@ -77,6 +77,6 @@
       "sha256": "70bdb7c043466f1ad960d623378541965ac913edf77b4445ef64fbc345008710"
     }
   ],
-  "sha256": "21f41188ee7353f3811659f745d1d8e4eac79364dad1b2167e436ef7d3028e78",
+  "sha256": "8aa5b8b9e59cc14e21ef30827c2a498452f9fc81ee993ab4df941cd6e770b1f3",
   "url": "https://virtualembryo.ai/challenge"
 }

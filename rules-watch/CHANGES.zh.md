@@ -4,6 +4,65 @@
 
 <!-- entries below, newest first -->
 
+## 2026-10-20（UTC 11:46 运行）
+
+### 网站链接
+
+- 比赛网站上出现新链接：https://virtualembryo.ai/challenge/partner-rules（尚未列入监测：可能是值得一读的新页面）
+
+### 页面
+
+#### 概览页
+
+概览页（https://virtualembryo.ai/challenge）：2 个小节有改动，+3 / -3 行。
+
+- 改动：“（页首）”（+1 / -1 行）
+- 改动：“Launch → development → final”（+2 / -2 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ （页首）
+- ...missions are scored and ranked, and the starter kit and reference baselines are out. Next: Test phase starts, validation data released, test leaderboard opens on 20 October 2026. Full timeline →
++ ...missions are scored and ranked, and the starter kit and reference baselines are out. Next: Test phase starts, validation data released, test leaderboard opens on 27 October 2026. Full timeline →
+@@ Launch → development → final
+- 20 Oct
++ 27 Oct
+- 2026-10-20
++ 2026-10-27
+```
+
+#### 比赛规则
+
+比赛规则（https://virtualembryo.ai/challenge/rules）：1 个小节有改动，+1 / -0 行。
+规则决定什么允许、什么有获奖资格：请到原页面完整阅读改动的小节。
+
+- 改动：“Official Rules”（+1 / -0 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Official Rules
++ Participating in the EigenLab Yukon partner category? See the partner participation arrangements for its team-size exception, collaboration, individual allowances, one-way transfers and exclusio...
+```
+
+#### 时间线
+
+时间线（https://virtualembryo.ai/challenge/timeline）：1 个小节有改动，+2 / -2 行。
+日期可能变了：请按新的日程核对你的计划。
+
+- 改动：“Challenge timeline”（+2 / -2 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Challenge timeline
+- 20 Oct
++ 27 Oct
+- 2026-10-20
++ 2026-10-27
+```
+
 ## 2026-10-16（UTC 11:31 运行）
 
 ### 官方打分器（https://github.com/aristoteleo/veckit）

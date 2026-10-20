@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "rules",
-  "last_changed": "2026-09-30",
+  "last_changed": "2026-10-20",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -12,6 +12,7 @@
     "/challenge/evaluation",
     "/challenge/faq",
     "/challenge/leaderboard",
+    "/challenge/partner-rules",
     "/challenge/prizes",
     "/challenge/publish",
     "/challenge/resources",
@@ -29,11 +30,11 @@
       "sha256": "7d4f84165bbc4169ad0cc595d619f001fe1241f0cf48b4cb002567040ae28258"
     },
     {
-      "chars": 0,
+      "chars": 252,
       "heading": "Official Rules",
       "level": 1,
-      "lines": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "lines": 1,
+      "sha256": "c368096ac2865df5b83ae9791d8b22285060f096915586c3493bb439003962d2"
     },
     {
       "chars": 519,
@@ -162,6 +163,6 @@
       "sha256": "cbf00412975238283010c80a830178adc7e765d9dbdae62bda5f5e9c6677ab29"
     }
   ],
-  "sha256": "e8eb002dd0a3d5c28f150e2ea080c5e9487d0c5ee0c909fc0fae78ebe7c06207",
+  "sha256": "68aade34b76b32c56e8f6576fe49dc975f59d2f0ce35089a360bff48d94d6548",
   "url": "https://virtualembryo.ai/challenge/rules"
 }

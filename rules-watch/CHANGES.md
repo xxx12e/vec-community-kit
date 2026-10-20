@@ -4,6 +4,65 @@ Newest first. One entry per run that found a change or a fetch problem. Written 
 
 <!-- entries below, newest first -->
 
+## 2026-10-20 (run 11:46 UTC)
+
+### Site links
+
+- New link on the challenge site: https://virtualembryo.ai/challenge/partner-rules (not in the watch list yet: it may be a new page worth reading)
+
+### Pages
+
+#### Overview
+
+Overview (https://virtualembryo.ai/challenge): 2 section(s) changed, +3 / -3 lines.
+
+- Changed: "(top of page)" (+1 / -1 lines)
+- Changed: "Launch → development → final" (+2 / -2 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ (top of page)
+- ...missions are scored and ranked, and the starter kit and reference baselines are out. Next: Test phase starts, validation data released, test leaderboard opens on 20 October 2026. Full timeline →
++ ...missions are scored and ranked, and the starter kit and reference baselines are out. Next: Test phase starts, validation data released, test leaderboard opens on 27 October 2026. Full timeline →
+@@ Launch → development → final
+- 20 Oct
++ 27 Oct
+- 2026-10-20
++ 2026-10-27
+```
+
+#### Challenge Rules
+
+Challenge Rules (https://virtualembryo.ai/challenge/rules): 1 section(s) changed, +1 / -0 lines.
+The rules decide what is allowed and what is prize-eligible: read the changed sections on the page in full.
+
+- Changed: "Official Rules" (+1 / -0 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Official Rules
++ Participating in the EigenLab Yukon partner category? See the partner participation arrangements for its team-size exception, collaboration, individual allowances, one-way transfers and exclusio...
+```
+
+#### Timeline
+
+Timeline (https://virtualembryo.ai/challenge/timeline): 1 section(s) changed, +2 / -2 lines.
+Dates may have moved: check your plan against the new schedule.
+
+- Changed: "Challenge timeline" (+2 / -2 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Challenge timeline
+- 20 Oct
++ 27 Oct
+- 2026-10-20
++ 2026-10-27
+```
+
 ## 2026-10-16 (run 11:31 UTC)
 
 ### Official scorer (https://github.com/aristoteleo/veckit)
