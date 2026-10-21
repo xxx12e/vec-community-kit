@@ -4,6 +4,28 @@
 
 <!-- entries below, newest first -->
 
+## 2026-10-21（UTC 11:58 运行）
+
+### 网站链接
+
+- 比赛网站上出现新链接：https://virtualembryo.ai/challenge/privacy（尚未列入监测：可能是值得一读的新页面）
+
+### 页面
+
+#### 使用条款
+
+使用条款（https://virtualembryo.ai/challenge/terms）：1 个小节有改动，+1 / -0 行。
+使用条款变了：请到原页面阅读改动的小节。
+
+- 改动：“8. Privacy”（+1 / -0 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ 8. Privacy
++ Read the Challenge Privacy Policy.
+```
+
 ## 2026-10-20（UTC 11:46 运行）
 
 ### 网站链接

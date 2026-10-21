@@ -4,6 +4,28 @@ Newest first. One entry per run that found a change or a fetch problem. Written 
 
 <!-- entries below, newest first -->
 
+## 2026-10-21 (run 11:58 UTC)
+
+### Site links
+
+- New link on the challenge site: https://virtualembryo.ai/challenge/privacy (not in the watch list yet: it may be a new page worth reading)
+
+### Pages
+
+#### Terms of Use
+
+Terms of Use (https://virtualembryo.ai/challenge/terms): 1 section(s) changed, +1 / -0 lines.
+The terms of use changed: read the changed sections on the page.
+
+- Changed: "8. Privacy" (+1 / -0 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ 8. Privacy
++ Read the Challenge Privacy Policy.
+```
+
 ## 2026-10-20 (run 11:46 UTC)
 
 ### Site links

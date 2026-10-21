@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "terms",
-  "last_changed": "2026-09-30",
+  "last_changed": "2026-10-21",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -12,6 +12,7 @@
     "/challenge/evaluation",
     "/challenge/faq",
     "/challenge/leaderboard",
+    "/challenge/privacy",
     "/challenge/prizes",
     "/challenge/publish",
     "/challenge/resources",
@@ -85,11 +86,11 @@
       "sha256": "3667eecbd9ec93323613642bf5fbf333a68110ed0827bd8f0f22240ae11baa9d"
     },
     {
-      "chars": 85,
+      "chars": 119,
       "heading": "8. Privacy",
       "level": 2,
-      "lines": 1,
-      "sha256": "4219e13529f8b05bc81ce75e4ce15557ca96c1ff6be40cfadec3869d08691226"
+      "lines": 2,
+      "sha256": "cb972996f4ae6d7a6256dadc44bc0091a536c37dfc7267bc62a0eda34351fbe2"
     },
     {
       "chars": 387,
@@ -134,6 +135,6 @@
       "sha256": "b299dd32f739409f0b7648acee1ffc048a8432527c42ed2b6b260299e571b40b"
     }
   ],
-  "sha256": "221f17256a1d8fd49bf2a2077a4b9b33fc6ac786079ddb7ce841e1490f5defe8",
+  "sha256": "06efad30b5a622ab3c2701bb73adeb1daa22430c67da4b74c6aad6b3a7046943",
   "url": "https://virtualembryo.ai/challenge/terms"
 }
