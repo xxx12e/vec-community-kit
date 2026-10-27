@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "tasks-temporal",
-  "last_changed": "2026-09-30",
+  "last_changed": "2026-10-27",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -49,11 +49,11 @@
       "sha256": "20f8e790c2e0ac5f32b751148ce04c01da012e2d3c9b80394395428494a73e30"
     },
     {
-      "chars": 1035,
+      "chars": 1176,
       "heading": "Splits",
       "level": 2,
       "lines": 13,
-      "sha256": "9fa302ff9a539a0a6c0b0c8ebbbcfc08cc2e7880185e28289e257379510ed257"
+      "sha256": "7b85d09deeff3dae6bc340d5f62cd3ef49130f19ea1e47ca85998f488715aa79"
     },
     {
       "chars": 636,
@@ -98,6 +98,6 @@
       "sha256": "43f5a2f1d6e66ea16716746a00d850590ace18b767a9482292ed7191ebddf7cd"
     }
   ],
-  "sha256": "b861a462ee64784410926bb6e231ca975077fc5a8ac0150dfc05e8cad89e2129",
+  "sha256": "ce4ded621b86ddd53e4225ab6235d77473117915441797f28b30f6a7f3d8ceb1",
   "url": "https://virtualembryo.ai/challenge/tasks/temporal"
 }

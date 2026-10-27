@@ -4,6 +4,266 @@ Newest first. One entry per run that found a change or a fetch problem. Written 
 
 <!-- entries below, newest first -->
 
+## 2026-10-27 (run 12:20 UTC)
+
+### Phase endpoint (https://kg.virtualembryo.ai/challenge/phase)
+
+- phase_mode null -> auto.
+- scheduled_p3_start_at null -> 2026-10-27T16:00:00Z.
+
+### Pages
+
+#### Overview
+
+Overview (https://virtualembryo.ai/challenge): 3 section(s) changed, +4 / -4 lines.
+
+- Changed: "(top of page)" (+1 / -1 lines)
+- Changed: "Three tasks, one shared atlas" (+1 / -1 lines)
+- Changed: "Launch → development → final" (+2 / -2 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ (top of page)
+- ...missions are scored and ranked, and the starter kit and reference baselines are out. Next: Test phase starts, validation data released, test leaderboard opens on 27 October 2026. Full timeline →
++ ...lidation submissions are scored and ranked, and the starter kit and reference baselines are out. Next: P3 opens at 09:00 Los Angeles time; P2 standings freeze on 27 October 2026. Full timeline →
+@@ Three tasks, one shared atlas
+- ... train, E10.5 extrapolation validation, E12.5 extrapolation test, and in the final phase every heart stage is training input. Embryo, in order: E6.75 train, E7.25 train, E7.5 validation, E7.75 t...
++ ...ion validation, E12.5 extrapolation test, and during P3 the validation stages become training input only after explicit opt-in; E12.5 remains hidden. Embryo, in order: E6.75 train, E7.25 train, ...
+@@ Launch → development → final
+- P3 · Test phase starts, validation data released, test leaderboard opens
++ P3 · P3 opens at 09:00 Los Angeles time; P2 standings freeze
+- P3 · Test phase starts, validation data released, test leaderboard opens
++ P3 · P3 opens at 09:00 Los Angeles time; P2 standings freeze
+```
+
+#### FAQ
+
+FAQ (https://virtualembryo.ai/challenge/faq): 1 section(s) changed, +1 / -1 lines.
+The FAQ often carries rulings on edge cases: read the changed answers.
+
+- Changed: "Data" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Data
+- ...Validation and test ground truth are withheld while they can still affect the board, until the final phase a validation submission returns a leaderboard score, not the answers. At the start of t...
++ ...During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
+```
+
+#### Timeline
+
+Timeline (https://virtualembryo.ai/challenge/timeline): 1 section(s) changed, +3 / -3 lines.
+Dates may have moved: check your plan against the new schedule.
+
+- Changed: "Challenge timeline" (+3 / -3 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Challenge timeline
+- P3 · Test phase starts, validation data released, test leaderboard opens
++ P3 · P3 opens at 09:00 Los Angeles time; P2 standings freeze
+- Test phase starts, validation data released, test leaderboard opens
++ P3 opens at 09:00 Los Angeles time; P2 standings freeze
+- The point where the two halves swap. The validation data is released for every task (it can no longer be used to probe the board, because ranking moves to the hidden test split) so validation be...
++ At 09:00 PDT (16:00 UTC), the default leaderboard switches to Test and Frozen P2 preserves results scored before this cutoff. During P3, eligible participants can explicitly request the P2 valid...
+```
+
+#### Data
+
+Data (https://virtualembryo.ai/challenge/data): 9 section(s) changed, 1 added, +17 / -16 lines.
+The Data page lists stages, downloads and per-board cell counts: compare it with the board contract.
+
+- Changed: "Download" (+1 / -4 lines)
+- Changed: "Task 1: single-cell RNA" (+1 / -1 lines)
+- Changed: "File format" (+2 / -2 lines)
+- Changed: "Task 2: 3D MERFISH (embryo setting)" (+1 / -1 lines)
+- Changed: "File format (2)" (+2 / -2 lines)
+- Changed: "Task 2: 3D MERFISH (heart setting)" (+3 / -3 lines)
+- Changed: "Task 3: conditional knock-outs" (+1 / -1 lines)
+- Changed: "File format (3)" (+1 / -1 lines)
+- Changed: "Access and reproducibility" (+2 / -1 lines)
+- Added: "Validation answers for P3" (3 line(s))
+
+Changed lines (short excerpts):
+
+```diff
+@@ Download
+- ...ing stages are released to registered participants. Validation and test targets come back as a score rather than as answers, until the final phase releases the validation answers for every task.
++ ... a score rather than as answers, until the final phase allows you to opt in to the validation answers for P3 preparation. Accessing those answers permanently ends your P2 submission eligibility.
+- More data comes later
+- This is not all the data you will get. At the final test phase the validation stages are released too, with their answers, so they become training material rather than something you can only pro...
+- Sign in to download →
+@@ Task 1: single-cell RNA
+- E10.5 | val | validation target, answers withheld | 647 MB
++ E10.5 | val | validation target, answers available during P3 after explicit opt-in | 647 MB
+@@ File format
+- never distributed. Submit and the server scores it
++ available during P3 after explicit opt-in; access permanently ends P2 submissions
+- inputs released at the final test phase, without labels
++ hidden test target; ground truth is never released
+@@ Task 2: 3D MERFISH (embryo setting)
+- E7.5 | val | interpolation validation, answers withheld
++ E7.5 | val | interpolation validation, answers available during P3 after explicit opt-in
+@@ File format (2)
+- never distributed. Submit and the server scores it
++ available during P3 after explicit opt-in; access permanently ends P2 submissions
+- inputs released at the final test phase, without labels
++ hidden test target; ground truth is never released
+@@ Task 2: 3D MERFISH (heart setting)
+- E8.5 | val | interpolation validation, answers withheld | 85 MB
++ E8.5 | val | interpolation validation, answers available during P3 after explicit opt-in | 85 MB
+- E10.5 | val | extrapolation validation, answers withheld | 484 MB
++ E10.5 | val | extrapolation validation, answers available during P3 after explicit opt-in | 484 MB
+- ...k if you want to know how that skill will be judged. What this setting carries into the final phase is extrapolation, on the hidden E12.5. In the final phase every heart stage is training input.
++ ... judged. What this setting carries into the final phase is extrapolation, on the hidden E12.5. During P3, the validation stages become training input after explicit opt-in; E12.5 remains hidden.
+@@ Task 3: conditional knock-outs
+- Gata4 KO @ E8.75 | val | Mesp1-Cre; Gata4 F/F; Gata6 F/+, two replicates; answers released at the final phase | 374 + 409 MB
++ Gata4 KO @ E8.75 | val | Mesp1-Cre; Gata4 F/F; Gata6 F/+, two replicates; answers available during P3 after explicit opt-in | 374 + 409 MB
+@@ File format (3)
+- inputs released at the final test phase, without labels
++ hidden test target; ground truth is never released
+@@ Access and reproducibility
+- ...Validation and test ground truth are withheld while they can still affect the board: a validation submission comes back as a leaderboard score, not the answers. At the start of the final phase t...
++ ...During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
++ After you explicitly unlock the official P2 validation release above, you may use those released validation files for P3 preparation. This does not permit access to hidden test data or other res...
+@@ Validation answers for P3
++ P2 validation answers can be used to prepare your final P3 models. Hidden test answers are never released. Browsing this page does not change your eligibility.
++ Available to eligible registered participants during P3, after explicit confirmation.
++ Sign in to download →
+```
+
+#### Tasks
+
+Tasks (https://virtualembryo.ai/challenge/tasks): 2 section(s) changed, +2 / -2 lines.
+A task description changed: check the splits and the input and output.
+
+- Changed: "Three tasks, one shared resource" (+1 / -1 lines)
+- Changed: "Spatial-temporal multiscale prediction" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Three tasks, one shared resource
+- Ground truth is withheld while it can still affect the board. Until the final phase a validation submission returns a leaderboard score, not the answers. At the start of the final phase the vali...
++ During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
+@@ Spatial-temporal multiscale prediction
+- ... train, E10.5 extrapolation validation, E12.5 extrapolation test, and in the final phase every heart stage is training input. Embryo, in order: E6.75 train, E7.25 train, E7.5 validation, E7.75 t...
++ ...ion validation, E12.5 extrapolation test, and during P3 the validation stages become training input only after explicit opt-in; E12.5 remains hidden. Embryo, in order: E6.75 train, E7.25 train, ...
+```
+
+#### Task 1 (temporal)
+
+Task 1 (temporal) (https://virtualembryo.ai/challenge/tasks/temporal): 1 section(s) changed, +2 / -2 lines.
+A task description changed: check the splits and the input and output.
+
+- Changed: "Splits" (+2 / -2 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Splits
+- Ground truth is withheld while it can still affect the board. Until the final phase a validation submission returns a leaderboard score, not the answers. At the start of the final phase the vali...
++ During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
+- Scored through the leaderboard until the final phase, when the answers are released.
++ Scored through the leaderboard until the final phase, when participants can explicitly request the answers and permanently end their P2 submission eligibility.
+```
+
+#### Task 2 (spatial-temporal)
+
+Task 2 (spatial-temporal) (https://virtualembryo.ai/challenge/tasks/spatial): 1 section(s) changed, +2 / -2 lines.
+A task description changed: check the splits and the input and output.
+
+- Changed: "Splits" (+2 / -2 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Splits
+- Ground truth is withheld while it can still affect the board. Until the final phase a validation submission returns a leaderboard score, not the answers. At the start of the final phase the vali...
++ During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
+- One interpolation target inside the observed range, one extrapolation target beyond it. Scored through the leaderboard until the final phase, when the answers are released.
++ ...ne extrapolation target beyond it. Scored through the leaderboard until the final phase, when participants can explicitly request the answers and permanently end their P2 submission eligibility.
+```
+
+#### Task 3 (perturbation)
+
+Task 3 (perturbation) (https://virtualembryo.ai/challenge/tasks/perturbation): 2 section(s) changed, +3 / -3 lines.
+A task description changed: check the splits and the input and output.
+
+- Changed: "The question" (+1 / -1 lines)
+- Changed: "Splits" (+2 / -2 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ The question
+- ...Task 3 is the only one whose validation answers are released during the competition. At the start of the final phase, when the rank has moved to the hidden knockout and they can no longer be use...
++ ...ondingly diffuse. Validation answers become available by explicit opt-in during P3, as for the other tasks. Access permanently ends P2 submission eligibility; hidden test answers remain private.
+@@ Splits
+- Ground truth is withheld while it can still affect the board. Until the final phase a validation submission returns a leaderboard score, not the answers. At the start of the final phase the vali...
++ During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
+- Also specific, at a different stage. Scored through the leaderboard until the final phase, when the answers are released.
++ Also specific, at a different stage. Scored through the leaderboard until the final phase, when participants can explicitly request the answers and permanently end their P2 submission eligibility.
+```
+
+#### Evaluation, Task 1: task
+
+Evaluation, Task 1: task (https://virtualembryo.ai/challenge/evaluation?section=task&task=1): 1 section(s) changed, +2 / -2 lines.
+The evaluation pages define the file contract and the metrics: check whether your file or your local scoring is affected.
+
+- Changed: "Splits" (+2 / -2 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Splits
+- Ground truth is withheld while it can still affect the board. Until the final phase a validation submission returns a leaderboard score, not the answers. At the start of the final phase the vali...
++ During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
+- Scored through the leaderboard until the final phase, when the answers are released.
++ Scored through the leaderboard until the final phase, when participants can explicitly request the answers and permanently end their P2 submission eligibility.
+```
+
+#### Evaluation, Task 2: task
+
+Evaluation, Task 2: task (https://virtualembryo.ai/challenge/evaluation?section=task&task=2): 1 section(s) changed, +2 / -2 lines.
+The evaluation pages define the file contract and the metrics: check whether your file or your local scoring is affected.
+
+- Changed: "Splits" (+2 / -2 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Splits
+- Ground truth is withheld while it can still affect the board. Until the final phase a validation submission returns a leaderboard score, not the answers. At the start of the final phase the vali...
++ During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
+- One interpolation target inside the observed range, one extrapolation target beyond it. Scored through the leaderboard until the final phase, when the answers are released.
++ ...ne extrapolation target beyond it. Scored through the leaderboard until the final phase, when participants can explicitly request the answers and permanently end their P2 submission eligibility.
+```
+
+#### Evaluation, Task 3: task
+
+Evaluation, Task 3: task (https://virtualembryo.ai/challenge/evaluation?section=task&task=3): 2 section(s) changed, +3 / -3 lines.
+The evaluation pages define the file contract and the metrics: check whether your file or your local scoring is affected.
+
+- Changed: "Task" (+1 / -1 lines)
+- Changed: "Splits" (+2 / -2 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Task
+- ...Task 3 is the only one whose validation answers are released during the competition. At the start of the final phase, when the rank has moved to the hidden knockout and they can no longer be use...
++ ...ondingly diffuse. Validation answers become available by explicit opt-in during P3, as for the other tasks. Access permanently ends P2 submission eligibility; hidden test answers remain private.
+@@ Splits
+- Ground truth is withheld while it can still affect the board. Until the final phase a validation submission returns a leaderboard score, not the answers. At the start of the final phase the vali...
++ During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
+- Also specific, at a different stage. Scored through the leaderboard until the final phase, when the answers are released.
++ Also specific, at a different stage. Scored through the leaderboard until the final phase, when participants can explicitly request the answers and permanently end their P2 submission eligibility.
+```
+
 ## 2026-10-21 (run 11:58 UTC)
 
 ### Site links

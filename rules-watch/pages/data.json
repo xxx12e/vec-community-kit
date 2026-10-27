@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "data",
-  "last_changed": "2026-10-16",
+  "last_changed": "2026-10-27",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -37,11 +37,18 @@
       "sha256": "2eebcb2d3b0167cdd1d21becf489d05f3ad48980f6dca6952bf4c7d07a2fb4d8"
     },
     {
-      "chars": 852,
+      "chars": 456,
       "heading": "Download",
       "level": 2,
-      "lines": 5,
-      "sha256": "1f1eda127ac07c5a732087259354d640a04ad14a8986dca370d959652a47b88e"
+      "lines": 2,
+      "sha256": "203e06fe6fc5eae9f85c2700ac797691bb9475f717b2385ab967e8ed0d4e10af"
+    },
+    {
+      "chars": 265,
+      "heading": "Validation answers for P3",
+      "level": 3,
+      "lines": 3,
+      "sha256": "ab8be313e88f1f390d6d73607039675fdfc315bf787ef66d15fa4a146f98d955"
     },
     {
       "chars": 1414,
@@ -72,53 +79,53 @@
       "sha256": "a6cdd60287418825b6a46668cbd4abc8373eda54447908a52ceb6916c744c7a2"
     },
     {
-      "chars": 906,
+      "chars": 939,
       "heading": "Task 1: single-cell RNA",
       "level": 2,
       "lines": 20,
-      "sha256": "82025f3fa643bf7fd4cac9a5d4f169e84794f77e9ce76c1e683368d13e82db2d"
+      "sha256": "68d5d7c25e5e2c1485c9e1cf74745a98a40d3e76df84101c045ea876fb28d39e"
     },
     {
-      "chars": 1503,
+      "chars": 1529,
       "heading": "File format",
       "level": 3,
       "lines": 20,
-      "sha256": "41d65595a878d4101bd5e29f33de7d5bb182afa453f63ed109c9fea7b86e9b27"
+      "sha256": "7a6e37b369f0b1cf3b26c7f4ddc1e181280cd2cea57acdff4a56a51ccbfcab57"
     },
     {
-      "chars": 1577,
+      "chars": 1610,
       "heading": "Task 2: 3D MERFISH (embryo setting)",
       "level": 2,
       "lines": 20,
-      "sha256": "23b47f569aa878ab4aaa3afd3b5754adbbddaa4e57613fdc8425f78e8d9c70e5"
+      "sha256": "899cc87de6ba416d407ba0f12cc599d440cb650dd99c6ed60656937b6bc26862"
     },
     {
-      "chars": 1461,
+      "chars": 1487,
       "heading": "File format (2)",
       "level": 3,
       "lines": 18,
-      "sha256": "8e737c3e813492cbe50c303beb1db4d3d6f3de6bbddffac728c67d91e8923ab8"
+      "sha256": "eb001a00c3032c11c35101b01ea5cb4132ae3a01592706f217df89a0d8ba09a5"
     },
     {
-      "chars": 1443,
+      "chars": 1553,
       "heading": "Task 2: 3D MERFISH (heart setting)",
       "level": 2,
       "lines": 24,
-      "sha256": "44577765ae1738e84fe2c908e63235daf48e5af84f135317a957849b817b8456"
+      "sha256": "0c17d19dd8b2c65e1c89fd50d70d1567b0a29162c7c952a4b0921b862e36acbd"
     },
     {
-      "chars": 1039,
+      "chars": 1053,
       "heading": "Task 3: conditional knock-outs",
       "level": 2,
       "lines": 17,
-      "sha256": "8c90a1bf260c520b484e5c74f8c9c55199439341d416e2083f4db1f8c3443953"
+      "sha256": "c273a0655a4ecd0ed4d693b3f2e369910108e7cef94c3d41a216ce2e6a681d48"
     },
     {
-      "chars": 1760,
+      "chars": 1755,
       "heading": "File format (3)",
       "level": 3,
       "lines": 21,
-      "sha256": "1cac5659be985413540a59e6fb2a4bcfacbdab9666ebe8efd943b2cb7972e9d9"
+      "sha256": "ccfb07499a75f3cd25f395fab398aec7b0d01afe1cbfbc64aa0eb53078a2bc42"
     },
     {
       "chars": 918,
@@ -128,11 +135,11 @@
       "sha256": "5eeea211a809e4d2d0f3938a2079330798c368b31090b6a883f1fe59ec0e14d9"
     },
     {
-      "chars": 3393,
+      "chars": 3579,
       "heading": "Access and reproducibility",
       "level": 2,
-      "lines": 3,
-      "sha256": "71c44beef7bb98102b88fa3aa9fbb1e8a418d6781adab86f12200ccfeed4e555"
+      "lines": 4,
+      "sha256": "063bd723f5e08475649b9730984891888591215a14a705ac34cb1249b8ad796e"
     },
     {
       "chars": 936,
@@ -142,6 +149,6 @@
       "sha256": "0930ef1931f9369ffb79dc6e75ddc001a45d9ffda2ef0d7e2e8812ce1a3c81be"
     }
   ],
-  "sha256": "5404e2a918204a4fe7b3797b25f2db1c7ce4b8174994db5ae0897c1200521686",
+  "sha256": "3f98729fb8d7f53cbe8e6b0173d2e22300916431859d0a20a8a3fd8bab98e109",
   "url": "https://virtualembryo.ai/challenge/data"
 }

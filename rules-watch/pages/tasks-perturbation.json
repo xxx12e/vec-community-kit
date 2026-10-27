@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "tasks-perturbation",
-  "last_changed": "2026-09-30",
+  "last_changed": "2026-10-27",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -35,11 +35,11 @@
       "sha256": "1b2145bf56eba75d41ae11d97386f4c5d8e057e50c8254496612c1877965a2ad"
     },
     {
-      "chars": 1176,
+      "chars": 1137,
       "heading": "The question",
       "level": 2,
       "lines": 4,
-      "sha256": "46c15534a8e11aa7fc9b32f58ba714d86f6d3f7300182ffcb312190948555f84"
+      "sha256": "10c4b44a012aed0adb4b7a60315c46064f163d0dbbdd33e079435f2f02be85fa"
     },
     {
       "chars": 213,
@@ -49,11 +49,11 @@
       "sha256": "785582030e370b1d923531fb27ca50d152f9d53bbcf68efc7e1c8d38a7f25af5"
     },
     {
-      "chars": 873,
+      "chars": 1014,
       "heading": "Splits",
       "level": 2,
       "lines": 13,
-      "sha256": "63347544792f31e284bbd0e17bc001671799024210a21f0392d57729b51d3eea"
+      "sha256": "7fa8ef579c77a6d7244ebd5614506f7a84403b3882c8d14b7c47c2ae954cd0df"
     },
     {
       "chars": 371,
@@ -98,6 +98,6 @@
       "sha256": "ee064720c0dad4faa96da0b4fb3d3f065b6fa3e181b5c591aca86e6f2c91b4ac"
     }
   ],
-  "sha256": "ce5253cd40a3cdd83736c841fbd4c824919ef36d1b3488421fe9c04152f84c49",
+  "sha256": "ae3ca618703c8830a721bb494492e7060699f52cc30941c6214c6a83392557f7",
   "url": "https://virtualembryo.ai/challenge/tasks/perturbation"
 }

@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "tasks",
-  "last_changed": "2026-09-30",
+  "last_changed": "2026-10-27",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -29,11 +29,11 @@
   ],
   "sections": [
     {
-      "chars": 414,
+      "chars": 480,
       "heading": "Three tasks, one shared resource",
       "level": 1,
       "lines": 2,
-      "sha256": "7b82bafe47dce497b2eb1f1c453302e2410daf85b5867ef1790c6997adba3527"
+      "sha256": "cdfce0af93d372202e832fac770b6ac1c5d2fcd1676f78e2e649e974600e5224"
     },
     {
       "chars": 923,
@@ -43,11 +43,11 @@
       "sha256": "755736e730d4e59607bde3ed8ae640a4c6af1d7c0dac1cbb7f93f5791aaac11a"
     },
     {
-      "chars": 1504,
+      "chars": 1552,
       "heading": "Spatial-temporal multiscale prediction",
       "level": 2,
       "lines": 13,
-      "sha256": "2b1e0e325b140aa42554a2f5480950683588eb4e769d38882c331f2146c75447"
+      "sha256": "f4dc0cda9194ac9a5cff8e93f981f5d2b033920ce82021c33a87726bbc4f28f6"
     },
     {
       "chars": 852,
@@ -64,6 +64,6 @@
       "sha256": "91363a4578ad275a732ec25fa594c18ed9757f6a40cc37e45fb34a6864ea2a05"
     }
   ],
-  "sha256": "8e93a91797c42c8642f0e2e0ddfe4b688eb26adcc35322db1d44743c8bb56fa2",
+  "sha256": "63145151f5a2f3d8b94bd4f4326a255a4a2f044a41d5f0f987f75e8291622e8b",
   "url": "https://virtualembryo.ai/challenge/tasks"
 }

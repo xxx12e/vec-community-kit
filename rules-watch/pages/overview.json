@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "overview",
-  "last_changed": "2026-10-20",
+  "last_changed": "2026-10-27",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -29,11 +29,11 @@
   ],
   "sections": [
     {
-      "chars": 257,
+      "chars": 245,
       "heading": "",
       "level": 0,
       "lines": 4,
-      "sha256": "27993dfe65711274788e1c9f8901b14a4b9b44a63f79e7a21f6a3a54ce225fca"
+      "sha256": "98dd5c6ff58028b1cdc1d5fb8aac20e7a1b39e294fdd1028399db52c501d81ae"
     },
     {
       "chars": 256,
@@ -50,11 +50,11 @@
       "sha256": "3a368be5f24d285ed8f7c193141cd36b614c6c8ba4e35a004fb103265564526e"
     },
     {
-      "chars": 1876,
+      "chars": 1924,
       "heading": "Three tasks, one shared atlas",
       "level": 2,
       "lines": 13,
-      "sha256": "763915162f60eaad0ac4b59e9257244605f9988610672c7cc04e2307e1b5e411"
+      "sha256": "43cfa2d604da9c3df6f5da201d448815f41e6a172bbc748b3b9cdd5e093efc14"
     },
     {
       "chars": 918,
@@ -64,11 +64,11 @@
       "sha256": "aa178ab0781b18a7a328770217796020fcdc683bb7b4f6f1dd9abf546bcbe45b"
     },
     {
-      "chars": 666,
+      "chars": 642,
       "heading": "Launch \u2192 development \u2192 final",
       "level": 2,
       "lines": 23,
-      "sha256": "0f1747e13f12b2499f0cff097261fc75937792529242c903fe15f43e7b6109c4"
+      "sha256": "e47d4326f81a96c9db3f3fb81d618e81b36ad3a8018376c75030afe608825384"
     },
     {
       "chars": 1041,
@@ -78,6 +78,6 @@
       "sha256": "70bdb7c043466f1ad960d623378541965ac913edf77b4445ef64fbc345008710"
     }
   ],
-  "sha256": "8aa5b8b9e59cc14e21ef30827c2a498452f9fc81ee993ab4df941cd6e770b1f3",
+  "sha256": "85d294b9f400345476bedfb4ec7e83620b48d0aaddf6ab046f502426f5623c3b",
   "url": "https://virtualembryo.ai/challenge"
 }

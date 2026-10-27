@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "tasks-spatial",
-  "last_changed": "2026-09-30",
+  "last_changed": "2026-10-27",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -49,11 +49,11 @@
       "sha256": "d20eb40e54ce3bd1e119958add9aaa1b225b3ef8847ad3b529b5b92ea9283bc3"
     },
     {
-      "chars": 1311,
+      "chars": 1452,
       "heading": "Splits",
       "level": 2,
       "lines": 19,
-      "sha256": "9cb449eb8eab6b14b09a4599c9816133e84d263719797a551ce5b0845ece2bcf"
+      "sha256": "ba3fad0c6fc1c309b5359b26229fd3aea8784631c93f7eccaff4d8d94b3403e8"
     },
     {
       "chars": 418,
@@ -98,6 +98,6 @@
       "sha256": "259214c088bb638b7ba2788a798d91cda312791d00c819c32a4d5598578e9d1a"
     }
   ],
-  "sha256": "aa9adf81eec23fd7ab423d08120606cb739090ca35c438b4b26c8a9bba8de86f",
+  "sha256": "837afb150200f026316877115730b90c8485344cbc5de03c1b014c4bfd4bc694",
   "url": "https://virtualembryo.ai/challenge/tasks/spatial"
 }
