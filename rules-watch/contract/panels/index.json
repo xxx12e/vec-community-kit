@@ -1,4 +1,19 @@
 {
+  "T1:test": {
+    "genes_file": "T1__test.genes.txt",
+    "genes_sha256": "807549e15be01989",
+    "key": "T1:test",
+    "label": "T1 \u00b7 test (E12.5)",
+    "max_cells": 5118,
+    "min_cells": 638,
+    "n_genes": 32285,
+    "needs_coords": false,
+    "obs_required": [],
+    "obsm_required": [],
+    "setting": null,
+    "split": "test",
+    "task": "T1"
+  },
   "T1:val": {
     "anchors": {
       "de_direction": {
@@ -36,6 +51,23 @@
     "target_ko": null,
     "task": "T1",
     "truth_cells": 1249
+  },
+  "T2:embryo:test_interp": {
+    "genes_file": "T2__embryo__test_interp.genes.txt",
+    "genes_sha256": "68d63317ac18edac",
+    "key": "T2:embryo:test_interp",
+    "label": "T2 embryo \u00b7 interpolation, test (E7.75)",
+    "max_cells": 5000,
+    "min_cells": 1000,
+    "n_genes": 497,
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "setting": "embryo",
+    "split": "test",
+    "task": "T2"
   },
   "T2:embryo:val_interp": {
     "anchors": {
@@ -92,6 +124,23 @@
     "target_ko": null,
     "task": "T2",
     "truth_cells": 583
+  },
+  "T2:heart:test_extrap": {
+    "genes_file": "T2__heart__test_extrap.genes.txt",
+    "genes_sha256": "a9a553108e19acb6",
+    "key": "T2:heart:test_extrap",
+    "label": "T2 heart \u00b7 extrapolation, test (E12.5)",
+    "max_cells": 34641,
+    "min_cells": 1000,
+    "n_genes": 500,
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "setting": "heart",
+    "split": "test",
+    "task": "T2"
   },
   "T2:heart:val_extrap": {
     "anchors": {
@@ -204,6 +253,23 @@
     "target_ko": null,
     "task": "T2",
     "truth_cells": 1185
+  },
+  "T3:bcatenin": {
+    "genes_file": "T3__bcatenin.genes.txt",
+    "genes_sha256": "a9a553108e19acb6",
+    "key": "T3:bcatenin",
+    "label": "T3 \u00b7 test (beta-catenin KO)",
+    "max_cells": 7449,
+    "min_cells": 1000,
+    "n_genes": 500,
+    "needs_coords": true,
+    "obs_required": [],
+    "obsm_required": [
+      "spatial_3D"
+    ],
+    "setting": null,
+    "split": "test",
+    "task": "T3"
   },
   "T3:gata4": {
     "anchors": {

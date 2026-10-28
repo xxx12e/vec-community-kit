@@ -4,6 +4,129 @@ Newest first. One entry per run that found a change or a fetch problem. Written 
 
 <!-- entries below, newest first -->
 
+## 2026-10-28 (run 13:05 UTC)
+
+### Board contract (https://virtualembryo.ai/challenge/panels/index.json)
+
+- New board T1:test (T1 · test (E12.5)): task T1, split test, 32285 genes (T1__test.genes.txt), cells 638-5118, coordinates: not used.
+  - What this changes for your file: A file for T1:test needs exactly this board's gene list in its order (32285 genes) and 638 to 5118 cells; coordinates: not used. The kit's validator reads the new contract with VEC_PANELS_DIR=rules-watch/contract/panels.
+- New board T2:embryo:test_interp (T2 embryo · interpolation, test (E7.75)): task T2, split test, 497 genes (T2__embryo__test_interp.genes.txt), cells 1000-5000, coordinates: required in .obsm [spatial_3D].
+  - What this changes for your file: A file for T2:embryo:test_interp needs exactly this board's gene list in its order (497 genes) and 1000 to 5000 cells; coordinates: required in .obsm [spatial_3D]. The kit's validator reads the new contract with VEC_PANELS_DIR=rules-watch/contract/panels.
+- New board T2:heart:test_extrap (T2 heart · extrapolation, test (E12.5)): task T2, split test, 500 genes (T2__heart__test_extrap.genes.txt), cells 1000-34641, coordinates: required in .obsm [spatial_3D].
+  - What this changes for your file: A file for T2:heart:test_extrap needs exactly this board's gene list in its order (500 genes) and 1000 to 34641 cells; coordinates: required in .obsm [spatial_3D]. The kit's validator reads the new contract with VEC_PANELS_DIR=rules-watch/contract/panels.
+- New board T3:bcatenin (T3 · test (beta-catenin KO)): task T3, split test, 500 genes (T3__bcatenin.genes.txt), cells 1000-7449, coordinates: required in .obsm [spatial_3D].
+  - What this changes for your file: A file for T3:bcatenin needs exactly this board's gene list in its order (500 genes) and 1000 to 7449 cells; coordinates: required in .obsm [spatial_3D]. The kit's validator reads the new contract with VEC_PANELS_DIR=rules-watch/contract/panels.
+
+### Phase endpoint (https://kg.virtualembryo.ai/challenge/phase)
+
+- Phase p2 -> p3 (P3 · Final test phase).
+  - What this changes for your file: The challenge is in a new phase: re-read the timeline and the rules before your next upload.
+- Scored board validation -> final.
+  - What this changes for your file: New submissions are scored on the final board: check the keys and cell bounds of its boards (board contract above).
+- daily_quota 8 -> 2.
+  - What this changes for your file: Plan your uploads for the new quota.
+- Nominations are open: a final entry can be nominated now (nominations_open true).
+- split val -> test.
+
+### Site links
+
+- New link on the challenge site: https://virtualembryo.ai/challenge/panels/T1__test.genes.txt
+- New link on the challenge site: https://virtualembryo.ai/challenge/panels/T2__embryo__test_interp.genes.txt
+- New link on the challenge site: https://virtualembryo.ai/challenge/panels/T2__heart__test_extrap.genes.txt
+- New link on the challenge site: https://virtualembryo.ai/challenge/panels/T3__bcatenin.genes.txt
+
+### Pages
+
+#### Overview
+
+Overview (https://virtualembryo.ai/challenge): 1 section(s) changed, +0 / -1 lines.
+
+- Changed: "(top of page)" (+0 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ (top of page)
+- P2 is open: validation submissions are scored and ranked, and the starter kit and reference baselines are out. Next: P3 opens at 09:00 Los Angeles time; P2 standings freeze on 27 October 2026. F...
+```
+
+#### Challenge Rules
+
+Challenge Rules (https://virtualembryo.ai/challenge/rules): 2 section(s) changed, +9 / -4 lines.
+The rules decide what is allowed and what is prize-eligible: read the changed sections on the page in full.
+
+- Changed: "10. Data and What You May Use" (+5 / -3 lines)
+- Changed: "11. Leaderboard Entries and Final Entries" (+4 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ 10. Data and What You May Use
+- Training stages are released at registration. Validation and test targets are never distributed while they rank: a submission comes back as a score, not as answers.
++ Training stages are released at registration. Before P3, validation answers are withheld. Hidden test ground truth is never distributed.
++ During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
++ The official P2 validation files supplied through this opt-in are a specific exception to the held-out-data restrictions below, solely for preparing P3 predictions after access is granted. This ...
+- ...d, by any route: not directly, not through a model pre-trained on it, and not through a public dataset that contains it. This is the one restriction that decides whether a result means anything.
++ ...not through a model pre-trained on it, and not through a public dataset that contains it. The only exception is the official P2 validation release obtained through the P3 opt-in described above.
+- ...s excluded from after E9.5 up to and including E13.5. E10.5 and E12.5, the validation and test targets themselves, are excluded absolutely. Anything after E13.5 may be used, provided the source ...
++ ....5. External data at E10.5 and E12.5 remains prohibited. The official E10.5 validation files may be used only after the P3 opt-in described above; E12.5 test ground truth remains prohibited. Any...
+@@ 11. Leaderboard Entries and Final Entries
+- Each task is scored on its own boards, and a submission names the board it answers. Limits are per team, per task, per UTC day:
++ ...d it answers. P1 and P2 limits are per team, per task, per UTC day; P3 limits are per test board for the entire phase. The published partner arrangements specify the individual Yukon allowances.
++ P3 opens on 27 October 2026 at 09:00 America/Los_Angeles (16:00 UTC). The default leaderboard becomes Test (P3). Live Validation (P2) remains available, and a separate Frozen P2 board preserves ...
++ Only P2 submissions already scored before 09:00 at that cutoff enter Frozen P2. A submission uploaded before the cutoff but scored afterward enters only the live Validation board. Later scores o...
++ Participants may continue submitting to live Validation during P3 under the P2 allowances until they explicitly obtain validation-data access or their first P3 submission is accepted, whichever ...
+```
+
+#### FAQ
+
+FAQ (https://virtualembryo.ai/challenge/faq): 1 section(s) changed, +1 / -1 lines.
+The FAQ often carries rulings on edge cases: read the changed answers.
+
+- Changed: "Data" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Data
+- You may train on external data, public or your own, and for Task 1 this is expressly encouraged. What you may not use is measured data from a held-out stage or genotype, by any route: not direct...
++ The official P2 validation files obtained through explicit P3 opt-in may be used for P3 preparation. This exception does not permit hidden test targets or additional external data from protected...
+```
+
+#### Data
+
+Data (https://virtualembryo.ai/challenge/data): 5 section(s) changed, +9 / -4 lines.
+The Data page lists stages, downloads and per-board cell counts: compare it with the board contract.
+
+- Changed: "Gene panel, per board" (+5 / -0 lines)
+- Changed: "How many cells to submit" (+1 / -1 lines)
+- Changed: "File format (2)" (+1 / -1 lines)
+- Changed: "File format (3)" (+1 / -1 lines)
+- Changed: "Access and reproducibility" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Gene panel, per board
++ Both Validation (P2) and Test (P3) submission specifications are listed below. Use the file for the exact board you submit to: embryo interpolation requires 498 genes for P2 and 497 for P3. Thes...
++ T1:test | 32,285 | 638-5,118 | T1__test.genes.txt ↓
++ T2:heart:test_extrap | 500 | 1,000-34,641 | T2__heart__test_extrap.genes.txt ↓
++ T2:embryo:test_interp | 497 | 1,000-5,000 | T2__embryo__test_interp.genes.txt ↓
++ T3:bcatenin | 500 | 1,000-7,449 | T3__bcatenin.genes.txt ↓
+@@ How many cells to submit
+- ...d one to estimate the ceiling. So truth_cells and ref_cells in index.json are counts of our working copy, not of an embryo and not of the release. Your submission is not expected to mirror them.
++ ...For P2, truth_cells and ref_cells in index.json are counts of our working copy, not of an embryo and not of the release. Your submission is not expected to mirror them. P3 specifications publish...
+@@ File format (2)
+- var index | string [500] | The 500 panel genes, in panel order. Identical across every Task-2 and Task-3 file.
++ ...Source files use a 500-gene measured panel. Predictions must use the exact ordered panel for their board: heart 500, embryo validation 498, embryo test 497. Download the corresponding gene list ...
+@@ File format (3)
+- var index | string [500] | The same 500 panel genes as Task 2, in the same order.
++ var index | string [500] | Use the exact ordered 500-gene list published for the Task-3 board. Do not substitute a Task-2 panel.
+@@ Access and reproducibility
+- You may train on external data, public or your own, and for Task 1 this is expressly encouraged. What you may not use is measured data from a held-out stage or genotype, by any route: not direct...
++ The official P2 validation files obtained through explicit P3 opt-in may be used for P3 preparation. This exception does not permit hidden test targets or additional external data from protected...
+```
+
 ## 2026-10-27 (run 12:20 UTC)
 
 ### Phase endpoint (https://kg.virtualembryo.ai/challenge/phase)

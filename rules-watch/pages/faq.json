@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "faq",
-  "last_changed": "2026-10-27",
+  "last_changed": "2026-10-28",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -51,11 +51,11 @@
       "sha256": "e12de8302db72ffe659ea371138135aeeaf0e55ba056607fa49df3a57cbb72c4"
     },
     {
-      "chars": 4126,
+      "chars": 4408,
       "heading": "Data",
       "level": 2,
       "lines": 10,
-      "sha256": "02e4cdb6eda6815ed4e9b6cb47d70fb1d74b4033352f089dfd6b3a23b6f52f1a"
+      "sha256": "3000d8fd26698c45bd6c74fcc73c525e4f60061242be9bf2fe9341330d883a73"
     },
     {
       "chars": 1132,
@@ -72,6 +72,6 @@
       "sha256": "b18c70a67b46e0a17005c40f38fab35f5f743b70d0b07b793fcc191499fbb1b4"
     }
   ],
-  "sha256": "249f0695e8a96050f92338fef45e0ab77bc4b3e8c444d90106a82abca20df002",
+  "sha256": "dde0a3dd5fe1d6504357883e3d814c2edf463bb64b16286278cf325237978138",
   "url": "https://virtualembryo.ai/challenge/faq"
 }

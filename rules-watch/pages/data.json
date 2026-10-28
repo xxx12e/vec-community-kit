@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "data",
-  "last_changed": "2026-10-27",
+  "last_changed": "2026-10-28",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -12,10 +12,14 @@
     "/challenge/evaluation",
     "/challenge/faq",
     "/challenge/leaderboard",
+    "/challenge/panels/T1__test.genes.txt",
     "/challenge/panels/T1__val.genes.txt",
+    "/challenge/panels/T2__embryo__test_interp.genes.txt",
     "/challenge/panels/T2__embryo__val_interp.genes.txt",
+    "/challenge/panels/T2__heart__test_extrap.genes.txt",
     "/challenge/panels/T2__heart__val_extrap.genes.txt",
     "/challenge/panels/T2__heart__val_interp.genes.txt",
+    "/challenge/panels/T3__bcatenin.genes.txt",
     "/challenge/panels/T3__gata4.genes.txt",
     "/challenge/panels/index.json",
     "/challenge/panels/t1_composition.json",
@@ -51,18 +55,18 @@
       "sha256": "ab8be313e88f1f390d6d73607039675fdfc315bf787ef66d15fa4a146f98d955"
     },
     {
-      "chars": 1414,
+      "chars": 1972,
       "heading": "Gene panel, per board",
       "level": 2,
-      "lines": 9,
-      "sha256": "f81c02522496e9a2a38a72a056e28175d8c684f62c78b39ed39469dac60cc628"
+      "lines": 14,
+      "sha256": "12d9e40fcf3e09d583d9f2bc1623e95e7adab45859d1e5360adf739e221bf3dc"
     },
     {
-      "chars": 1869,
+      "chars": 1981,
       "heading": "How many cells to submit",
       "level": 3,
       "lines": 4,
-      "sha256": "e37ada9286047d33670fee8046f7af4550574abc747effca7f1d7bbcebb2aea1"
+      "sha256": "7427a3498fb78eefc9374e9fb774e2bcae430b62962e8637a5d78fdae181e453"
     },
     {
       "chars": 1341,
@@ -100,11 +104,11 @@
       "sha256": "899cc87de6ba416d407ba0f12cc599d440cb650dd99c6ed60656937b6bc26862"
     },
     {
-      "chars": 1487,
+      "chars": 1604,
       "heading": "File format (2)",
       "level": 3,
       "lines": 18,
-      "sha256": "eb001a00c3032c11c35101b01ea5cb4132ae3a01592706f217df89a0d8ba09a5"
+      "sha256": "9b55b0833a013481f78094ea59542ed9a7d772d85deb41ba0c3db2accf7e61a8"
     },
     {
       "chars": 1553,
@@ -121,11 +125,11 @@
       "sha256": "c273a0655a4ecd0ed4d693b3f2e369910108e7cef94c3d41a216ce2e6a681d48"
     },
     {
-      "chars": 1755,
+      "chars": 1802,
       "heading": "File format (3)",
       "level": 3,
       "lines": 21,
-      "sha256": "ccfb07499a75f3cd25f395fab398aec7b0d01afe1cbfbc64aa0eb53078a2bc42"
+      "sha256": "efcfc2a8af39d98886ad994e151bacb9f6e9603cc97d9a907593dc7e0ccd18ab"
     },
     {
       "chars": 918,
@@ -135,11 +139,11 @@
       "sha256": "5eeea211a809e4d2d0f3938a2079330798c368b31090b6a883f1fe59ec0e14d9"
     },
     {
-      "chars": 3579,
+      "chars": 3861,
       "heading": "Access and reproducibility",
       "level": 2,
       "lines": 4,
-      "sha256": "063bd723f5e08475649b9730984891888591215a14a705ac34cb1249b8ad796e"
+      "sha256": "0845a60a20a710f4722a03b50d6ea4258231c042c6152cb2e33362869b41f765"
     },
     {
       "chars": 936,
@@ -149,6 +153,6 @@
       "sha256": "0930ef1931f9369ffb79dc6e75ddc001a45d9ffda2ef0d7e2e8812ce1a3c81be"
     }
   ],
-  "sha256": "3f98729fb8d7f53cbe8e6b0173d2e22300916431859d0a20a8a3fd8bab98e109",
+  "sha256": "77ea7553efbdb35e7816a0a424daea55d676bae9256b64b8e86dfa3319e30fd0",
   "url": "https://virtualembryo.ai/challenge/data"
 }

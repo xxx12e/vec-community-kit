@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "rules",
-  "last_changed": "2026-10-20",
+  "last_changed": "2026-10-28",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -101,18 +101,18 @@
       "sha256": "927214765c315cb99e9db3474752a437b01f63add828945f8d0abf5c93d9a6bc"
     },
     {
-      "chars": 5309,
+      "chars": 6308,
       "heading": "10. Data and What You May Use",
       "level": 2,
-      "lines": 16,
-      "sha256": "b5f19f8df92f24482bf4614c39e5faa9fff7024e98ecc8ff085322a1af2794d6"
+      "lines": 18,
+      "sha256": "259c1ec0dc6df9ef1d932625976871cab767bbbf0b49f22ec1790f1246f4f9c7"
     },
     {
-      "chars": 1069,
+      "chars": 2208,
       "heading": "11. Leaderboard Entries and Final Entries",
       "level": 2,
-      "lines": 8,
-      "sha256": "ca839c3ed8814860758d4a7448e0984353b983ab74caac5bb097b67acd38c083"
+      "lines": 11,
+      "sha256": "f541c30a89946d00486eedf51f9c3a978e5256d636cd4b8195d8e4c2d697b03c"
     },
     {
       "chars": 1124,
@@ -164,6 +164,6 @@
       "sha256": "cbf00412975238283010c80a830178adc7e765d9dbdae62bda5f5e9c6677ab29"
     }
   ],
-  "sha256": "68aade34b76b32c56e8f6576fe49dc975f59d2f0ce35089a360bff48d94d6548",
+  "sha256": "fb509defabd6f445799f22fcf77ef023116025cacde6de6b365bedaad4254766",
   "url": "https://virtualembryo.ai/challenge/rules"
 }

@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "overview",
-  "last_changed": "2026-10-27",
+  "last_changed": "2026-10-28",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -29,11 +29,11 @@
   ],
   "sections": [
     {
-      "chars": 245,
+      "chars": 37,
       "heading": "",
       "level": 0,
-      "lines": 4,
-      "sha256": "98dd5c6ff58028b1cdc1d5fb8aac20e7a1b39e294fdd1028399db52c501d81ae"
+      "lines": 3,
+      "sha256": "84760777430be2fe4d012ae5b4ac28fe6196df09edc2da10723515497b0dc679"
     },
     {
       "chars": 256,
@@ -78,6 +78,6 @@
       "sha256": "70bdb7c043466f1ad960d623378541965ac913edf77b4445ef64fbc345008710"
     }
   ],
-  "sha256": "85d294b9f400345476bedfb4ec7e83620b48d0aaddf6ab046f502426f5623c3b",
+  "sha256": "dc673f928600ca8e372d0b742a3f1f3f2b65c0a1f1d671fe9f5557ed58413a1a",
   "url": "https://virtualembryo.ai/challenge"
 }

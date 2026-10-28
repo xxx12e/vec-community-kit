@@ -4,6 +4,129 @@
 
 <!-- entries below, newest first -->
 
+## 2026-10-28（UTC 13:05 运行）
+
+### 榜契约（https://virtualembryo.ai/challenge/panels/index.json）
+
+- 新增榜 T1:test（T1 · test (E12.5)）：任务 T1，切分 test，32285 个基因（T1__test.genes.txt），细胞数 638-5118，坐标：不需要。
+  - 对你的文件意味着什么：T1:test 的文件必须严格使用该榜的基因列表及其顺序（32285 个基因），细胞数在 638 到 5118 之间；坐标：不需要。设置 VEC_PANELS_DIR=rules-watch/contract/panels 即可让工具包的校验器读取新契约。
+- 新增榜 T2:embryo:test_interp（T2 embryo · interpolation, test (E7.75)）：任务 T2，切分 test，497 个基因（T2__embryo__test_interp.genes.txt），细胞数 1000-5000，坐标：必须放在 .obsm [spatial_3D]。
+  - 对你的文件意味着什么：T2:embryo:test_interp 的文件必须严格使用该榜的基因列表及其顺序（497 个基因），细胞数在 1000 到 5000 之间；坐标：必须放在 .obsm [spatial_3D]。设置 VEC_PANELS_DIR=rules-watch/contract/panels 即可让工具包的校验器读取新契约。
+- 新增榜 T2:heart:test_extrap（T2 heart · extrapolation, test (E12.5)）：任务 T2，切分 test，500 个基因（T2__heart__test_extrap.genes.txt），细胞数 1000-34641，坐标：必须放在 .obsm [spatial_3D]。
+  - 对你的文件意味着什么：T2:heart:test_extrap 的文件必须严格使用该榜的基因列表及其顺序（500 个基因），细胞数在 1000 到 34641 之间；坐标：必须放在 .obsm [spatial_3D]。设置 VEC_PANELS_DIR=rules-watch/contract/panels 即可让工具包的校验器读取新契约。
+- 新增榜 T3:bcatenin（T3 · test (beta-catenin KO)）：任务 T3，切分 test，500 个基因（T3__bcatenin.genes.txt），细胞数 1000-7449，坐标：必须放在 .obsm [spatial_3D]。
+  - 对你的文件意味着什么：T3:bcatenin 的文件必须严格使用该榜的基因列表及其顺序（500 个基因），细胞数在 1000 到 7449 之间；坐标：必须放在 .obsm [spatial_3D]。设置 VEC_PANELS_DIR=rules-watch/contract/panels 即可让工具包的校验器读取新契约。
+
+### 阶段接口（https://kg.virtualembryo.ai/challenge/phase）
+
+- 阶段 p2 -> p3（P3 · Final test phase）。
+  - 对你的文件意味着什么：比赛进入了新阶段：下次上传前请重读时间线和规则。
+- 计分榜 validation -> final。
+  - 对你的文件意味着什么：新提交在 final 榜上计分：请核对这些榜的 key 和细胞数范围（见上面的榜契约）。
+- daily_quota（每日配额）8 -> 2。
+  - 对你的文件意味着什么：请按新配额安排上传。
+- 提名已开放：现在可以提名最终参赛作品（nominations_open 为 true）。
+- 切分 val -> test。
+
+### 网站链接
+
+- 比赛网站上出现新链接：https://virtualembryo.ai/challenge/panels/T1__test.genes.txt
+- 比赛网站上出现新链接：https://virtualembryo.ai/challenge/panels/T2__embryo__test_interp.genes.txt
+- 比赛网站上出现新链接：https://virtualembryo.ai/challenge/panels/T2__heart__test_extrap.genes.txt
+- 比赛网站上出现新链接：https://virtualembryo.ai/challenge/panels/T3__bcatenin.genes.txt
+
+### 页面
+
+#### 概览页
+
+概览页（https://virtualembryo.ai/challenge）：1 个小节有改动，+0 / -1 行。
+
+- 改动：“（页首）”（+0 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ （页首）
+- P2 is open: validation submissions are scored and ranked, and the starter kit and reference baselines are out. Next: P3 opens at 09:00 Los Angeles time; P2 standings freeze on 27 October 2026. F...
+```
+
+#### 比赛规则
+
+比赛规则（https://virtualembryo.ai/challenge/rules）：2 个小节有改动，+9 / -4 行。
+规则决定什么允许、什么有获奖资格：请到原页面完整阅读改动的小节。
+
+- 改动：“10. Data and What You May Use”（+5 / -3 行）
+- 改动：“11. Leaderboard Entries and Final Entries”（+4 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ 10. Data and What You May Use
+- Training stages are released at registration. Validation and test targets are never distributed while they rank: a submission comes back as a score, not as answers.
++ Training stages are released at registration. Before P3, validation answers are withheld. Hidden test ground truth is never distributed.
++ During P3, eligible participants can explicitly request the P2 validation answers for model development. Receiving access or submitting a first final P3 entry permanently stops further P2 submis...
++ The official P2 validation files supplied through this opt-in are a specific exception to the held-out-data restrictions below, solely for preparing P3 predictions after access is granted. This ...
+- ...d, by any route: not directly, not through a model pre-trained on it, and not through a public dataset that contains it. This is the one restriction that decides whether a result means anything.
++ ...not through a model pre-trained on it, and not through a public dataset that contains it. The only exception is the official P2 validation release obtained through the P3 opt-in described above.
+- ...s excluded from after E9.5 up to and including E13.5. E10.5 and E12.5, the validation and test targets themselves, are excluded absolutely. Anything after E13.5 may be used, provided the source ...
++ ....5. External data at E10.5 and E12.5 remains prohibited. The official E10.5 validation files may be used only after the P3 opt-in described above; E12.5 test ground truth remains prohibited. Any...
+@@ 11. Leaderboard Entries and Final Entries
+- Each task is scored on its own boards, and a submission names the board it answers. Limits are per team, per task, per UTC day:
++ ...d it answers. P1 and P2 limits are per team, per task, per UTC day; P3 limits are per test board for the entire phase. The published partner arrangements specify the individual Yukon allowances.
++ P3 opens on 27 October 2026 at 09:00 America/Los_Angeles (16:00 UTC). The default leaderboard becomes Test (P3). Live Validation (P2) remains available, and a separate Frozen P2 board preserves ...
++ Only P2 submissions already scored before 09:00 at that cutoff enter Frozen P2. A submission uploaded before the cutoff but scored afterward enters only the live Validation board. Later scores o...
++ Participants may continue submitting to live Validation during P3 under the P2 allowances until they explicitly obtain validation-data access or their first P3 submission is accepted, whichever ...
+```
+
+#### 常见问题（FAQ）
+
+常见问题（FAQ）（https://virtualembryo.ai/challenge/faq）：1 个小节有改动，+1 / -1 行。
+FAQ 里常有对边界情况的裁定：请阅读改动的回答。
+
+- 改动：“Data”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Data
+- You may train on external data, public or your own, and for Task 1 this is expressly encouraged. What you may not use is measured data from a held-out stage or genotype, by any route: not direct...
++ The official P2 validation files obtained through explicit P3 opt-in may be used for P3 preparation. This exception does not permit hidden test targets or additional external data from protected...
+```
+
+#### 数据页
+
+数据页（https://virtualembryo.ai/challenge/data）：5 个小节有改动，+9 / -4 行。
+数据页列出阶段、下载和各榜细胞数：请与榜契约对照。
+
+- 改动：“Gene panel, per board”（+5 / -0 行）
+- 改动：“How many cells to submit”（+1 / -1 行）
+- 改动：“File format (2)”（+1 / -1 行）
+- 改动：“File format (3)”（+1 / -1 行）
+- 改动：“Access and reproducibility”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Gene panel, per board
++ Both Validation (P2) and Test (P3) submission specifications are listed below. Use the file for the exact board you submit to: embryo interpolation requires 498 genes for P2 and 497 for P3. Thes...
++ T1:test | 32,285 | 638-5,118 | T1__test.genes.txt ↓
++ T2:heart:test_extrap | 500 | 1,000-34,641 | T2__heart__test_extrap.genes.txt ↓
++ T2:embryo:test_interp | 497 | 1,000-5,000 | T2__embryo__test_interp.genes.txt ↓
++ T3:bcatenin | 500 | 1,000-7,449 | T3__bcatenin.genes.txt ↓
+@@ How many cells to submit
+- ...d one to estimate the ceiling. So truth_cells and ref_cells in index.json are counts of our working copy, not of an embryo and not of the release. Your submission is not expected to mirror them.
++ ...For P2, truth_cells and ref_cells in index.json are counts of our working copy, not of an embryo and not of the release. Your submission is not expected to mirror them. P3 specifications publish...
+@@ File format (2)
+- var index | string [500] | The 500 panel genes, in panel order. Identical across every Task-2 and Task-3 file.
++ ...Source files use a 500-gene measured panel. Predictions must use the exact ordered panel for their board: heart 500, embryo validation 498, embryo test 497. Download the corresponding gene list ...
+@@ File format (3)
+- var index | string [500] | The same 500 panel genes as Task 2, in the same order.
++ var index | string [500] | Use the exact ordered 500-gene list published for the Task-3 board. Do not substitute a Task-2 panel.
+@@ Access and reproducibility
+- You may train on external data, public or your own, and for Task 1 this is expressly encouraged. What you may not use is measured data from a held-out stage or genotype, by any route: not direct...
++ The official P2 validation files obtained through explicit P3 opt-in may be used for P3 preparation. This exception does not permit hidden test targets or additional external data from protected...
+```
+
 ## 2026-10-27（UTC 12:20 运行）
 
 ### 阶段接口（https://kg.virtualembryo.ai/challenge/phase）

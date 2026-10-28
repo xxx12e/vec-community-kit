@@ -6,13 +6,25 @@
       "ok": true,
       "url": "https://virtualembryo.ai/challenge/panels/index.json"
     },
+    "genes:T1__test.genes.txt": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/T1__test.genes.txt"
+    },
     "genes:T1__val.genes.txt": {
       "ok": true,
       "url": "https://virtualembryo.ai/challenge/panels/T1__val.genes.txt"
     },
+    "genes:T2__embryo__test_interp.genes.txt": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/T2__embryo__test_interp.genes.txt"
+    },
     "genes:T2__embryo__val_interp.genes.txt": {
       "ok": true,
       "url": "https://virtualembryo.ai/challenge/panels/T2__embryo__val_interp.genes.txt"
+    },
+    "genes:T2__heart__test_extrap.genes.txt": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/T2__heart__test_extrap.genes.txt"
     },
     "genes:T2__heart__val_extrap.genes.txt": {
       "ok": true,
@@ -21,6 +33,10 @@
     "genes:T2__heart__val_interp.genes.txt": {
       "ok": true,
       "url": "https://virtualembryo.ai/challenge/panels/T2__heart__val_interp.genes.txt"
+    },
+    "genes:T3__bcatenin.genes.txt": {
+      "ok": true,
+      "url": "https://virtualembryo.ai/challenge/panels/T3__bcatenin.genes.txt"
     },
     "genes:T3__gata4.genes.txt": {
       "ok": true,

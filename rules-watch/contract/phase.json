@@ -1,14 +1,14 @@
 {
   "accepts_submissions": true,
-  "board": "validation",
-  "daily_quota": 8,
+  "board": "final",
+  "daily_quota": 2,
   "data_open": true,
-  "label": "P2 \u00b7 Baselines released",
-  "nominations_open": false,
+  "label": "P3 \u00b7 Final test phase",
+  "nominations_open": true,
   "note": null,
-  "phase": "p2",
+  "phase": "p3",
   "phase_mode": "auto",
   "scheduled_p3_start_at": "2026-10-27T16:00:00Z",
   "shows_scores": true,
-  "split": "val"
+  "split": "test"
 }
