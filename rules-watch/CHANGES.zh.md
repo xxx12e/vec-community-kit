@@ -4,6 +4,60 @@
 
 <!-- entries below, newest first -->
 
+## 2026-10-29（UTC 13:11 运行）
+
+### 网站链接
+
+- 比赛网站上出现新链接：https://virtualembryo.ai/challenge/data-protocol（尚未列入监测：可能是值得一读的新页面）
+
+### 页面
+
+#### 比赛规则
+
+比赛规则（https://virtualembryo.ai/challenge/rules）：1 个小节有改动，+1 / -1 行。
+规则决定什么允许、什么有获奖资格：请到原页面完整阅读改动的小节。
+
+- 改动：“9. Agent Team Entries”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ 9. Agent Team Entries
+- Evidence is capped at 200 MB per file and 600 MB per team in total. Trajectories compress well; a trace that does not fit is a trace that should be filed in full and summarised, not truncated si...
++ ...pped at 200 MiB per file and 2 GiB in total per submission, not per team. Evidence attached to other submissions, including P2 entries, does not reduce a new submission’s allowance. Trajectories...
+```
+
+#### 数据页
+
+数据页（https://virtualembryo.ai/challenge/data）：2 个小节有改动，新增 1 个，移除 1 个，+13 / -3 行。
+数据页列出阶段、下载和各榜细胞数：请与榜契约对照。
+
+- 改动：“Download”（+1 / -0 行）
+- 改动：“How many cells to submit”（+1 / -0 行）
+- 新增：“File checksums”（11 行）
+- 移除：“Validation answers for P3”（3 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Download
++ Sign in to download →
+@@ How many cells to submit
++ How the samples were collected, dissected and processed: Data Protocol.
+@@ File checksums
++ SHA-256 of each file in the training release. Check a download with shasum -a 256 <file>.
++ File | Bytes | SHA-256
++ T1/E8.5_RNA.h5ad | 570,917,395 | 8eab2d0ccaa89f92861b09816b76b6a731b8ed6b5995e4af196d9ed8ff76e504
++ T1/E9.5_RNA.h5ad | 589,907,081 | 0296e0043842f944a663f3c11ac1542d1bbee733c1cd657bd56f75af65958361
++ T2/E8.25_late.h5ad | 225,091,568 | d56f94d3e2d719ed3074d86c03eae457ccf90b24145d33300f9958f0e8078593
++ T2/E9.5.h5ad | 163,640,212 | 371ca6530e084de2b6cd6703b49d95f4bb59546c9291659809575382a630ee9a
+@@ Validation answers for P3
+- P2 validation answers can be used to prepare your final P3 models. Hidden test answers are never released. Browsing this page does not change your eligibility.
+- Available to eligible registered participants during P3, after explicit confirmation.
+- Sign in to download →
+```
+（另有 5 行改动没有引用）
+
 ## 2026-10-28（UTC 13:05 运行）
 
 ### 榜契约（https://virtualembryo.ai/challenge/panels/index.json）

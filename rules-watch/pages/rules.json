@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "rules",
-  "last_changed": "2026-10-28",
+  "last_changed": "2026-10-29",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -94,11 +94,11 @@
       "sha256": "233f78028c1d39be421bb9f7f04064941d9a46e28f9b2a204a6d73cc23b81a1b"
     },
     {
-      "chars": 5360,
+      "chars": 5488,
       "heading": "9. Agent Team Entries",
       "level": 2,
       "lines": 17,
-      "sha256": "927214765c315cb99e9db3474752a437b01f63add828945f8d0abf5c93d9a6bc"
+      "sha256": "0eebdf144ad3ec85e29fb5edf3010248996c0817d4308e217781fd2799eb446d"
     },
     {
       "chars": 6308,
@@ -164,6 +164,6 @@
       "sha256": "cbf00412975238283010c80a830178adc7e765d9dbdae62bda5f5e9c6677ab29"
     }
   ],
-  "sha256": "fb509defabd6f445799f22fcf77ef023116025cacde6de6b365bedaad4254766",
+  "sha256": "de829bf4c386879d2cd4ce2ec0b894c36a7b2bad3643ea6407b3ba54fcb93faa",
   "url": "https://virtualembryo.ai/challenge/rules"
 }
