@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "timeline",
-  "last_changed": "2026-10-27",
+  "last_changed": "2026-11-17",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -23,13 +23,13 @@
   ],
   "sections": [
     {
-      "chars": 2731,
+      "chars": 3200,
       "heading": "Challenge timeline",
       "level": 1,
-      "lines": 40,
-      "sha256": "0ce9445a600e5a8564b56578f2d278a1ed688a0b7dd772049562fc638dc263be"
+      "lines": 45,
+      "sha256": "79bbacc5fae0f019c6a215f8f9d2b3ad78aac42b4ec346ed408f0e33035ac6ba"
     }
   ],
-  "sha256": "7e931bbb120144ac1a3c67ba44ae52b01b2839531ab1faa427ae242ead5e91d2",
+  "sha256": "033988ab460b98d15e65c9370ff45fe8eaefc5314ee23e58dccbf3ab33814476",
   "url": "https://virtualembryo.ai/challenge/timeline"
 }

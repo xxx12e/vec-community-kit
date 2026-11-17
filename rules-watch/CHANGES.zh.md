@@ -4,6 +4,106 @@
 
 <!-- entries below, newest first -->
 
+## 2026-11-17（UTC 16:08 运行）
+
+### 阶段接口（https://kg.virtualembryo.ai/challenge/phase）
+
+- scheduled_close_at 由 null 改为 2026-11-26T12:00:00Z。
+
+### 页面
+
+#### 概览页
+
+概览页（https://virtualembryo.ai/challenge）：1 个小节有改动，+6 / -4 行。
+
+- 改动：“Launch → development → final”（+6 / -4 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Launch → development → final
+- 4 Dec
++ 26 Nov
+- 2 Dec
++ 25 Nov
+- Final submissions due
++ Final submissions due at 23:59 AoE
+- 11 Dec
++ 1 Dec
++ Winners notified
++ 12 Dec
+```
+
+#### 比赛规则
+
+比赛规则（https://virtualembryo.ai/challenge/rules）：2 个小节有改动，+2 / -2 行。
+规则决定什么允许、什么有获奖资格：请到原页面完整阅读改动的小节。
+
+- 改动：“14. Finalists, Winners and Prizes”（+1 / -1 行）
+- 改动：“17. Schedule”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ 14. Finalists, Winners and Prizes
+- ...and three third prizes in each, together with a single Generality Award across both tracks for the best method answering more than one task. Winners are announced at NeurIPS on 11 December 2026.
++ ...and three third prizes in each, together with a single Generality Award across both tracks for the best method answering more than one task. Winners are announced at NeurIPS on 12 December 2026.
+@@ 17. Schedule
+- ...dule is published on the timeline page and forms part of these Rules. Final submissions are due 2 December 2026, official evaluation begins 4 December 2026, and results are announced at NeurIPS.
++ ...on the timeline page and forms part of these Rules. Final submissions are due at 23:59 AoE on 25 November 2026, official evaluation begins 26 November 2026, and results are announced at NeurIPS.
+```
+
+#### 时间线
+
+时间线（https://virtualembryo.ai/challenge/timeline）：1 个小节有改动，+15 / -10 行。
+日期可能变了：请按新的日程核对你的计划。
+
+- 改动：“Challenge timeline”（+15 / -10 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Challenge timeline
+- 4 Dec
++ 26 Nov
+- 2 Dec
++ 25 Nov
+- Final submissions due
++ Final submissions due at 23:59 AoE
+- 11 Dec
++ 1 Dec
++ Winners notified
++ 12 Dec
+```
+（另有 9 行改动没有引用）
+
+#### 数据页
+
+数据页（https://virtualembryo.ai/challenge/data）：4 个小节有改动，+4 / -4 行。
+数据页列出阶段、下载和各榜细胞数：请与榜契约对照。
+
+- 改动：“How many cells to submit”（+1 / -1 行）
+- 改动：“Task 1: single-cell RNA”（+1 / -1 行）
+- 改动：“Task 2: 3D MERFISH (heart setting)”（+1 / -1 行）
+- 改动：“Task 3: conditional knock-outs”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ How many cells to submit
+- ...is what keeps one submission inside its memory. It is set at three times the larger of the board's truth half and its reference stage, with a floor of 5,000. Sized so that the floor baseline, wh...
++ ...285 float32 on the scoring host, so the cap keeps submissions within the scoring service's memory budget. Use the published range for your exact board. The lower bound is statistical: every prim...
+@@ Task 1: single-cell RNA
+- E12.5 | test | hidden test target | 360 MB
++ E12.5 | test | hidden test target |
+@@ Task 2: 3D MERFISH (heart setting)
+- E12.5 | test | extrapolation test, hidden | 629 MB
++ E12.5 | test | extrapolation test, hidden |
+@@ Task 3: conditional knock-outs
+- β-catenin KO @ E8.75 | test | Mesp1-Cre; β-catenin F/F, two replicates, broadly expressed and the hardest | 300 + 381 MB
++ β-catenin KO @ E8.75 | test | Mesp1-Cre; β-catenin F/F, two replicates, broadly expressed and the hardest |
+```
+
 ## 2026-10-29（UTC 13:11 运行）
 
 ### 网站链接

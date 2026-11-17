@@ -4,6 +4,106 @@ Newest first. One entry per run that found a change or a fetch problem. Written 
 
 <!-- entries below, newest first -->
 
+## 2026-11-17 (run 16:08 UTC)
+
+### Phase endpoint (https://kg.virtualembryo.ai/challenge/phase)
+
+- scheduled_close_at null -> 2026-11-26T12:00:00Z.
+
+### Pages
+
+#### Overview
+
+Overview (https://virtualembryo.ai/challenge): 1 section(s) changed, +6 / -4 lines.
+
+- Changed: "Launch → development → final" (+6 / -4 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Launch → development → final
+- 4 Dec
++ 26 Nov
+- 2 Dec
++ 25 Nov
+- Final submissions due
++ Final submissions due at 23:59 AoE
+- 11 Dec
++ 1 Dec
++ Winners notified
++ 12 Dec
+```
+
+#### Challenge Rules
+
+Challenge Rules (https://virtualembryo.ai/challenge/rules): 2 section(s) changed, +2 / -2 lines.
+The rules decide what is allowed and what is prize-eligible: read the changed sections on the page in full.
+
+- Changed: "14. Finalists, Winners and Prizes" (+1 / -1 lines)
+- Changed: "17. Schedule" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ 14. Finalists, Winners and Prizes
+- ...and three third prizes in each, together with a single Generality Award across both tracks for the best method answering more than one task. Winners are announced at NeurIPS on 11 December 2026.
++ ...and three third prizes in each, together with a single Generality Award across both tracks for the best method answering more than one task. Winners are announced at NeurIPS on 12 December 2026.
+@@ 17. Schedule
+- ...dule is published on the timeline page and forms part of these Rules. Final submissions are due 2 December 2026, official evaluation begins 4 December 2026, and results are announced at NeurIPS.
++ ...on the timeline page and forms part of these Rules. Final submissions are due at 23:59 AoE on 25 November 2026, official evaluation begins 26 November 2026, and results are announced at NeurIPS.
+```
+
+#### Timeline
+
+Timeline (https://virtualembryo.ai/challenge/timeline): 1 section(s) changed, +15 / -10 lines.
+Dates may have moved: check your plan against the new schedule.
+
+- Changed: "Challenge timeline" (+15 / -10 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Challenge timeline
+- 4 Dec
++ 26 Nov
+- 2 Dec
++ 25 Nov
+- Final submissions due
++ Final submissions due at 23:59 AoE
+- 11 Dec
++ 1 Dec
++ Winners notified
++ 12 Dec
+```
+(9 more changed lines not quoted)
+
+#### Data
+
+Data (https://virtualembryo.ai/challenge/data): 4 section(s) changed, +4 / -4 lines.
+The Data page lists stages, downloads and per-board cell counts: compare it with the board contract.
+
+- Changed: "How many cells to submit" (+1 / -1 lines)
+- Changed: "Task 1: single-cell RNA" (+1 / -1 lines)
+- Changed: "Task 2: 3D MERFISH (heart setting)" (+1 / -1 lines)
+- Changed: "Task 3: conditional knock-outs" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ How many cells to submit
+- ...is what keeps one submission inside its memory. It is set at three times the larger of the board's truth half and its reference stage, with a floor of 5,000. Sized so that the floor baseline, wh...
++ ...285 float32 on the scoring host, so the cap keeps submissions within the scoring service's memory budget. Use the published range for your exact board. The lower bound is statistical: every prim...
+@@ Task 1: single-cell RNA
+- E12.5 | test | hidden test target | 360 MB
++ E12.5 | test | hidden test target |
+@@ Task 2: 3D MERFISH (heart setting)
+- E12.5 | test | extrapolation test, hidden | 629 MB
++ E12.5 | test | extrapolation test, hidden |
+@@ Task 3: conditional knock-outs
+- β-catenin KO @ E8.75 | test | Mesp1-Cre; β-catenin F/F, two replicates, broadly expressed and the hardest | 300 + 381 MB
++ β-catenin KO @ E8.75 | test | Mesp1-Cre; β-catenin F/F, two replicates, broadly expressed and the hardest |
+```
+
 ## 2026-10-29 (run 13:11 UTC)
 
 ### Site links

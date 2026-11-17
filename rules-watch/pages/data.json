@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "data",
-  "last_changed": "2026-10-29",
+  "last_changed": "2026-11-17",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -63,11 +63,11 @@
       "sha256": "12d9e40fcf3e09d583d9f2bc1623e95e7adab45859d1e5360adf739e221bf3dc"
     },
     {
-      "chars": 2052,
+      "chars": 1908,
       "heading": "How many cells to submit",
       "level": 3,
       "lines": 5,
-      "sha256": "d226b3831cb06b17ce4bd7ab1ffbbb5d97d1693c1f5d138579fbb39719b9db6e"
+      "sha256": "72c56705797b2741deb3731aff3235f471e04a1fde9487f5ac55db03f28669b4"
     },
     {
       "chars": 1341,
@@ -84,11 +84,11 @@
       "sha256": "a6cdd60287418825b6a46668cbd4abc8373eda54447908a52ceb6916c744c7a2"
     },
     {
-      "chars": 939,
+      "chars": 932,
       "heading": "Task 1: single-cell RNA",
       "level": 2,
       "lines": 20,
-      "sha256": "68d5d7c25e5e2c1485c9e1cf74745a98a40d3e76df84101c045ea876fb28d39e"
+      "sha256": "37cef3778f91a8d916d99fb3c3c2f267a169b58cc44edfdc1e956395a1ce8522"
     },
     {
       "chars": 1529,
@@ -112,18 +112,18 @@
       "sha256": "9b55b0833a013481f78094ea59542ed9a7d772d85deb41ba0c3db2accf7e61a8"
     },
     {
-      "chars": 1553,
+      "chars": 1546,
       "heading": "Task 2: 3D MERFISH (heart setting)",
       "level": 2,
       "lines": 24,
-      "sha256": "0c17d19dd8b2c65e1c89fd50d70d1567b0a29162c7c952a4b0921b862e36acbd"
+      "sha256": "bfb7a7dc3db711c928bda9a1dda63a9d11ce00514e3f740a61c57ff998cffcdd"
     },
     {
-      "chars": 1053,
+      "chars": 1040,
       "heading": "Task 3: conditional knock-outs",
       "level": 2,
       "lines": 17,
-      "sha256": "c273a0655a4ecd0ed4d693b3f2e369910108e7cef94c3d41a216ce2e6a681d48"
+      "sha256": "24758b9ff7f7fa45a119736ba9fc6a2c6e3271a89a945aa7adcc22e26dd204a2"
     },
     {
       "chars": 1802,
@@ -154,6 +154,6 @@
       "sha256": "0930ef1931f9369ffb79dc6e75ddc001a45d9ffda2ef0d7e2e8812ce1a3c81be"
     }
   ],
-  "sha256": "89a8f65852016407df084b480f6131363b0d5f968586af1d191fd28a56f55ebd",
+  "sha256": "8b7f516b52f633d072a1baf6f44937913de0f5e59d859be35f965df56b81e4a0",
   "url": "https://virtualembryo.ai/challenge/data"
 }
