@@ -1,7 +1,7 @@
 {
   "full_text_in_repo": false,
   "id": "data",
-  "last_changed": "2026-11-17",
+  "last_changed": "2026-11-25",
   "links": [
     "/challenge",
     "/challenge/account",
@@ -60,7 +60,7 @@
       "heading": "Gene panel, per board",
       "level": 2,
       "lines": 14,
-      "sha256": "12d9e40fcf3e09d583d9f2bc1623e95e7adab45859d1e5360adf739e221bf3dc"
+      "sha256": "8f94aaf1b29ac86cddfafb0c47024363836f39560f3814b9451adee3936d0261"
     },
     {
       "chars": 1908,
@@ -154,6 +154,6 @@
       "sha256": "0930ef1931f9369ffb79dc6e75ddc001a45d9ffda2ef0d7e2e8812ce1a3c81be"
     }
   ],
-  "sha256": "8b7f516b52f633d072a1baf6f44937913de0f5e59d859be35f965df56b81e4a0",
+  "sha256": "caa69c5dfe5dff4b901b63e6e909b9b8089ce5ae6ae71a871ef518452c72e24d",
   "url": "https://virtualembryo.ai/challenge/data"
 }

@@ -4,6 +4,30 @@
 
 <!-- entries below, newest first -->
 
+## 2026-11-25（UTC 17:19 运行）
+
+### 榜契约（https://virtualembryo.ai/challenge/panels/index.json）
+
+- T2:heart:test_extrap：细胞数范围 [1000, 34641] -> [1000, 25179]。
+  - 对你的文件意味着什么：T2:heart:test_extrap 的文件现在必须有 1000 到 25179 个细胞；超出范围的文件会被门户拒绝。
+
+### 页面
+
+#### 数据页
+
+数据页（https://virtualembryo.ai/challenge/data）：1 个小节有改动，+1 / -1 行。
+数据页列出阶段、下载和各榜细胞数：请与榜契约对照。
+
+- 改动：“Gene panel, per board”（+1 / -1 行）
+
+改动的行（英文原文的简短摘录）：
+
+```diff
+@@ Gene panel, per board
+- T2:heart:test_extrap | 500 | 1,000-34,641 | T2__heart__test_extrap.genes.txt ↓
++ T2:heart:test_extrap | 500 | 1,000-25,179 | T2__heart__test_extrap.genes.txt ↓
+```
+
 ## 2026-11-17（UTC 16:08 运行）
 
 ### 阶段接口（https://kg.virtualembryo.ai/challenge/phase）

@@ -4,6 +4,30 @@ Newest first. One entry per run that found a change or a fetch problem. Written 
 
 <!-- entries below, newest first -->
 
+## 2026-11-25 (run 17:19 UTC)
+
+### Board contract (https://virtualembryo.ai/challenge/panels/index.json)
+
+- T2:heart:test_extrap: cell bounds [1000, 34641] -> [1000, 25179].
+  - What this changes for your file: A T2:heart:test_extrap file must now have between 1000 and 25179 cells; the portal rejects a file outside the bounds.
+
+### Pages
+
+#### Data
+
+Data (https://virtualembryo.ai/challenge/data): 1 section(s) changed, +1 / -1 lines.
+The Data page lists stages, downloads and per-board cell counts: compare it with the board contract.
+
+- Changed: "Gene panel, per board" (+1 / -1 lines)
+
+Changed lines (short excerpts):
+
+```diff
+@@ Gene panel, per board
+- T2:heart:test_extrap | 500 | 1,000-34,641 | T2__heart__test_extrap.genes.txt ↓
++ T2:heart:test_extrap | 500 | 1,000-25,179 | T2__heart__test_extrap.genes.txt ↓
+```
+
 ## 2026-11-17 (run 16:08 UTC)
 
 ### Phase endpoint (https://kg.virtualembryo.ai/challenge/phase)

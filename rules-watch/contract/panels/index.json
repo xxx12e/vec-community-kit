@@ -130,7 +130,7 @@
     "genes_sha256": "a9a553108e19acb6",
     "key": "T2:heart:test_extrap",
     "label": "T2 heart \u00b7 extrapolation, test (E12.5)",
-    "max_cells": 34641,
+    "max_cells": 25179,
     "min_cells": 1000,
     "n_genes": 500,
     "needs_coords": true,
