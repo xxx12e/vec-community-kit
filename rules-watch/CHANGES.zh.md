@@ -4,6 +4,16 @@
 
 <!-- entries below, newest first -->
 
+## 2026-11-26（UTC 16:59 运行）
+
+### 阶段接口（https://kg.virtualembryo.ai/challenge/phase）
+
+- 阶段 p3 -> closed（Submissions closed）。
+  - 对你的文件意味着什么：比赛进入了新阶段：下次上传前请重读时间线和规则。
+- daily_quota（每日配额）2 -> 0。
+  - 对你的文件意味着什么：请按新配额安排上传。
+- 门户停止接受提交（accepts_submissions 为 false）。
+
 ## 2026-11-25（UTC 17:19 运行）
 
 ### 榜契约（https://virtualembryo.ai/challenge/panels/index.json）

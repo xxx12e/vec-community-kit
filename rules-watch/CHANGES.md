@@ -4,6 +4,16 @@ Newest first. One entry per run that found a change or a fetch problem. Written 
 
 <!-- entries below, newest first -->
 
+## 2026-11-26 (run 16:59 UTC)
+
+### Phase endpoint (https://kg.virtualembryo.ai/challenge/phase)
+
+- Phase p3 -> closed (Submissions closed).
+  - What this changes for your file: The challenge is in a new phase: re-read the timeline and the rules before your next upload.
+- daily_quota 2 -> 0.
+  - What this changes for your file: Plan your uploads for the new quota.
+- The portal stopped accepting submissions (accepts_submissions false).
+
 ## 2026-11-25 (run 17:19 UTC)
 
 ### Board contract (https://virtualembryo.ai/challenge/panels/index.json)
